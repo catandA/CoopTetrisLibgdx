@@ -217,7 +217,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     private void connectToServer() {
         NetworkManager networkManager = uiManager.getNetworkManager();
         if (networkManager == null) {
-            setStatus(ConnectionState.ERROR, "Network manager not initialized!");
+            setStatus(ConnectionState.ERROR, lang().get("network.manager.not.initialized"));
             return;
         }
 
@@ -226,25 +226,25 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         try {
             port = Integer.parseInt(portField.getText());
         } catch (NumberFormatException e) {
-            setStatus(ConnectionState.ERROR, "Invalid port number!");
+            setStatus(ConnectionState.ERROR, lang().get("invalid.port.number"));
             return;
         }
         String playerName = playerNameField.getText();
 
         if (playerName.isEmpty()) {
-            setStatus(ConnectionState.ERROR, "Player name cannot be empty!");
+            setStatus(ConnectionState.ERROR, lang().get("player.name.cannot.be.empty"));
             return;
         }
 
-        setStatus(ConnectionState.INITIAL, "Connecting to server...");
+        setStatus(ConnectionState.INITIAL, lang().get("connecting.to.server"));
 
         if (networkManager.connect(host, port, playerName)) {
-            setStatus(ConnectionState.CONNECTED_TO_SERVER, "Connected to server: " + host + ":" + port);
+            setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("connected.to.server").replace("%s", host + ":" + port));
             updateUIForState(ConnectionState.CONNECTED_TO_SERVER);
             // 自动获取房间列表
             refreshRoomList();
         } else {
-            setStatus(ConnectionState.ERROR, "Failed to connect to server: " + host + ":" + port);
+            setStatus(ConnectionState.ERROR, lang().get("failed.to.connect.to.server").replace("%s", host + ":" + port));
         }
     }
 
@@ -283,35 +283,35 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     private void createRoom() {
         NetworkManager networkManager = uiManager.getNetworkManager();
         if (networkManager == null) {
-            setStatus(ConnectionState.ERROR, "Network manager not initialized!");
+            setStatus(ConnectionState.ERROR, lang().get("network.manager.not.initialized"));
             return;
         }
 
         // 如果未连接到服务器，启动本地服务器
         if (!networkManager.isConnected()) {
-            setStatus(ConnectionState.INITIAL, "Starting local server...");
+            setStatus(ConnectionState.INITIAL, lang().get("starting.local.server"));
             if (!startLocalServer(8080)) {
-                setStatus(ConnectionState.ERROR, "Failed to start local server!");
+                setStatus(ConnectionState.ERROR, lang().get("failed.to.start.local.server"));
                 return;
             }
 
             // 连接到本地服务器
             String playerName = playerNameField.getText();
             if (playerName.isEmpty()) {
-                playerName = "Player" + (int) (Math.random() * 1000);
+                playerName = lang().get("default.player.name") + (int) (Math.random() * 1000);
             }
 
             if (!networkManager.connect("localhost", 8080, playerName)) {
-                setStatus(ConnectionState.ERROR, "Failed to connect to local server!");
+                setStatus(ConnectionState.ERROR, lang().get("failed.to.connect.to.local.server"));
                 return;
             }
 
-            setStatus(ConnectionState.CONNECTED_TO_SERVER, "Connected to local server");
+            setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("connected.to.local.server"));
         }
 
         // 创建房间
-        String roomName = "Room" + (int) (Math.random() * 1000);
-        setStatus(ConnectionState.CONNECTED_TO_SERVER, "Creating room: " + roomName);
+        String roomName = lang().get("default.room.name") + (int) (Math.random() * 1000);
+        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("creating.room").replace("%s", roomName));
         networkManager.createRoom(roomName);
     }
 
@@ -321,11 +321,11 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     private void refreshRoomList() {
         NetworkManager networkManager = uiManager.getNetworkManager();
         if (networkManager == null || !networkManager.isConnected()) {
-            setStatus(ConnectionState.ERROR, "Not connected to server!");
+            setStatus(ConnectionState.ERROR, lang().get("not.connected.to.server"));
             return;
         }
 
-        setStatus(ConnectionState.CONNECTED_TO_SERVER, "Refreshing room list...");
+        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("refreshing.room.list"));
         networkManager.listRooms();
     }
 
@@ -334,18 +334,18 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
      */
     private void joinSelectedRoom() {
         if (selectedRoomButton == null) {
-            setStatus(ConnectionState.ERROR, "No room selected!");
+            setStatus(ConnectionState.ERROR, lang().get("no.room.selected"));
             return;
         }
 
         NetworkManager networkManager = uiManager.getNetworkManager();
         if (networkManager == null || !networkManager.isConnected()) {
-            setStatus(ConnectionState.ERROR, "Not connected to server!");
+            setStatus(ConnectionState.ERROR, lang().get("not.connected.to.server"));
             return;
         }
 
         String roomId = selectedRoomButton.getUserObject().toString();
-        setStatus(ConnectionState.CONNECTED_TO_SERVER, "Joining room...");
+        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("joining.room"));
         networkManager.joinRoom(roomId);
     }
 
@@ -440,12 +440,12 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         if (networkManager != null) {
             if (networkManager.isConnected()) {
                 if (currentState != ConnectionState.CONNECTED_TO_SERVER) {
-                    setStatus(ConnectionState.CONNECTED_TO_SERVER, "Connected to server");
+                    setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("connected.to.server.simple"));
                     updateUIForState(ConnectionState.CONNECTED_TO_SERVER);
                 }
             } else {
                 if (currentState != ConnectionState.INITIAL && currentState != ConnectionState.ERROR) {
-                    setStatus(ConnectionState.INITIAL, "Disconnected from server");
+                    setStatus(ConnectionState.INITIAL, lang().get("disconnected.from.server"));
                     updateUIForState(ConnectionState.INITIAL);
                 }
             }
@@ -475,17 +475,17 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
                 );
                 roomButton.setUserObject(room.getId());
                 roomButton.addListener(event -> {
-                    if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                        // 选择房间
-                        if (selectedRoomButton != null) {
-                            selectedRoomButton.setColor(Color.WHITE);
+                        if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
+                            // 选择房间
+                            if (selectedRoomButton != null) {
+                                selectedRoomButton.setColor(Color.WHITE);
+                            }
+                            selectedRoomButton = roomButton;
+                            selectedRoomButton.setColor(Color.GREEN);
+                            setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("selected.room").replace("%s", room.getName()));
                         }
-                        selectedRoomButton = roomButton;
-                        selectedRoomButton.setColor(Color.GREEN);
-                        setStatus(ConnectionState.CONNECTED_TO_SERVER, "Selected room: " + room.getName());
-                    }
-                    return true;
-                });
+                        return true;
+                    });
                 roomListTable.add(roomButton).row();
             }
         }
@@ -504,10 +504,10 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     public void onConnectResponse(boolean success, String message, String clientId) {
         // 处理连接响应
         if (success) {
-            setStatus(ConnectionState.CONNECTED_TO_SERVER, "Connected: " + message);
+            setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("connected.message").replace("%s", message));
             updateUIForState(ConnectionState.CONNECTED_TO_SERVER);
         } else {
-            setStatus(ConnectionState.ERROR, "Connection failed: " + message);
+            setStatus(ConnectionState.ERROR, lang().get("connection.failed").replace("%s", message));
         }
     }
 
@@ -517,7 +517,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         switch (message.getAction()) {
             case CREATE:
                 if (message.isSuccess()) {
-                    setStatus(ConnectionState.CONNECTED_TO_SERVER, "Room created: " + message.getMessage());
+                    setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("room.created").replace("%s", message.getMessage()));
                     // 加入创建的房间
                     if (message.getRoomId() != null) {
                         NetworkManager networkManager = uiManager.getNetworkManager();
@@ -528,38 +528,41 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
                         }
                     }
                 } else {
-                    setStatus(ConnectionState.ERROR, "Failed to create room: " + message.getMessage());
+                    setStatus(ConnectionState.ERROR, lang().get("failed.to.create.room").replace("%s", message.getMessage()));
                 }
                 break;
             case JOIN:
                 if (message.isSuccess()) {
-                    setStatus(ConnectionState.CONNECTED_TO_ROOM, "Joined room: " + message.getMessage());
+                    setStatus(ConnectionState.CONNECTED_TO_ROOM, lang().get("joined.room").replace("%s", message.getMessage()));
                     // 进入房间大厅
                     NetworkManager networkManager = uiManager.getNetworkManager();
                     if (networkManager != null) {
                         RoomLobbyState roomLobbyState = new RoomLobbyState(uiManager, networkManager);
-                        roomLobbyState.setRoomInfo(message.getRoomName() != null ? message.getRoomName() : "Room", 4, true); // 创建房间的人是房主
+                        roomLobbyState.setRoomInfo(message.getRoomName() != null ? message.getRoomName() : lang().get("default.room.name"), 4, true); // 创建房间的人是房主
                         uiManager.pushState(roomLobbyState);
                     }
                 } else {
-                    setStatus(ConnectionState.ERROR, "Failed to join room: " + message.getMessage());
+                    setStatus(ConnectionState.ERROR, lang().get("failed.to.join.room").replace("%s", message.getMessage()));
                 }
                 break;
             case LEAVE:
                 if (message.isSuccess()) {
-                    setStatus(ConnectionState.CONNECTED_TO_SERVER, "Left room: " + message.getMessage());
+                    setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("left.room").replace("%s", message.getMessage()));
                 } else {
-                    setStatus(ConnectionState.ERROR, "Failed to leave room: " + message.getMessage());
+                    setStatus(ConnectionState.ERROR, lang().get("failed.to.leave.room").replace("%s", message.getMessage()));
                 }
                 break;
             case LIST:
-                // 房间列表已经在NetworkManager中处理
+                // 处理房间列表
+                if (message.isSuccess() && message.getRooms() != null) {
+                    updateRoomList(message.getRooms());
+                }
                 break;
             case START:
                 if (message.isSuccess()) {
-                    setStatus(ConnectionState.CONNECTED_TO_ROOM, "Game starting: " + message.getMessage());
+                    setStatus(ConnectionState.CONNECTED_TO_ROOM, lang().get("game.starting").replace("%s", message.getMessage()));
                 } else {
-                    setStatus(ConnectionState.ERROR, "Failed to start game: " + message.getMessage());
+                    setStatus(ConnectionState.ERROR, lang().get("failed.to.start.game").replace("%s", message.getMessage()));
                 }
                 break;
             case STATUS:
@@ -571,7 +574,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
                 break;
             case KICK:
                 if (!message.isSuccess()) {
-                    setStatus(ConnectionState.ERROR, "Kick failed: " + message.getMessage());
+                    setStatus(ConnectionState.ERROR, lang().get("kick.failed").replace("%s", message.getMessage()));
                 }
                 break;
             case CHAT:
@@ -583,7 +586,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     @Override
     public void onGameStart(GameStartMessage message) {
         // 处理游戏开始消息
-        setStatus(ConnectionState.CONNECTED_TO_ROOM, "Game started!");
+        setStatus(ConnectionState.CONNECTED_TO_ROOM, lang().get("game.started"));
         // 进入游戏状态，使用uiManager中已经存在的GameStateManager实例
         if (uiManager.gameStateManager != null) {
             GameState gameState = new GameState(uiManager, uiManager.gameStateManager);
@@ -600,7 +603,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     @Override
     public void onDisconnected() {
         // 处理断开连接消息
-        setStatus(ConnectionState.INITIAL, "Disconnected from server");
+        setStatus(ConnectionState.INITIAL, lang().get("disconnected.from.server"));
         updateUIForState(ConnectionState.INITIAL);
 
         // 停止本地服务器

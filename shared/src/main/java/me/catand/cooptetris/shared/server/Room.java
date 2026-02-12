@@ -17,8 +17,13 @@ public class Room {
     private final List<GameLogic> gameLogics;
     private final ServerManager serverManager;
     private ClientConnection host;
+    private final boolean isDefaultLobby;
 
     public Room(String name, int maxPlayers, ServerManager serverManager) {
+        this(name, maxPlayers, serverManager, false);
+    }
+
+    public Room(String name, int maxPlayers, ServerManager serverManager, boolean isDefaultLobby) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
         this.players = new ArrayList<>();
@@ -26,6 +31,7 @@ public class Room {
         this.started = false;
         this.serverManager = serverManager;
         this.gameLogics = new ArrayList<>();
+        this.isDefaultLobby = isDefaultLobby;
     }
 
     public boolean addPlayer(ClientConnection client) {
@@ -34,8 +40,8 @@ public class Room {
             client.setCurrentRoom(this);
             gameLogics.add(new GameLogic());
 
-            // 第一个加入的玩家成为房主
-            if (players.size() == 1) {
+            // 第一个加入的玩家成为房主（默认聊天室除外）
+            if (players.size() == 1 && !isDefaultLobby) {
                 host = client;
             }
 
@@ -52,8 +58,8 @@ public class Room {
             gameLogics.remove(index);
             client.setCurrentRoom(null);
 
-            // 如果离开的是房主，设置下一个玩家为房主
-            if (client == host && !players.isEmpty()) {
+            // 如果离开的是房主，设置下一个玩家为房主（默认聊天室除外）
+            if (client == host && !players.isEmpty() && !isDefaultLobby) {
                 host = players.get(0);
             }
 

@@ -15,6 +15,7 @@ import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.model.Tetromino;
 import me.catand.cooptetris.shared.tetris.GameLogic;
 import me.catand.cooptetris.tetris.GameStateManager;
+import me.catand.cooptetris.util.LanguageManager;
 
 public class GameState implements UIState {
     private Stage stage;
@@ -43,6 +44,11 @@ public class GameState implements UIState {
         calculateBoardPosition();
     }
 
+    // 辅助方法，获取LanguageManager实例
+    private LanguageManager lang() {
+        return LanguageManager.getInstance();
+    }
+
     @Override
     public void show(Stage stage, Skin skin) {
         this.stage = stage;
@@ -53,16 +59,16 @@ public class GameState implements UIState {
         int screenWidth = Gdx.graphics.getWidth();
         uiTable.setPosition(screenWidth - 200, 100);
 
-        Label scoreTitle = new Label("Score", skin);
+        Label scoreTitle = new Label(lang().get("score.title"), skin);
         scoreLabel = new Label("0", skin);
 
-        Label levelTitle = new Label("Level", skin);
+        Label levelTitle = new Label(lang().get("level.title"), skin);
         levelLabel = new Label("1", skin);
 
-        Label linesTitle = new Label("Lines", skin);
+        Label linesTitle = new Label(lang().get("lines.title"), skin);
         linesLabel = new Label("0", skin);
 
-        TextButton pauseButton = new TextButton("Pause", skin);
+        TextButton pauseButton = new TextButton(lang().get("pause"), skin);
         pauseButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 // 暂停游戏
@@ -70,7 +76,7 @@ public class GameState implements UIState {
             return true;
         });
 
-        TextButton exitButton = new TextButton("Exit", skin);
+        TextButton exitButton = new TextButton(lang().get("exit"), skin);
         exitButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 // 断开与服务端的连接

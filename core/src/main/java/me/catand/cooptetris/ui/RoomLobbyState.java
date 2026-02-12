@@ -49,11 +49,16 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         this.networkManager = networkManager;
         this.playerNames = new ArrayList<>();
         this.chatMessages = new ArrayList<>();
-        this.roomName = "Unknown Room";
+        this.roomName = lang().get("unknown.room");
         this.maxPlayers = 4;
         this.isHost = false;
         this.countdownTimer = 0;
         this.isCountingDown = false;
+    }
+
+    // 辅助方法，获取LanguageManager实例
+    private LanguageManager lang() {
+        return LanguageManager.getInstance();
     }
 
     public void setRoomInfo(String roomName, int maxPlayers, boolean isHost) {
@@ -62,10 +67,10 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         this.isHost = isHost;
         // 更新UI显示
         if (roomNameLabel != null) {
-            roomNameLabel.setText("Room: " + roomName);
+            roomNameLabel.setText(lang().get("room.label") + " " + roomName);
         }
         if (playerCountLabel != null) {
-            playerCountLabel.setText("Players: " + playerNames.size() + "/" + maxPlayers);
+            playerCountLabel.setText(lang().get("players.label") + " " + playerNames.size() + "/" + maxPlayers);
         }
         if (startGameButton != null) {
             startGameButton.setVisible(isHost);
@@ -82,7 +87,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         }
         // 更新玩家数量显示
         if (playerCountLabel != null) {
-            playerCountLabel.setText("Players: " + playerNames.size() + "/" + maxPlayers);
+            playerCountLabel.setText(lang().get("players.label") + " " + playerNames.size() + "/" + maxPlayers);
         }
     }
 
@@ -103,25 +108,25 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         Label title;
         if (titleFont != null) {
             Label.LabelStyle labelStyle = new Label.LabelStyle(titleFont, skin.getColor("font"));
-            title = new Label("Room Lobby", labelStyle);
+            title = new Label(lang().get("room.lobby"), labelStyle);
         } else {
             // 如果字体生成失败，使用默认字体
-            title = new Label("Room Lobby", skin);
+            title = new Label(lang().get("room.lobby"), skin);
         }
         title.setAlignment(Align.center);
 
         // 状态标签
-        statusLabel = new Label("Waiting for players...", skin);
+        statusLabel = new Label(lang().get("waiting.players"), skin);
         statusLabel.setColor(Color.YELLOW);
 
         // 房间信息
-        roomNameLabel = new Label("Room: " + roomName, skin);
-        playerCountLabel = new Label("Players: 0/" + maxPlayers, skin);
+        roomNameLabel = new Label(lang().get("room.label") + " " + roomName, skin);
+        playerCountLabel = new Label(lang().get("players.label") + " 0/" + maxPlayers, skin);
 
         // 玩家列表
         playerListTable = new Table();
         playerListTable.defaults().padBottom(5f);
-        playerListTable.add(new Label("Players:", skin)).left().padBottom(10f).row();
+        playerListTable.add(new Label(lang().get("players.title"), skin)).left().padBottom(10f).row();
         updatePlayerListUI();
 
         // 聊天区域
@@ -157,7 +162,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
 
         chatInputField = new TextField("", skin);
         chatInputField.setWidth(320f);
-        chatInputField.setMessageText("Type a message...");
+        chatInputField.setMessageText(lang().get("type.message"));
         chatInputField.addListener(event -> {
             if (event instanceof InputEvent) {
                 InputEvent inputEvent = (InputEvent) event;
@@ -170,7 +175,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
             return true;
         });
 
-        sendChatButton = new TextButton("Send", skin);
+        sendChatButton = new TextButton(lang().get("send.button"), skin);
         sendChatButton.setWidth(70f);
         sendChatButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -192,7 +197,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         Table buttonTable = new Table();
         buttonTable.defaults().width(200f).height(50f).padBottom(10f);
 
-        startGameButton = new TextButton("Start Game", skin);
+        startGameButton = new TextButton(lang().get("start.game.button"), skin);
         startGameButton.setVisible(isHost); // 只有房主可以开始游戏
         startGameButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -201,7 +206,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
             return true;
         });
 
-        leaveRoomButton = new TextButton("Leave Room", skin);
+        leaveRoomButton = new TextButton(lang().get("leave.room.button"), skin);
         leaveRoomButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 leaveRoom();
@@ -243,7 +248,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
     public void update(float delta) {
         // 更新玩家数量显示
         if (playerCountLabel != null) {
-            playerCountLabel.setText("Players: " + playerNames.size() + "/" + maxPlayers);
+            playerCountLabel.setText(lang().get("players.label") + " " + playerNames.size() + "/" + maxPlayers);
         }
 
         // 处理倒计时
@@ -251,25 +256,25 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
             countdownTimer -= delta;
             if (countdownTimer > 0) {
                 if (startGameButton != null) {
-                    startGameButton.setText("Starting... " + (int) countdownTimer + "s");
+                    startGameButton.setText(lang().get("starting.countdown").replace("%d", String.valueOf((int) countdownTimer)));
                 }
             } else {
                 isCountingDown = false;
                 if (startGameButton != null) {
-                    startGameButton.setText("Start Game");
+                    startGameButton.setText(lang().get("start.game.button"));
                 }
             }
         } else {
             // 更新状态信息
             if (statusLabel != null) {
                 if (playerNames.isEmpty()) {
-                    statusLabel.setText("Waiting for players...");
+                    statusLabel.setText(lang().get("waiting.players"));
                     statusLabel.setColor(Color.YELLOW);
                     if (startGameButton != null) {
                         startGameButton.setDisabled(true);
                     }
                 } else {
-                    statusLabel.setText("Ready to start!" + (isHost ? " (Click Start Game)" : ""));
+                    statusLabel.setText(lang().get("ready.start") + (isHost ? lang().get("click.start") : ""));
                     statusLabel.setColor(Color.GREEN);
                     if (startGameButton != null && isHost) {
                         startGameButton.setDisabled(false);
@@ -298,14 +303,15 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
     private void updatePlayerListUI() {
         // 清空玩家列表表格
         playerListTable.clear();
-        playerListTable.add(new Label("Players:", skin)).left().padBottom(10f).row();
+        playerListTable.add(new Label(lang().get("players.title"), skin)).left().padBottom(10f).row();
 
         if (playerNames.isEmpty()) {
-            playerListTable.add(new Label("No players yet", skin)).left().row();
+            playerListTable.add(new Label(lang().get("no.players"), skin)).left().row();
         } else {
             for (int i = 0; i < playerNames.size(); i++) {
                 String playerName = playerNames.get(i);
-                String displayName = playerName + (i == 0 ? " (Host)" : "");
+                // 只在当前用户是房主时显示房主标记
+                String displayName = playerName + (isHost && i == 0 ? lang().get("host.suffix") : "");
                 Label playerLabel = new Label(displayName, skin);
 
                 if (isHost && i > 0) { // 房主可以踢出其他玩家，但不能踢自己
@@ -313,7 +319,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
                     playerRow.defaults().padRight(10f);
                     playerRow.add(playerLabel).left().expandX();
 
-                    TextButton kickButton = new TextButton("Kick", skin);
+                    TextButton kickButton = new TextButton(lang().get("kick.button"), skin);
                     kickButton.setWidth(60f);
                     final String targetPlayerName = playerName;
                     kickButton.addListener(event -> {
@@ -338,7 +344,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
     private void startGame() {
         if (networkManager != null && networkManager.isConnected()) {
             networkManager.startGame();
-            statusLabel.setText("Starting game...");
+            statusLabel.setText(lang().get("starting.game"));
             statusLabel.setColor(Color.BLUE);
             startGameButton.setDisabled(true);
             isCountingDown = true;
@@ -383,7 +389,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         if (chatTable != null) {
             // 清空并添加标题行
             chatTable.clear();
-            chatTable.add(new Label("Chat:", skin)).left().padBottom(10f).row();
+            chatTable.add(new Label(lang().get("chat.label"), skin)).left().padBottom(10f).row();
 
             // 添加所有聊天消息
             if (chatMessages.isEmpty()) {
@@ -414,7 +420,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
             // 移除空消息占位符（如果存在）
             if (chatMessages.size() == 1 && chatTable.getChildren().size > 1) {
                 chatTable.clear();
-                chatTable.add(new Label("Chat:", skin)).left().padBottom(10f).row();
+                chatTable.add(new Label(lang().get("chat.label"), skin)).left().padBottom(10f).row();
             }
 
             // 添加新消息

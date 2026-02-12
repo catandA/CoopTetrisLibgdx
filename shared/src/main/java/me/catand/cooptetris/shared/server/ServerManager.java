@@ -151,8 +151,8 @@ public class ServerManager {
      * 在内置服务器上，这个房间用作唯一房间进行游戏
      */
     public void createDefaultRoom() {
-        // 创建默认房间
-        defaultRoom = new Room("Lobby", 10, this);
+        // 创建默认房间（设置为默认聊天室，没有房主）
+        defaultRoom = new Room("Lobby", 10, this, true);
         rooms.add(defaultRoom);
     }
 

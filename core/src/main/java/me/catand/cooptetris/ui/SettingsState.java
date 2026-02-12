@@ -106,7 +106,7 @@ public class SettingsState implements UIState {
         // 语言设置
         Label languageLabel = new Label(lang.get("language"), skin);
         languageBox = new com.badlogic.gdx.scenes.scene2d.ui.SelectBox<>(skin);
-        String[] languages = {"English", "中文"};
+        String[] languages = {lang.get("en"), lang.get("zh")};
         languageBox.setItems(languages);
         // 设置当前选中的语言
         if (lang.getCurrentLanguageCode().equals("zh")) {
