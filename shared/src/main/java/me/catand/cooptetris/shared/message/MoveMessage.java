@@ -11,6 +11,10 @@ public class MoveMessage extends NetworkMessage {
 
     private MoveType moveType;
 
+    public MoveMessage() {
+        super("move");
+    }
+
     public MoveMessage(MoveType moveType) {
         super("move");
         this.moveType = moveType;

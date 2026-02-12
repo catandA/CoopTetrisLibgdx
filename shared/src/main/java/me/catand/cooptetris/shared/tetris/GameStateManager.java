@@ -34,34 +34,36 @@ public class GameStateManager {
     }
 
     public void update(float delta) {
-        // 无论是单机模式还是多人模式，都执行自动下落逻辑
-        dropTimer += delta;
-        if (dropTimer >= DROP_INTERVAL) {
-            localGameLogic.moveDown();
-            dropTimer = 0f;
+        // 只有在单机模式下执行本地自动下落逻辑
+        // 多人模式下，由服务器控制方块下落，客户端只接收状态更新
+        if (!isMultiplayer) {
+            dropTimer += delta;
+            if (dropTimer >= DROP_INTERVAL) {
+                localGameLogic.moveDown();
+                dropTimer = 0f;
+            }
         }
     }
 
-    public void handleInput(MoveMessage.MoveType moveType) {
+    public boolean handleInput(MoveMessage.MoveType moveType) {
         if (!isMultiplayer) {
             switch (moveType) {
                 case LEFT:
-                    localGameLogic.moveLeft();
-                    break;
+                    return localGameLogic.moveLeft();
                 case RIGHT:
-                    localGameLogic.moveRight();
-                    break;
+                    return localGameLogic.moveRight();
                 case DOWN:
-                    localGameLogic.moveDown();
-                    break;
+                    return localGameLogic.moveDown();
                 case DROP:
                     localGameLogic.dropPiece();
-                    break;
+                    return true;
                 case ROTATE_CLOCKWISE:
-                    localGameLogic.rotateClockwise();
-                    break;
+                    return localGameLogic.rotateClockwise();
+                default:
+                    return false;
             }
         }
+        return false;
     }
 
     public void updateGameLogic(GameStateMessage message) {

@@ -56,11 +56,12 @@ public class GameStateManager implements NetworkManager.NetworkListener {
         sharedManager.update(delta);
     }
 
-    public void handleInput(MoveMessage.MoveType moveType) {
+    public boolean handleInput(MoveMessage.MoveType moveType) {
         if (sharedManager.isMultiplayer() && networkManager != null && networkManager.isConnected()) {
             networkManager.sendMove(moveType);
+            return false;
         } else {
-            sharedManager.handleInput(moveType);
+            return sharedManager.handleInput(moveType);
         }
     }
 

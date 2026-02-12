@@ -1,10 +1,10 @@
 package me.catand.cooptetris.network;
 
 import com.badlogic.gdx.Gdx;
+import com.esotericsoftware.kryonet.Client;
+import com.esotericsoftware.kryonet.Connection;
+import com.esotericsoftware.kryonet.Listener;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,9 +16,7 @@ import me.catand.cooptetris.shared.message.NetworkMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 
 public class NetworkManager {
-    private Socket socket;
-    private ObjectInputStream in;
-    private ObjectOutputStream out;
+    private Client client;
     private String clientId;
     private String playerName;
     private boolean connected;
@@ -47,9 +45,18 @@ public class NetworkManager {
         }
 
         try {
-            socket = new Socket(host, port);
-            out = new ObjectOutputStream(socket.getOutputStream());
-            in = new ObjectInputStream(socket.getInputStream());
+            // 创建kryonet客户端
+            client = new Client();
+            
+            // 注册消息类
+            registerMessages();
+            
+            // 启动客户端
+            client.start();
+            
+            // 连接到服务器
+            client.connect(5000, host, port);
+            
             this.playerName = playerName;
             connected = true;
 
@@ -60,17 +67,49 @@ public class NetworkManager {
                 currentConnectionType = ConnectionType.EXTERNAL_SERVER;
             }
 
+            // 添加监听器
+            client.addListener(new Listener() {
+                @Override
+                public void received(Connection connection, Object object) {
+                    if (object instanceof NetworkMessage) {
+                        handleMessage((NetworkMessage) object);
+                    }
+                }
+
+                @Override
+                public void disconnected(Connection connection) {
+                    handleDisconnected();
+                }
+            });
+
+            // 发送连接消息
             ConnectMessage connectMessage = new ConnectMessage();
             connectMessage.setPlayerName(playerName);
             sendMessage(connectMessage);
 
-            startMessageListener();
             return true;
         } catch (Exception e) {
             e.printStackTrace();
             currentConnectionType = ConnectionType.NONE;
             return false;
         }
+    }
+
+    /**
+     * 注册消息类
+     */
+    private void registerMessages() {
+        client.getKryo().register(ConnectMessage.class);
+        client.getKryo().register(RoomMessage.class);
+        client.getKryo().register(RoomMessage.RoomAction.class);
+        client.getKryo().register(RoomMessage.RoomInfo.class);
+        client.getKryo().register(GameStartMessage.class);
+        client.getKryo().register(GameStateMessage.class);
+        client.getKryo().register(MoveMessage.class);
+        client.getKryo().register(MoveMessage.MoveType.class);
+        client.getKryo().register(java.util.ArrayList.class);
+        client.getKryo().register(int[].class);
+        client.getKryo().register(int[][].class);
     }
 
     /**
@@ -85,19 +124,6 @@ public class NetworkManager {
      */
     public boolean connectToExternalServer(String host, int port, String playerName) {
         return connect(host, port, playerName);
-    }
-
-    private void startMessageListener() {
-        new Thread(() -> {
-            while (connected) {
-                try {
-                    NetworkMessage message = (NetworkMessage) in.readObject();
-                    handleMessage(message);
-                } catch (Exception e) {
-                    disconnect();
-                }
-            }
-        }).start();
     }
 
     private void handleMessage(NetworkMessage message) {
@@ -406,11 +432,24 @@ public class NetworkManager {
         });
     }
 
-    public void sendMessage(NetworkMessage message) {
+    private void handleDisconnected() {
         if (connected) {
+            connected = false;
+
+            // 确保在主线程中调用监听器方法
+            Gdx.app.postRunnable(() -> {
+                // 使用监听器列表的副本进行遍历，避免ConcurrentModificationException
+                for (NetworkListener listener : new ArrayList<>(listeners)) {
+                    listener.onDisconnected();
+                }
+            });
+        }
+    }
+
+    public void sendMessage(NetworkMessage message) {
+        if (connected && client != null) {
             try {
-                out.writeObject(message);
-                out.flush();
+                client.sendTCP(message);
             } catch (Exception e) {
                 e.printStackTrace();
                 disconnect();
@@ -467,9 +506,10 @@ public class NetworkManager {
             connected = false;
 
             try {
-                if (in != null) in.close();
-                if (out != null) out.close();
-                if (socket != null) socket.close();
+                if (client != null) {
+                    client.close();
+                    client = null;
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

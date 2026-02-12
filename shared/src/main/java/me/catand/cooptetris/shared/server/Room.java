@@ -199,7 +199,7 @@ public class Room {
             // 执行方块自动下落
             gameLogic.moveDown();
         }
-        // 广播游戏状态更新
+        // 广播游戏状态更新，确保所有客户端同步
         broadcastGameState();
     }
 }

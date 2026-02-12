@@ -25,6 +25,10 @@ public class RoomMessage extends NetworkMessage {
     private String targetPlayer;
     private String chatMessage;
 
+    public RoomMessage() {
+        super("room");
+    }
+
     public RoomMessage(RoomAction action) {
         super("room");
         this.action = action;
@@ -111,11 +115,14 @@ public class RoomMessage extends NetworkMessage {
     }
 
     public static class RoomInfo {
-        private final String id;
-        private final String name;
-        private final int playerCount;
-        private final int maxPlayers;
-        private final boolean started;
+        private String id;
+        private String name;
+        private int playerCount;
+        private int maxPlayers;
+        private boolean started;
+
+        public RoomInfo() {
+        }
 
         public RoomInfo(String id, String name, int playerCount, int maxPlayers, boolean started) {
             this.id = id;
@@ -129,20 +136,40 @@ public class RoomMessage extends NetworkMessage {
             return id;
         }
 
+        public void setId(String id) {
+            this.id = id;
+        }
+
         public String getName() {
             return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
 
         public int getPlayerCount() {
             return playerCount;
         }
 
+        public void setPlayerCount(int playerCount) {
+            this.playerCount = playerCount;
+        }
+
         public int getMaxPlayers() {
             return maxPlayers;
         }
 
+        public void setMaxPlayers(int maxPlayers) {
+            this.maxPlayers = maxPlayers;
+        }
+
         public boolean isStarted() {
             return started;
+        }
+
+        public void setStarted(boolean started) {
+            this.started = started;
         }
     }
 }

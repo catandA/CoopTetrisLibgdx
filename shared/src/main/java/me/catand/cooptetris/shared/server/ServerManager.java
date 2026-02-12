@@ -1,13 +1,16 @@
 package me.catand.cooptetris.shared.server;
 
+import com.esotericsoftware.kryonet.Connection;
+import com.esotericsoftware.kryonet.Listener;
+import com.esotericsoftware.kryonet.Server;
+
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
 import me.catand.cooptetris.shared.message.ConnectMessage;
 import me.catand.cooptetris.shared.message.GameStartMessage;
+import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NetworkMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
@@ -18,7 +21,7 @@ public class ServerManager {
         DEDICATED_SERVER  // 专有服务器
     }
 
-    private ServerSocket serverSocket;
+    private Server server;
     private final List<ClientConnection> clients;
     private final List<Room> rooms;
     private boolean running;
@@ -35,9 +38,56 @@ public class ServerManager {
         this.serverType = serverType;
 
         try {
-            serverSocket = new ServerSocket(port);
+            // 创建kryonet服务器
+            server = new Server();
+            
+            // 注册消息类
+            registerMessages();
+            
+            // 启动服务器
+            server.start();
+            server.bind(port);
             running = true;
-            startAcceptingConnections();
+            
+            // 添加监听器
+            server.addListener(new Listener() {
+                @Override
+                public void connected(Connection connection) {
+                    // 创建新的客户端连接
+                    ClientConnection client = new ClientConnection(connection, ServerManager.this);
+                    clients.add(client);
+                }
+
+                @Override
+                public void received(Connection connection, Object object) {
+                    if (object instanceof NetworkMessage) {
+                        // 找到对应的客户端连接
+                        for (ClientConnection client : clients) {
+                            if (client.getConnection() == connection) {
+                                handleMessage(client, (NetworkMessage) object);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void disconnected(Connection connection) {
+                    // 找到对应的客户端连接并移除
+                    for (int i = 0; i < clients.size(); i++) {
+                        ClientConnection client = clients.get(i);
+                        if (client.getConnection() == connection) {
+                            // 从房间中移除
+                            if (client.getCurrentRoom() != null) {
+                                client.getCurrentRoom().removePlayer(client);
+                            }
+                            clients.remove(i);
+                            break;
+                        }
+                    }
+                }
+            });
+            
             // 启动游戏循环线程，处理方块自动下落
             startGameLoop();
             // 服务器启动时默认创建一个房间
@@ -45,6 +95,23 @@ public class ServerManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 注册消息类
+     */
+    private void registerMessages() {
+        server.getKryo().register(ConnectMessage.class);
+        server.getKryo().register(RoomMessage.class);
+        server.getKryo().register(RoomMessage.RoomAction.class);
+        server.getKryo().register(RoomMessage.RoomInfo.class);
+        server.getKryo().register(GameStartMessage.class);
+        server.getKryo().register(GameStateMessage.class);
+        server.getKryo().register(MoveMessage.class);
+        server.getKryo().register(MoveMessage.MoveType.class);
+        server.getKryo().register(java.util.ArrayList.class);
+        server.getKryo().register(int[].class);
+        server.getKryo().register(int[][].class);
     }
 
     /**
@@ -58,8 +125,8 @@ public class ServerManager {
             while (running) {
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastTime >= DROP_INTERVAL) {
-                    // 遍历所有房间
-                    for (Room room : rooms) {
+                    // 使用副本遍历，避免ConcurrentModificationException
+                    for (Room room : new ArrayList<>(rooms)) {
                         // 只有已开始游戏的房间需要处理自动下落
                         if (room.isStarted()) {
                             // 处理每个房间的游戏逻辑
@@ -87,21 +154,6 @@ public class ServerManager {
         // 创建默认房间
         defaultRoom = new Room("Lobby", 10, this);
         rooms.add(defaultRoom);
-    }
-
-    private void startAcceptingConnections() {
-        new Thread(() -> {
-            while (running) {
-                try {
-                    Socket socket = serverSocket.accept();
-                    ClientConnection client = new ClientConnection(socket, this);
-                    clients.add(client);
-                    new Thread(client).start();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
     }
 
     public void handleMessage(ClientConnection client, NetworkMessage message) {
@@ -333,11 +385,13 @@ public class ServerManager {
     public void stop() {
         running = false;
         try {
-            if (serverSocket != null) {
-                serverSocket.close();
+            if (server != null) {
+                server.stop();
+                server = null;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 }

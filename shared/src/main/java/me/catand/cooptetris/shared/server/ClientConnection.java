@@ -1,53 +1,29 @@
 package me.catand.cooptetris.shared.server;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
+import com.esotericsoftware.kryonet.Connection;
+
 import java.util.UUID;
 
 import me.catand.cooptetris.shared.message.NetworkMessage;
 
-public class ClientConnection implements Runnable {
-    private final Socket socket;
-    private ObjectInputStream in;
-    private ObjectOutputStream out;
+public class ClientConnection {
+    private final Connection connection;
     private final String clientId;
     private String playerName;
     private Room currentRoom;
     private final ServerManager serverManager;
     private boolean connected;
 
-    public ClientConnection(Socket socket, ServerManager serverManager) {
-        this.socket = socket;
+    public ClientConnection(Connection connection, ServerManager serverManager) {
+        this.connection = connection;
         this.serverManager = serverManager;
         this.clientId = UUID.randomUUID().toString();
         this.connected = true;
-
-        try {
-            out = new ObjectOutputStream(socket.getOutputStream());
-            in = new ObjectInputStream(socket.getInputStream());
-        } catch (Exception e) {
-            e.printStackTrace();
-            disconnect();
-        }
-    }
-
-    @Override
-    public void run() {
-        while (connected) {
-            try {
-                NetworkMessage message = (NetworkMessage) in.readObject();
-                serverManager.handleMessage(this, message);
-            } catch (Exception e) {
-                disconnect();
-            }
-        }
     }
 
     public void sendMessage(NetworkMessage message) {
         try {
-            out.writeObject(message);
-            out.flush();
+            connection.sendTCP(message);
         } catch (Exception e) {
             disconnect();
         }
@@ -64,9 +40,7 @@ public class ClientConnection implements Runnable {
             serverManager.removeClient(this);
 
             try {
-                if (in != null) in.close();
-                if (out != null) out.close();
-                if (socket != null) socket.close();
+                connection.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -95,5 +69,9 @@ public class ClientConnection implements Runnable {
 
     public boolean isConnected() {
         return connected;
+    }
+
+    public Connection getConnection() {
+        return connection;
     }
 }
