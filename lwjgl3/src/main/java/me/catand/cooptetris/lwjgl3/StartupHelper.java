@@ -168,7 +168,6 @@ public class StartupHelper {
 		// Check whether this JVM process is a child JVM process already.
 		// This state shouldn't usually be reachable, but this stops us from endlessly spawning new child JVM processes.
 		if ("true".equals(System.getProperty(JVM_RESTARTED_ARG))) {
-			System.err.println(CHILD_LOOP_ERR_MSG);
 			return false;
 		}
 
@@ -179,7 +178,6 @@ public class StartupHelper {
 		// If targeting Java 9 or higher, you could use the following instead of the above line:
 		//String javaExecPath = ProcessHandle.current().info().command().orElseThrow()
 		if (!(new File(javaExecPath).exists())) {
-			System.err.println(getJreErrMsg(isMac));
 			return false;
 		}
 
@@ -194,7 +192,6 @@ public class StartupHelper {
 			StackTraceElement[] trace = Thread.currentThread().getStackTrace();
 			if (trace.length > 0) mainClass = trace[trace.length - 1].getClassName();
 			else {
-				System.err.println("The main class could not be determined.");
 				return false;
 			}
 		}
@@ -207,7 +204,6 @@ public class StartupHelper {
 			if (!inheritIO) processBuilder.start();
 			else processBuilder.inheritIO().start().waitFor();
 		} catch (Exception e) {
-			System.err.println("There was a problem restarting the JVM.");
 			// noinspection CallToPrintStackTrace
 			e.printStackTrace();
 		}
