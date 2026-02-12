@@ -5,20 +5,19 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
-import com.badlogic.gdx.scenes.scene2d.ui.TextArea;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.utils.Align;
 
-import me.catand.cooptetris.util.LanguageManager;
-import me.catand.cooptetris.network.NetworkManager;
-import me.catand.cooptetris.shared.message.RoomMessage;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import me.catand.cooptetris.network.NetworkManager;
+import me.catand.cooptetris.shared.message.RoomMessage;
+import me.catand.cooptetris.util.LanguageManager;
 
 public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
     private Stage stage;
@@ -128,10 +127,10 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         // 聊天区域
         Table chatContainer = new Table();
         chatContainer.defaults().width(400f).padBottom(10f);
-        
+
         chatTable = new Table();
         chatTable.defaults().left().padBottom(5f).width(380f);
-        
+
         // 创建一个带有滚动条的滚动窗
         chatScrollPane = new ScrollPane(chatTable, skin);
         chatScrollPane.setHeight(200f);
@@ -139,7 +138,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         chatScrollPane.setScrollingDisabled(false, true);
         chatScrollPane.setFlickScroll(true);
         chatScrollPane.setSmoothScrolling(true);
-        
+
         // 为滚动窗添加外边框
         Table borderTable = new Table(skin);
         borderTable.setWidth(400f);
@@ -152,10 +151,10 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         } catch (Exception e) {
             // 如果默认背景不存在，忽略错误
         }
-        
+
         Table chatInputContainer = new Table();
         chatInputContainer.defaults().padRight(5f);
-        
+
         chatInputField = new TextField("", skin);
         chatInputField.setWidth(320f);
         chatInputField.setMessageText("Type a message...");
@@ -163,14 +162,14 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
             if (event instanceof InputEvent) {
                 InputEvent inputEvent = (InputEvent) event;
                 int keyCode = inputEvent.getKeyCode();
-                if (inputEvent.getType() == InputEvent.Type.keyDown && 
+                if (inputEvent.getType() == InputEvent.Type.keyDown &&
                     (keyCode == com.badlogic.gdx.Input.Keys.ENTER || keyCode == com.badlogic.gdx.Input.Keys.NUMPAD_ENTER)) {
                     sendChatMessage();
                 }
             }
             return true;
         });
-        
+
         sendChatButton = new TextButton("Send", skin);
         sendChatButton.setWidth(70f);
         sendChatButton.addListener(event -> {
@@ -179,13 +178,13 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
             }
             return true;
         });
-        
+
         chatInputContainer.add(chatInputField).fillX().expandX();
         chatInputContainer.add(sendChatButton).width(70f);
-        
+
         chatContainer.add(borderTable).row();
         chatContainer.add(chatInputContainer).row();
-        
+
         // 初始化聊天消息
         initChatMessages();
 
@@ -308,12 +307,12 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
                 String playerName = playerNames.get(i);
                 String displayName = playerName + (i == 0 ? " (Host)" : "");
                 Label playerLabel = new Label(displayName, skin);
-                
+
                 if (isHost && i > 0) { // 房主可以踢出其他玩家，但不能踢自己
                     Table playerRow = new Table();
                     playerRow.defaults().padRight(10f);
                     playerRow.add(playerLabel).left().expandX();
-                    
+
                     TextButton kickButton = new TextButton("Kick", skin);
                     kickButton.setWidth(60f);
                     final String targetPlayerName = playerName;
@@ -323,7 +322,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
                         }
                         return true;
                     });
-                    
+
                     playerRow.add(kickButton);
                     playerListTable.add(playerRow).left().row();
                 } else {
@@ -385,7 +384,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
             // 清空并添加标题行
             chatTable.clear();
             chatTable.add(new Label("Chat:", skin)).left().padBottom(10f).row();
-            
+
             // 添加所有聊天消息
             if (chatMessages.isEmpty()) {
                 // 添加空消息占位符，确保聊天框保持最小高度
@@ -399,7 +398,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
                     chatTable.add(messageLabel).left().row();
                 }
             }
-            
+
             // 滚动到底部
             chatScrollPane.layout();
             chatScrollPane.setScrollPercentY(1f);
@@ -417,12 +416,12 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
                 chatTable.clear();
                 chatTable.add(new Label("Chat:", skin)).left().padBottom(10f).row();
             }
-            
+
             // 添加新消息
             Label messageLabel = new Label(message, skin);
             messageLabel.setWrap(true);
             chatTable.add(messageLabel).left().row();
-            
+
             // 滚动到底部
             chatScrollPane.layout();
             chatScrollPane.setScrollPercentY(1f);

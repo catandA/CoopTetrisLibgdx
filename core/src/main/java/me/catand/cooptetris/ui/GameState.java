@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 
 import me.catand.cooptetris.shared.message.MoveMessage;
+import me.catand.cooptetris.shared.model.Tetromino;
 import me.catand.cooptetris.shared.tetris.GameLogic;
 import me.catand.cooptetris.tetris.GameStateManager;
 
@@ -171,24 +172,10 @@ public class GameState implements UIState {
     }
 
     private Color getColorForCell(int cell) {
-        switch (cell) {
-            case 0:
-                return Color.CYAN;     // I
-            case 1:
-                return Color.BLUE;     // J
-            case 2:
-                return Color.ORANGE;   // L
-            case 3:
-                return Color.YELLOW;   // O
-            case 4:
-                return Color.GREEN;    // S
-            case 5:
-                return Color.PURPLE;   // T
-            case 6:
-                return Color.RED;      // Z
-            default:
-                return Color.GRAY;
+        if (cell >= 0 && cell < Tetromino.COLORS.length) {
+            return Tetromino.COLORS[cell];
         }
+        return Color.GRAY;
     }
 
     @Override
@@ -203,19 +190,5 @@ public class GameState implements UIState {
 
     public ShapeRenderer getShapeRenderer() {
         return shapeRenderer;
-    }
-    
-    /**
-     * 启动单人游戏模式
-     */
-    public void startSinglePlayer() {
-        gameStateManager.startSinglePlayer();
-    }
-    
-    /**
-     * 启动单人游戏模式但不自动连接到本地服务器
-     */
-    public void startSinglePlayerWithoutServer() {
-        gameStateManager.startSinglePlayerWithoutServer();
     }
 }

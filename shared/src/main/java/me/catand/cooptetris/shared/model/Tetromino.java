@@ -1,5 +1,7 @@
 package me.catand.cooptetris.shared.model;
 
+import com.badlogic.gdx.graphics.Color;
+
 public class Tetromino {
     public static final int I = 0;
     public static final int J = 1;
@@ -54,14 +56,14 @@ public class Tetromino {
         }
     };
 
-    public static final int[] COLORS = {
-        0x00FFFF, // Cyan (I)
-        0x0000FF, // Blue (J)
-        0xFFA500, // Orange (L)
-        0xFFFF00, // Yellow (O)
-        0x00FF00, // Green (S)
-        0x800080, // Purple (T)
-        0xFF0000  // Red (Z)
+    public static final Color[] COLORS = {
+        Color.CYAN,     // I
+        Color.BLUE,     // J
+        Color.ORANGE,   // L
+        Color.YELLOW,   // O
+        Color.GREEN,    // S
+        Color.MAGENTA,   // T
+        Color.RED       // Z
     };
 
     public static int[][] rotateClockwise(int[][] piece) {

@@ -1,7 +1,8 @@
 package me.catand.cooptetris.shared.tetris;
 
-import me.catand.cooptetris.shared.model.Tetromino;
 import java.util.Random;
+
+import me.catand.cooptetris.shared.model.Tetromino;
 
 public class GameLogic {
     public static final int BOARD_WIDTH = 10;
@@ -16,7 +17,7 @@ public class GameLogic {
     private int score;
     private int level;
     private int lines;
-    private Random random;
+    private final Random random;
     private boolean gameOver;
 
     public GameLogic() {
@@ -75,7 +76,7 @@ public class GameLogic {
     }
 
     public void dropPiece() {
-        while (moveDown());
+        while (moveDown()) ;
     }
 
     public boolean rotateClockwise() {
@@ -285,7 +286,8 @@ public class GameLogic {
 
     /**
      * 获取指定方块和旋转状态的形状
-     * @param piece 方块类型
+     *
+     * @param piece    方块类型
      * @param rotation 旋转状态
      * @return 方块的形状数组
      */

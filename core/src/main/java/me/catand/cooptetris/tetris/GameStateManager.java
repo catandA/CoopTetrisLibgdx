@@ -1,7 +1,7 @@
 package me.catand.cooptetris.tetris;
 
-import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.network.LocalServerManager;
+import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 
@@ -34,7 +34,7 @@ public class GameStateManager implements NetworkManager.NetworkListener {
         isSinglePlayerMode = true;
         // 启动本地服务器（如果尚未启动）
         if (!isLocalServerStarted && localServerManager != null && !localServerManager.isRunning()) {
-            if (localServerManager.startSinglePlayerServer(8080)) {
+            if (localServerManager.startServer(8080)) {
                 System.out.println("Local server started for single player mode");
                 isLocalServerStarted = true;
                 // 连接到本地服务器
@@ -45,14 +45,6 @@ public class GameStateManager implements NetworkManager.NetworkListener {
                 System.err.println("Failed to start local server for single player mode");
             }
         }
-        sharedManager.startSinglePlayer();
-    }
-
-    /**
-     * 启动单人游戏但不自动连接到本地服务器
-     * 用于联机模式下的本地游戏
-     */
-    public void startSinglePlayerWithoutServer() {
         sharedManager.startSinglePlayer();
     }
 
@@ -76,7 +68,7 @@ public class GameStateManager implements NetworkManager.NetworkListener {
     public void onConnectResponse(boolean success, String message, String clientId) {
         // 处理连接响应
         System.out.println("Connection response: " + message + " (" + (success ? "success" : "failure") + ")");
-        
+
         // 只有在单人模式下，连接到本地服务器成功时才自动开始游戏
         if (success && networkManager != null && networkManager.getCurrentConnectionType() == NetworkManager.ConnectionType.LOCAL_SERVER && isSinglePlayerMode) {
             // 延迟一秒，确保服务器完全启动

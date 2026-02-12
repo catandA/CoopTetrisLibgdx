@@ -1,12 +1,12 @@
 package me.catand.cooptetris.network;
 
+import com.badlogic.gdx.Gdx;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.badlogic.gdx.Gdx;
 
 import me.catand.cooptetris.shared.message.ConnectMessage;
 import me.catand.cooptetris.shared.message.GameStartMessage;
@@ -129,7 +129,7 @@ public class NetworkManager {
             // 连接到本地服务器时，不再自动加入默认房间
             // 由OnlineMenuState控制房间的创建和加入
         }
-        
+
         // 确保在主线程中调用监听器方法
         final ConnectMessage finalMessage = message;
         Gdx.app.postRunnable(() -> {
@@ -170,7 +170,7 @@ public class NetworkManager {
                             // 尝试获取主应用实例
                             Class<?> mainClass = Class.forName("me.catand.cooptetris.Main");
                             java.lang.reflect.Field[] fields = mainClass.getDeclaredFields();
-                            
+
                             // 首先尝试获取Gdx.app实例，然后从中获取Main实例
                             try {
                                 Class<?> applicationClass = Class.forName("com.badlogic.gdx.Application");
@@ -178,7 +178,7 @@ public class NetworkManager {
                                 java.lang.reflect.Field appField = gdxClass.getDeclaredField("app");
                                 appField.setAccessible(true);
                                 Object appInstance = appField.get(null);
-                                
+
                                 // 检查appInstance是否是Main的实例
                                 if (mainClass.isInstance(appInstance)) {
                                     // 从Main实例中获取UIManager
@@ -194,7 +194,7 @@ public class NetworkManager {
                                 // 如果获取Gdx.app失败，尝试其他方式
                                 e.printStackTrace();
                             }
-                            
+
                             // 如果上述方式失败，尝试遍历所有字段，看是否有静态的Main实例
                             if (uiManager == null) {
                                 for (java.lang.reflect.Field field : fields) {
@@ -241,7 +241,7 @@ public class NetworkManager {
                             // 尝试获取主应用实例
                             Class<?> mainClass = Class.forName("me.catand.cooptetris.Main");
                             java.lang.reflect.Field[] fields = mainClass.getDeclaredFields();
-                            
+
                             // 首先尝试获取Gdx.app实例，然后从中获取Main实例
                             try {
                                 Class<?> applicationClass = Class.forName("com.badlogic.gdx.Application");
@@ -249,7 +249,7 @@ public class NetworkManager {
                                 java.lang.reflect.Field appField = gdxClass.getDeclaredField("app");
                                 appField.setAccessible(true);
                                 Object appInstance = appField.get(null);
-                                
+
                                 // 检查appInstance是否是Main的实例
                                 if (mainClass.isInstance(appInstance)) {
                                     // 从Main实例中获取UIManager
@@ -265,7 +265,7 @@ public class NetworkManager {
                                 // 如果获取Gdx.app失败，尝试其他方式
                                 e.printStackTrace();
                             }
-                            
+
                             // 如果上述方式失败，尝试遍历所有字段，看是否有静态的Main实例
                             if (uiManager == null) {
                                 for (java.lang.reflect.Field field : fields) {
@@ -294,7 +294,7 @@ public class NetworkManager {
                                     // 调用updatePlayerList方法更新玩家列表
                                     java.lang.reflect.Method updatePlayerListMethod = currentState.getClass().getMethod("updatePlayerList", java.util.List.class);
                                     updatePlayerListMethod.invoke(currentState, finalMessage.getPlayers());
-                                    
+
                                     // 设置房间信息
                                     java.lang.reflect.Method setRoomInfoMethod = currentState.getClass().getMethod("setRoomInfo", String.class, int.class, boolean.class);
                                     setRoomInfoMethod.invoke(currentState, finalMessage.getRoomName(), 4, false); // 暂时使用默认maxPlayers
@@ -316,7 +316,7 @@ public class NetworkManager {
                             // 尝试获取主应用实例
                             Class<?> mainClass = Class.forName("me.catand.cooptetris.Main");
                             java.lang.reflect.Field[] fields = mainClass.getDeclaredFields();
-                            
+
                             // 首先尝试获取Gdx.app实例，然后从中获取Main实例
                             try {
                                 Class<?> applicationClass = Class.forName("com.badlogic.gdx.Application");
@@ -324,7 +324,7 @@ public class NetworkManager {
                                 java.lang.reflect.Field appField = gdxClass.getDeclaredField("app");
                                 appField.setAccessible(true);
                                 Object appInstance = appField.get(null);
-                                
+
                                 // 检查appInstance是否是Main的实例
                                 if (mainClass.isInstance(appInstance)) {
                                     // 从Main实例中获取UIManager
@@ -340,7 +340,7 @@ public class NetworkManager {
                                 // 如果获取Gdx.app失败，尝试其他方式
                                 e.printStackTrace();
                             }
-                            
+
                             // 如果上述方式失败，尝试遍历所有字段，看是否有静态的Main实例
                             if (uiManager == null) {
                                 for (java.lang.reflect.Field field : fields) {

@@ -1,20 +1,21 @@
 package me.catand.cooptetris.shared.server;
 
-import me.catand.cooptetris.shared.message.GameStateMessage;
-import me.catand.cooptetris.shared.message.RoomMessage;
-import me.catand.cooptetris.shared.tetris.GameLogic;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import me.catand.cooptetris.shared.message.GameStateMessage;
+import me.catand.cooptetris.shared.message.RoomMessage;
+import me.catand.cooptetris.shared.tetris.GameLogic;
+
 public class Room {
-    private String id;
-    private String name;
-    private List<ClientConnection> players;
-    private int maxPlayers;
+    private final String id;
+    private final String name;
+    private final List<ClientConnection> players;
+    private final int maxPlayers;
     private boolean started;
-    private List<GameLogic> gameLogics;
-    private ServerManager serverManager;
+    private final List<GameLogic> gameLogics;
+    private final ServerManager serverManager;
     private ClientConnection host;
 
     public Room(String name, int maxPlayers, ServerManager serverManager) {
@@ -32,12 +33,12 @@ public class Room {
             players.add(client);
             client.setCurrentRoom(this);
             gameLogics.add(new GameLogic());
-            
+
             // 第一个加入的玩家成为房主
             if (players.size() == 1) {
                 host = client;
             }
-            
+
             broadcastRoomStatus();
             return true;
         }

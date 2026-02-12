@@ -1,7 +1,6 @@
 package me.catand.cooptetris.network;
 
 import me.catand.cooptetris.shared.server.ServerManager;
-import me.catand.cooptetris.shared.message.RoomMessage;
 
 public class LocalServerManager {
     private ServerManager serverManager;
@@ -22,27 +21,6 @@ public class LocalServerManager {
                 serverThread.start();
                 // 等待服务器启动
                 Thread.sleep(1000);
-                return true;
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 为单人游戏启动本地服务器并准备游戏环境
-     */
-    public boolean startSinglePlayerServer(int port) {
-        if (!running) {
-            try {
-                // 启动服务器
-                if (!startServer(port)) {
-                    return false;
-                }
-                // 单人游戏模式下，我们不需要创建房间
-                // 游戏逻辑将直接在客户端处理
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();

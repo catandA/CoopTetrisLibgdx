@@ -1,25 +1,26 @@
 package me.catand.cooptetris.shared.server;
 
-import me.catand.cooptetris.shared.message.ConnectMessage;
-import me.catand.cooptetris.shared.message.GameStartMessage;
-import me.catand.cooptetris.shared.message.MoveMessage;
-import me.catand.cooptetris.shared.message.NetworkMessage;
-import me.catand.cooptetris.shared.message.RoomMessage;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.catand.cooptetris.shared.message.ConnectMessage;
+import me.catand.cooptetris.shared.message.GameStartMessage;
+import me.catand.cooptetris.shared.message.MoveMessage;
+import me.catand.cooptetris.shared.message.NetworkMessage;
+import me.catand.cooptetris.shared.message.RoomMessage;
+
 public class ServerManager {
     public enum ServerType {
         LOCAL_SERVER,  // 内置服务器
         DEDICATED_SERVER  // 专有服务器
     }
-    
+
     private ServerSocket serverSocket;
-    private List<ClientConnection> clients;
-    private List<Room> rooms;
+    private final List<ClientConnection> clients;
+    private final List<Room> rooms;
     private boolean running;
     private final ServerType serverType;
     private Room defaultRoom;
@@ -27,7 +28,7 @@ public class ServerManager {
     public ServerManager(int port) {
         this(port, ServerType.DEDICATED_SERVER);
     }
-    
+
     public ServerManager(int port, ServerType serverType) {
         clients = new ArrayList<>();
         rooms = new ArrayList<>();
@@ -53,7 +54,7 @@ public class ServerManager {
         new Thread(() -> {
             long lastTime = System.currentTimeMillis();
             final long DROP_INTERVAL = 1000; // 1秒
-            
+
             while (running) {
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastTime >= DROP_INTERVAL) {
@@ -67,7 +68,7 @@ public class ServerManager {
                     }
                     lastTime = currentTime;
                 }
-                
+
                 try {
                     Thread.sleep(100); // 避免CPU占用过高
                 } catch (InterruptedException e) {
@@ -126,7 +127,7 @@ public class ServerManager {
             response.setClientId(client.getClientId());
             response.setMessage("Connected successfully");
             client.sendMessage(response);
-            
+
             // 在内置服务器模式下，自动将客户端加入默认房间
             if (serverType == ServerType.LOCAL_SERVER && defaultRoom != null) {
                 defaultRoom.addPlayer(client);
@@ -226,7 +227,7 @@ public class ServerManager {
             response.setSuccess(true);
             response.setMessage("Left room successfully");
             client.sendMessage(response);
-            
+
             // 在内置服务器模式下，如果用户离开房间，直接断开连接
             if (serverType == ServerType.LOCAL_SERVER) {
                 client.disconnect();

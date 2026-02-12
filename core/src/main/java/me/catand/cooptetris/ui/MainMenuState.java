@@ -61,7 +61,7 @@ public class MainMenuState implements UIState {
                     GameState gameState = new GameState(uiManager, uiManager.gameStateManager);
                     uiManager.setScreen(gameState);
                     // 启动单人游戏模式，包括本地服务器
-                    gameState.startSinglePlayer();
+                    uiManager.gameStateManager.startSinglePlayer();
                 }
             }
             return true;

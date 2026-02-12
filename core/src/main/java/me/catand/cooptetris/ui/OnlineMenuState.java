@@ -12,16 +12,15 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.utils.Align;
 
-import me.catand.cooptetris.util.LanguageManager;
-import me.catand.cooptetris.shared.message.RoomMessage;
-import me.catand.cooptetris.shared.message.GameStartMessage;
-import me.catand.cooptetris.shared.message.GameStateMessage;
-import me.catand.cooptetris.network.NetworkManager;
-import me.catand.cooptetris.network.LocalServerManager;
-import me.catand.cooptetris.tetris.GameStateManager;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import me.catand.cooptetris.network.LocalServerManager;
+import me.catand.cooptetris.network.NetworkManager;
+import me.catand.cooptetris.shared.message.GameStartMessage;
+import me.catand.cooptetris.shared.message.GameStateMessage;
+import me.catand.cooptetris.shared.message.RoomMessage;
+import me.catand.cooptetris.util.LanguageManager;
 
 public class OnlineMenuState implements UIState, NetworkManager.NetworkListener {
     private Stage stage;
@@ -82,7 +81,6 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         statusLabel.setColor(Color.RED);
 
 
-
         // 连接设置区域
         connectionTable = new Table();
         connectionTable.defaults().padBottom(10f);
@@ -102,7 +100,6 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         connectionTable.add(portField).width(200f).row();
         connectionTable.add(playerNameLabel).right().padRight(10f);
         connectionTable.add(playerNameField).width(200f).row();
-
 
 
         // 房间列表区域
@@ -152,7 +149,6 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
             }
             return true;
         });
-
 
 
         TextButton backButton = new TextButton(lang.get("back"), skin);
@@ -215,7 +211,6 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     }
 
 
-
     /**
      * 连接到服务器
      */
@@ -260,7 +255,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         try {
             // 直接使用UIManager的getLocalServerManager方法获取实例
             LocalServerManager localServerManager = uiManager.getLocalServerManager();
-            
+
             if (localServerManager != null) {
                 // 如果服务器已经在运行，先停止它
                 if (localServerManager.isRunning()) {
@@ -355,14 +350,13 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     }
 
 
-
     /**
      * 更新状态
      */
     private void setStatus(ConnectionState state, String message) {
         this.currentState = state;
         statusLabel.setText(message);
-        
+
         // 根据状态设置颜色
         switch (state) {
             case INITIAL:
@@ -389,7 +383,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         TextButton createRoomButton = null;
         TextButton refreshRoomsButton = null;
         TextButton joinSelectedRoomButton = null;
-        
+
         // 遍历按钮表格中的所有子元素
         for (int i = 0; i < mainTable.getChildren().size; i++) {
             if (mainTable.getChildren().get(i) instanceof Table) {
@@ -466,17 +460,17 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         if (rooms != null) {
             this.availableRooms.addAll(rooms);
         }
-        
+
         // 清空房间列表表格
         roomListTable.clear();
-        
+
         if (availableRooms.isEmpty()) {
             roomListTable.add(new Label(LanguageManager.getInstance().get("no.rooms.available"), skin)).center().row();
             selectedRoomButton = null;
         } else {
             for (RoomMessage.RoomInfo room : availableRooms) {
                 TextButton roomButton = new TextButton(
-                    room.getName() + " (" + room.getPlayerCount() + "/" + room.getMaxPlayers() + ")", 
+                    room.getName() + " (" + room.getPlayerCount() + "/" + room.getMaxPlayers() + ")",
                     skin
                 );
                 roomButton.setUserObject(room.getId());
@@ -495,7 +489,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
                 roomListTable.add(roomButton).row();
             }
         }
-        
+
         if (roomListScrollPane != null) {
             roomListScrollPane.layout();
         }
@@ -608,7 +602,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         // 处理断开连接消息
         setStatus(ConnectionState.INITIAL, "Disconnected from server");
         updateUIForState(ConnectionState.INITIAL);
-        
+
         // 停止本地服务器
         LocalServerManager localServerManager = uiManager.getLocalServerManager();
         if (localServerManager != null && localServerManager.isRunning()) {

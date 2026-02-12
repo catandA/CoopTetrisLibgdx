@@ -15,8 +15,8 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import java.util.Stack;
 
-import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.network.LocalServerManager;
+import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.util.LanguageManager;
 
 public class UIManager {
@@ -147,6 +147,7 @@ public class UIManager {
 
     /**
      * 生成指定大小的字体
+     *
      * @param size 字体大小
      * @return 生成的BitmapFont对象，如果失败则返回null
      */
@@ -176,7 +177,8 @@ public class UIManager {
 
     /**
      * 生成高分辨率字体，用于在小尺寸下显示时保持清晰
-     * @param targetSize 目标显示大小
+     *
+     * @param targetSize           目标显示大小
      * @param resolutionMultiplier 分辨率倍率，建议为2或3
      * @return 生成的高分辨率BitmapFont对象，如果失败则返回null
      */
