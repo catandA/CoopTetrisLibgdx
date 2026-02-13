@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
 
 import me.catand.cooptetris.util.LanguageManager;
+import me.catand.cooptetris.util.UIScaler;
 
 public class MainMenuState implements UIState {
     private Stage stage;
@@ -32,10 +33,15 @@ public class MainMenuState implements UIState {
         table.setFillParent(true);
         table.center();
 
+        // 使用UIScaler获取缩放比例
+        UIScaler scaler = UIScaler.getInstance();
+        float scale = scaler.getScale();
+
         LanguageManager lang = LanguageManager.getInstance();
 
-        // 为标题创建一个更大的字体，避免缩放导致模糊
-        titleFont = uiManager.generateFont(32);
+        // 为标题创建一个更大的字体，考虑缩放比例
+        int titleFontSize = (int) (32 * scale);
+        titleFont = uiManager.generateFont(titleFontSize);
 
         // 创建标题
         Label title;
@@ -43,7 +49,7 @@ public class MainMenuState implements UIState {
             Label.LabelStyle labelStyle = new Label.LabelStyle(titleFont, skin.getColor("font"));
             title = new Label(lang.get("title"), labelStyle);
         } else {
-            // 如果字体生成失败，使用默认字体，但不使用缩放
+            // 如果字体生成失败，使用默认字体
             title = new Label(lang.get("title"), skin);
         }
         title.setAlignment(Align.center);
@@ -89,11 +95,17 @@ public class MainMenuState implements UIState {
             return true;
         });
 
-        table.add(title).padBottom(50f).row();
-        table.add(startButton).width(200f).height(60f).padBottom(20f).row();
-        table.add(onlineButton).width(200f).height(60f).padBottom(20f).row();
-        table.add(settingsButton).width(200f).height(60f).padBottom(20f).row();
-        table.add(exitButton).width(200f).height(60f).row();
+        // 使用UIScaler缩放按钮大小和间距
+        float buttonWidth = scaler.toScreenWidth(200f);
+        float buttonHeight = scaler.toScreenHeight(60f);
+        float padBottomTitle = scaler.toScreenHeight(50f);
+        float padBottomButton = scaler.toScreenHeight(20f);
+
+        table.add(title).padBottom(padBottomTitle).row();
+        table.add(startButton).width(buttonWidth).height(buttonHeight).padBottom(padBottomButton).row();
+        table.add(onlineButton).width(buttonWidth).height(buttonHeight).padBottom(padBottomButton).row();
+        table.add(settingsButton).width(buttonWidth).height(buttonHeight).padBottom(padBottomButton).row();
+        table.add(exitButton).width(buttonWidth).height(buttonHeight).row();
 
         stage.addActor(table);
     }
@@ -110,7 +122,14 @@ public class MainMenuState implements UIState {
 
     @Override
     public void resize(int width, int height) {
-        // 自动处理大小调整
+        // 更新UIScaler
+        UIScaler.getInstance().update();
+        
+        // 重新创建表格，确保UI元素正确缩放
+        if (table != null) {
+            table.remove();
+            show(stage, skin);
+        }
     }
 
     @Override

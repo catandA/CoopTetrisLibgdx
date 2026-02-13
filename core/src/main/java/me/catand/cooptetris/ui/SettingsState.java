@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import me.catand.cooptetris.util.ConfigManager;
 import me.catand.cooptetris.util.Config;
 import me.catand.cooptetris.util.LanguageManager;
+import me.catand.cooptetris.util.UIScaler;
 
 public class SettingsState implements UIState {
     private Stage stage;
@@ -43,15 +44,21 @@ public class SettingsState implements UIState {
         this.stage = stage;
         this.skin = skin;
 
+        // 使用UIScaler获取缩放比例
+        UIScaler scaler = UIScaler.getInstance();
+        float scale = scaler.getScale();
+
         table = new Table();
         table.setFillParent(true);
         table.center();
 
         LanguageManager lang = LanguageManager.getInstance();
 
-        // 生成标题字体和section字体
-        titleFont = uiManager.generateFont(24);
-        sectionFont = uiManager.generateFont(19);
+        // 生成标题字体和section字体，考虑缩放比例
+        int titleFontSize = (int) (24 * scale);
+        int sectionFontSize = (int) (19 * scale);
+        titleFont = uiManager.generateFont(titleFontSize);
+        sectionFont = uiManager.generateFont(sectionFontSize);
 
         // 获取配置
         config = configManager.getConfig();
@@ -156,39 +163,49 @@ public class SettingsState implements UIState {
             return true;
         });
 
-        table.add(title).padBottom(30f).row();
+        // 使用UIScaler缩放间距和元素大小
+        float padBottomTitle = scaler.toScreenHeight(30f);
+        float padRight = scaler.toScreenWidth(10f);
+        float padBottomField = scaler.toScreenHeight(10f);
+        float padBottomSection = scaler.toScreenHeight(20f);
+        float smallFieldWidth = scaler.toScreenWidth(100f);
+        float mediumFieldWidth = scaler.toScreenWidth(150f);
+        float largeFieldWidth = scaler.toScreenWidth(200f);
+        float buttonWidth = scaler.toScreenWidth(150f);
+
+        table.add(title).padBottom(padBottomTitle).row();
 
         // 难度设置
-        table.add(difficultyLabel).right().padRight(10f);
-        table.add(difficultyField).width(100f).padBottom(20f).row();
+        table.add(difficultyLabel).right().padRight(padRight);
+        table.add(difficultyField).width(smallFieldWidth).padBottom(padBottomSection).row();
 
         // 控制设置
-        table.add(controlsLabel).colspan(2).padBottom(10f).row();
-        table.add(leftKeyLabel).right().padRight(10f);
-        table.add(leftKeyField).width(100f).padBottom(10f).row();
-        table.add(rightKeyLabel).right().padRight(10f);
-        table.add(rightKeyField).width(100f).padBottom(10f).row();
-        table.add(downKeyLabel).right().padRight(10f);
-        table.add(downKeyField).width(100f).padBottom(10f).row();
-        table.add(rotateKeyLabel).right().padRight(10f);
-        table.add(rotateKeyField).width(100f).padBottom(10f).row();
-        table.add(dropKeyLabel).right().padRight(10f);
-        table.add(dropKeyField).width(100f).padBottom(20f).row();
+        table.add(controlsLabel).colspan(2).padBottom(padBottomField).row();
+        table.add(leftKeyLabel).right().padRight(padRight);
+        table.add(leftKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
+        table.add(rightKeyLabel).right().padRight(padRight);
+        table.add(rightKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
+        table.add(downKeyLabel).right().padRight(padRight);
+        table.add(downKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
+        table.add(rotateKeyLabel).right().padRight(padRight);
+        table.add(rotateKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
+        table.add(dropKeyLabel).right().padRight(padRight);
+        table.add(dropKeyField).width(smallFieldWidth).padBottom(padBottomSection).row();
 
         // 网络设置
-        table.add(networkLabel).colspan(2).padBottom(10f).row();
-        table.add(defaultHostLabel).right().padRight(10f);
-        table.add(defaultHostField).width(200f).padBottom(10f).row();
-        table.add(defaultPortLabel).right().padRight(10f);
-        table.add(defaultPortField).width(100f).padBottom(20f).row();
+        table.add(networkLabel).colspan(2).padBottom(padBottomField).row();
+        table.add(defaultHostLabel).right().padRight(padRight);
+        table.add(defaultHostField).width(largeFieldWidth).padBottom(padBottomField).row();
+        table.add(defaultPortLabel).right().padRight(padRight);
+        table.add(defaultPortField).width(smallFieldWidth).padBottom(padBottomSection).row();
 
         // 语言设置
-        table.add(languageLabel).right().padRight(10f);
-        table.add(languageBox).width(150f).padBottom(20f).row();
+        table.add(languageLabel).right().padRight(padRight);
+        table.add(languageBox).width(mediumFieldWidth).padBottom(padBottomSection).row();
 
         // 按钮
-        table.add(saveButton).width(150f).padBottom(10f).row();
-        table.add(backButton).width(150f).row();
+        table.add(saveButton).width(buttonWidth).padBottom(padBottomField).row();
+        table.add(backButton).width(buttonWidth).row();
 
         stage.addActor(table);
     }
@@ -236,7 +253,14 @@ public class SettingsState implements UIState {
 
     @Override
     public void resize(int width, int height) {
-        // 自动处理大小调整
+        // 更新UIScaler
+        UIScaler.getInstance().update();
+        
+        // 重新创建表格，确保UI元素正确缩放
+        if (table != null) {
+            table.remove();
+            show(stage, skin);
+        }
     }
 
     @Override

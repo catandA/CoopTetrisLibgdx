@@ -19,6 +19,7 @@ import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.util.ConfigManager;
 import me.catand.cooptetris.util.LanguageManager;
+import me.catand.cooptetris.util.UIScaler;
 
 public class UIManager {
     private final Stage stage;
@@ -30,17 +31,35 @@ public class UIManager {
     public me.catand.cooptetris.tetris.GameStateManager gameStateManager;
 
     public UIManager() {
+        // 初始化UIScaler
+        UIScaler.getInstance().update();
+        
         stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
 
         // 尝试加载支持中文的字体
+        updateSkinFonts();
+
+        uiStates = new Stack<>();
+        Gdx.input.setInputProcessor(stage);
+    }
+    
+    /**
+     * 更新skin中的字体，考虑当前的缩放比例
+     */
+    public void updateSkinFonts() {
         try {
             // 检查是否有默认字体文件
-            boolean fontLoaded = false;
-
             if (Gdx.files.internal("fonts/NotoSansSC-Regular.ttf").exists()) {
+                // 获取当前缩放比例
+                float scale = UIScaler.getInstance().getScale();
+                
+                // 根据缩放比例计算字体大小
+                int baseSize = 16;
+                int scaledSize = (int) (baseSize * scale);
+                
                 // 使用高分辨率字体，提高显示质量
-                BitmapFont font = generateHighResolutionFont(16, 2);
+                BitmapFont font = generateHighResolutionFont(scaledSize, 2);
                 if (font != null) {
                     // 替换skin中的默认字体
                     skin.add("default", font, BitmapFont.class);
@@ -60,9 +79,6 @@ public class UIManager {
             // 字体加载失败，使用默认字体
             e.printStackTrace();
         }
-
-        uiStates = new Stack<>();
-        Gdx.input.setInputProcessor(stage);
     }
 
     public void pushState(UIState state) {
@@ -105,6 +121,12 @@ public class UIManager {
     }
 
     public void resize(int width, int height) {
+        // 更新UIScaler
+        UIScaler.getInstance().update();
+        
+        // 更新skin中的字体大小
+        updateSkinFonts();
+        
         stage.getViewport().update(width, height, true);
         if (!uiStates.isEmpty()) {
             uiStates.peek().resize(width, height);
