@@ -7,27 +7,46 @@ public class LocalServerManager {
     private Thread serverThread;
     private boolean running;
     private String roomId;
+    private int actualPort;
 
-    public boolean startServer(int port) {
+    public int startServer(int startPort) {
         if (!running) {
-            try {
-                serverThread = new Thread(() -> {
-                    // 创建本地服务器，使用LOCAL_SERVER类型
-                    serverManager = new ServerManager(port, ServerManager.ServerType.LOCAL_SERVER);
-                    running = true;
-                    // 本地服务器启动后，默认创建一个房间
-                    // 这个房间将作为唯一的游戏房间
-                });
-                serverThread.start();
-                // 等待服务器启动
-                Thread.sleep(1000);
-                return true;
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
+            // 尝试从startPort开始的多个端口
+            for (int port = startPort; port < startPort + 10; port++) {
+                try {
+                    final int finalPort = port;
+                    serverThread = new Thread(() -> {
+                        try {
+                            // 创建本地服务器，使用LOCAL_SERVER类型
+                            serverManager = new ServerManager(finalPort, ServerManager.ServerType.LOCAL_SERVER);
+                            running = true;
+                            actualPort = finalPort;
+                            // 本地服务器启动后，默认创建一个房间
+                            // 这个房间将作为唯一的游戏房间
+                        } catch (Exception e) {
+                            running = false;
+                            serverManager = null;
+                        }
+                    });
+                    serverThread.start();
+                    // 等待服务器启动
+                    Thread.sleep(1000);
+
+                    if (running && serverManager != null) {
+                        System.out.println("LocalServerManager: 服务器成功启动，端口: " + port);
+                        return port;
+                    }
+                } catch (Exception e) {
+                    System.out.println("LocalServerManager: 尝试端口 " + port + " 失败: " + e.getMessage());
+                }
             }
+            return -1; // 所有端口都失败
         }
-        return false;
+        return actualPort;
+    }
+
+    public int getActualPort() {
+        return actualPort;
     }
 
     public void stopServer() {

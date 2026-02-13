@@ -41,18 +41,18 @@ public class ServerManager {
             System.out.println("ServerManager: 正在启动服务器...");
             // 创建kryonet服务器
             server = new Server();
-            
+
             // 注册消息类
             registerMessages();
             System.out.println("ServerManager: 消息类注册完成");
-            
+
             // 启动服务器
             server.start();
             server.bind(port);
             running = true;
             System.out.println("ServerManager: 服务器启动成功，监听端口: " + port);
             System.out.println("ServerManager: 服务器类型: " + (serverType == ServerType.LOCAL_SERVER ? "本地服务器" : "专用服务器"));
-            
+
             // 添加监听器
             server.addListener(new Listener() {
                 @Override
@@ -96,7 +96,7 @@ public class ServerManager {
                     }
                 }
             });
-            
+
 
             // 服务器启动时默认创建一个房间
             createDefaultRoom();
@@ -124,7 +124,6 @@ public class ServerManager {
         server.getKryo().register(int[].class);
         server.getKryo().register(int[][].class);
     }
-
 
 
     /**
@@ -157,7 +156,7 @@ public class ServerManager {
     private void handleConnectMessage(ClientConnection client, ConnectMessage message) {
         String playerName = message.getPlayerName();
         System.out.println("ServerManager: 收到连接请求，玩家名称: " + playerName);
-        
+
         if (playerName != null && !playerName.isEmpty()) {
             client.setPlayerName(playerName);
             ConnectMessage response = new ConnectMessage();
@@ -165,7 +164,7 @@ public class ServerManager {
             response.setClientId(client.getClientId());
             response.setMessage("Connected successfully");
             client.sendMessage(response);
-            
+
             System.out.println("ServerManager: 玩家 " + playerName + " 连接成功，客户端ID: " + client.getClientId());
 
             // 在内置服务器模式下，自动将客户端加入默认房间
@@ -177,7 +176,7 @@ public class ServerManager {
                 roomResponse.setRoomId(defaultRoom.getId());
                 roomResponse.setMessage("Joined default room automatically");
                 client.sendMessage(roomResponse);
-                
+
                 System.out.println("ServerManager: 玩家 " + playerName + " 自动加入默认房间: " + defaultRoom.getName());
             }
         } else {
@@ -186,7 +185,7 @@ public class ServerManager {
             response.setMessage("Invalid player name");
             client.sendMessage(response);
             client.disconnect();
-            
+
             System.out.println("ServerManager: 连接失败: 无效的玩家名称");
         }
     }
@@ -214,13 +213,24 @@ public class ServerManager {
             case CHAT:
                 handleChatMessage(client, message);
                 break;
+            case STATUS:
+                handleStatusRequest(client);
+                break;
+        }
+    }
+
+    private void handleStatusRequest(ClientConnection client) {
+        Room room = client.getCurrentRoom();
+        if (room != null) {
+            room.broadcastRoomStatus();
+            System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 请求房间状态更新");
         }
     }
 
     private void handleCreateRoom(ClientConnection client, RoomMessage message) {
         String roomName = message.getRoomName();
         System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 请求创建房间: " + roomName);
-        
+
         if (roomName != null && !roomName.isEmpty()) {
             Room room = new Room(roomName, 4, this);
             rooms.add(room);
@@ -231,7 +241,7 @@ public class ServerManager {
             response.setRoomId(room.getId());
             response.setMessage("Room created successfully");
             client.sendMessage(response);
-            
+
             System.out.println("ServerManager: 房间创建成功: " + roomName + " (ID: " + room.getId() + ")");
             System.out.println("ServerManager: 房主: " + client.getPlayerName());
         } else {
@@ -239,7 +249,7 @@ public class ServerManager {
             response.setSuccess(false);
             response.setMessage("Invalid room name");
             client.sendMessage(response);
-            
+
             System.out.println("ServerManager: 房间创建失败: 无效的房间名称");
         }
     }
@@ -247,7 +257,7 @@ public class ServerManager {
     private void handleJoinRoom(ClientConnection client, RoomMessage message) {
         String roomId = message.getRoomId();
         System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 请求加入房间: " + roomId);
-        
+
         Room room = findRoomById(roomId);
 
         if (room != null) {
@@ -257,14 +267,14 @@ public class ServerManager {
                 response.setRoomId(room.getId());
                 response.setMessage("Joined room successfully");
                 client.sendMessage(response);
-                
+
                 System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 成功加入房间: " + room.getName());
             } else {
                 RoomMessage response = new RoomMessage(RoomMessage.RoomAction.JOIN);
                 response.setSuccess(false);
                 response.setMessage("Room is full or game has started");
                 client.sendMessage(response);
-                
+
                 System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 加入房间失败: 房间已满或游戏已开始");
             }
         } else {
@@ -272,7 +282,7 @@ public class ServerManager {
             response.setSuccess(false);
             response.setMessage("Room not found");
             client.sendMessage(response);
-            
+
             System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 加入房间失败: 房间不存在");
         }
     }
@@ -282,14 +292,14 @@ public class ServerManager {
         if (room != null) {
             String playerName = client.getPlayerName();
             String roomName = room.getName();
-            
+
             room.removePlayer(client);
 
             RoomMessage response = new RoomMessage(RoomMessage.RoomAction.LEAVE);
             response.setSuccess(true);
             response.setMessage("Left room successfully");
             client.sendMessage(response);
-            
+
             System.out.println("ServerManager: 玩家 " + playerName + " 离开房间: " + roomName);
 
             // 在内置服务器模式下，如果用户离开房间，直接断开连接
@@ -318,7 +328,7 @@ public class ServerManager {
         response.setSuccess(true);
         response.setRooms(roomInfos);
         client.sendMessage(response);
-        
+
         System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 请求房间列表，返回 " + roomInfos.size() + " 个房间");
     }
 
@@ -326,13 +336,13 @@ public class ServerManager {
         Room room = client.getCurrentRoom();
         if (room != null) {
             System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 请求开始游戏: " + room.getName());
-            
+
             if (room.startGame(client)) {
                 RoomMessage response = new RoomMessage(RoomMessage.RoomAction.START);
                 response.setSuccess(true);
                 response.setMessage("Game started successfully");
                 client.sendMessage(response);
-                
+
                 System.out.println("ServerManager: 游戏开始成功: " + room.getName() + "，玩家数: " + room.getPlayers().size());
             } else {
                 RoomMessage response = new RoomMessage(RoomMessage.RoomAction.START);
@@ -362,14 +372,14 @@ public class ServerManager {
         Room room = client.getCurrentRoom();
         String targetPlayer = message.getTargetPlayer();
         System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 请求踢出玩家: " + targetPlayer + " (房间: " + room.getName() + ")");
-        
+
         if (room != null && targetPlayer != null) {
             boolean success = room.kickPlayer(client, targetPlayer);
             RoomMessage response = new RoomMessage(RoomMessage.RoomAction.KICK);
             response.setSuccess(success);
             response.setMessage(success ? "Player kicked successfully" : "Failed to kick player");
             client.sendMessage(response);
-            
+
             if (success) {
                 System.out.println("ServerManager: 踢出玩家成功: " + targetPlayer + " (由 " + client.getPlayerName() + " 执行)");
             } else {
@@ -401,7 +411,7 @@ public class ServerManager {
 
     public void removeRoom(Room room) {
         rooms.remove(room);
-        
+
         // 在内置服务器模式下，如果默认房间被移除，停止整个服务器
         if (serverType == ServerType.LOCAL_SERVER && room == defaultRoom) {
             System.out.println("ServerManager: 本地服务器模式: 默认房间被移除，停止服务器");

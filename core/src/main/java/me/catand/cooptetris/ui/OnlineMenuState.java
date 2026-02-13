@@ -35,7 +35,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     private TextField playerNameField;
     private Label statusLabel;
     private BitmapFont titleFont;
-    private List<RoomMessage.RoomInfo> availableRooms;
+    private final List<RoomMessage.RoomInfo> availableRooms;
     private TextButton selectedRoomButton;
     private ConnectionState currentState;
 
@@ -251,7 +251,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     /**
      * 启动本地服务器
      */
-    private boolean startLocalServer(int port) {
+    private int startLocalServer(int startPort) {
         try {
             // 直接使用UIManager的getLocalServerManager方法获取实例
             LocalServerManager localServerManager = uiManager.getLocalServerManager();
@@ -263,17 +263,17 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
                     // 等待服务器完全停止
                     Thread.sleep(500);
                 }
-                // 启动服务器
-                boolean result = localServerManager.startServer(port);
-                System.out.println("Local server started: " + result);
-                return result;
+                // 启动服务器（尝试多个端口）
+                int actualPort = localServerManager.startServer(startPort);
+                System.out.println("Local server started on port: " + actualPort);
+                return actualPort;
             } else {
                 System.err.println("LocalServerManager not found!");
-                return false;
+                return -1;
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            return -1;
         }
     }
 
@@ -290,7 +290,9 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         // 如果未连接到服务器，启动本地服务器
         if (!networkManager.isConnected()) {
             setStatus(ConnectionState.INITIAL, lang().get("starting.local.server"));
-            if (!startLocalServer(8080)) {
+            // 使用不常见的默认端口12345
+            int actualPort = startLocalServer(12345);
+            if (actualPort == -1) {
                 setStatus(ConnectionState.ERROR, lang().get("failed.to.start.local.server"));
                 return;
             }
@@ -301,12 +303,13 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
                 playerName = lang().get("default.player.name") + (int) (Math.random() * 1000);
             }
 
-            if (!networkManager.connect("localhost", 8080, playerName)) {
+            if (!networkManager.connect("localhost", actualPort, playerName)) {
                 setStatus(ConnectionState.ERROR, lang().get("failed.to.connect.to.local.server"));
                 return;
             }
 
             setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("connected.to.local.server"));
+            System.out.println("Connected to local server on port: " + actualPort);
         }
 
         // 创建房间
@@ -475,17 +478,17 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
                 );
                 roomButton.setUserObject(room.getId());
                 roomButton.addListener(event -> {
-                        if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                            // 选择房间
-                            if (selectedRoomButton != null) {
-                                selectedRoomButton.setColor(Color.WHITE);
-                            }
-                            selectedRoomButton = roomButton;
-                            selectedRoomButton.setColor(Color.GREEN);
-                            setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("selected.room").replace("%s", room.getName()));
+                    if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
+                        // 选择房间
+                        if (selectedRoomButton != null) {
+                            selectedRoomButton.setColor(Color.WHITE);
                         }
-                        return true;
-                    });
+                        selectedRoomButton = roomButton;
+                        selectedRoomButton.setColor(Color.GREEN);
+                        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("selected.room").replace("%s", room.getName()));
+                    }
+                    return true;
+                });
                 roomListTable.add(roomButton).row();
             }
         }

@@ -32,8 +32,8 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
     private TextButton startGameButton;
     private TextButton leaveRoomButton;
     private BitmapFont titleFont;
-    private List<String> playerNames;
-    private List<String> chatMessages;
+    private final List<String> playerNames;
+    private final List<String> chatMessages;
     private String roomName;
     private int maxPlayers;
     private boolean isHost;
@@ -232,6 +232,9 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         // 注册为NetworkManager的监听器
         if (networkManager != null) {
             networkManager.addListener(this);
+            // 主动请求房间状态更新，确保获取最新的玩家列表
+            RoomMessage statusMessage = new RoomMessage(RoomMessage.RoomAction.STATUS);
+            networkManager.sendMessage(statusMessage);
         }
     }
 
