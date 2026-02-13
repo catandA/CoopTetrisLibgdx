@@ -18,6 +18,8 @@ public class Room {
     private final ServerManager serverManager;
     private ClientConnection host;
     private final boolean isDefaultLobby;
+    private Thread gameLoopThread;
+    private boolean gameLoopRunning;
 
     public Room(String name, int maxPlayers, ServerManager serverManager) {
         this(name, maxPlayers, serverManager, false);
@@ -32,6 +34,8 @@ public class Room {
         this.serverManager = serverManager;
         this.gameLogics = new ArrayList<>();
         this.isDefaultLobby = isDefaultLobby;
+        this.gameLoopThread = null;
+        this.gameLoopRunning = false;
     }
 
     public boolean addPlayer(ClientConnection client) {
@@ -64,7 +68,17 @@ public class Room {
             }
 
             if (players.isEmpty()) {
-                serverManager.removeRoom(this);
+                // 停止游戏循环线程
+                stopGameLoop();
+
+                // 检查服务器类型
+                boolean isLocalServer = serverManager.getServerType() == ServerManager.ServerType.LOCAL_SERVER;
+
+                // 决定是否移除房间
+                if (!isDefaultLobby || isLocalServer) {
+                    // 非默认聊天室或本地服务器模式下的默认聊天室，从服务器中移除
+                    serverManager.removeRoom(this);
+                }
             } else {
                 broadcastRoomStatus();
             }
@@ -79,6 +93,9 @@ public class Room {
                 ClientConnection client = players.get(i);
                 serverManager.sendGameStartMessage(client, this, i);
             }
+
+            // 启动游戏循环线程
+            startGameLoop();
 
             broadcastRoomStatus();
             return true;
@@ -193,6 +210,50 @@ public class Room {
             chatMessage.setMessage(sender + ": " + message);
             client.sendMessage(chatMessage);
         }
+    }
+
+    /**
+     * 启动游戏循环线程，处理方块自动下落
+     */
+    private void startGameLoop() {
+        if (gameLoopThread == null || !gameLoopThread.isAlive()) {
+            gameLoopRunning = true;
+            gameLoopThread = new Thread(() -> {
+                long lastTime = System.currentTimeMillis();
+                final long DROP_INTERVAL = 1000; // 1秒
+
+                while (gameLoopRunning && started) {
+                    long currentTime = System.currentTimeMillis();
+                    if (currentTime - lastTime >= DROP_INTERVAL) {
+                        // 处理游戏逻辑
+                        updateGameState();
+                        lastTime = currentTime;
+                    }
+
+                    try {
+                        Thread.sleep(100); // 避免CPU占用过高
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            gameLoopThread.start();
+        }
+    }
+
+    /**
+     * 停止游戏循环线程
+     */
+    private void stopGameLoop() {
+        gameLoopRunning = false;
+        if (gameLoopThread != null && gameLoopThread.isAlive()) {
+            try {
+                gameLoopThread.join(1000); // 等待线程结束，最多1秒
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        gameLoopThread = null;
     }
 
     /**
