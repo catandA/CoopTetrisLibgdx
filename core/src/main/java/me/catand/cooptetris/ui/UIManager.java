@@ -17,6 +17,7 @@ import java.util.Stack;
 
 import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
+import me.catand.cooptetris.util.ConfigManager;
 import me.catand.cooptetris.util.LanguageManager;
 
 public class UIManager {
@@ -25,6 +26,7 @@ public class UIManager {
     private final Stack<UIState> uiStates;
     private NetworkManager networkManager;
     private LocalServerManager localServerManager;
+    private ConfigManager configManager;
     public me.catand.cooptetris.tetris.GameStateManager gameStateManager;
 
     public UIManager() {
@@ -143,6 +145,14 @@ public class UIManager {
 
     public LocalServerManager getLocalServerManager() {
         return localServerManager;
+    }
+
+    public void setConfigManager(ConfigManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public ConfigManager getConfigManager() {
+        return configManager;
     }
 
     /**

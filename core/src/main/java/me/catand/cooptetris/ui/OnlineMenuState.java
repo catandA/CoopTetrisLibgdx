@@ -92,7 +92,12 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         portField = new TextField("8080", skin);
 
         Label playerNameLabel = new Label(lang.get("player.name"), skin);
-        playerNameField = new TextField("Player" + (int) (Math.random() * 1000), skin);
+        // 从ConfigManager获取保存的玩家名称
+        String savedPlayerName = "Player" + (int) (Math.random() * 1000);
+        if (uiManager.getConfigManager() != null) {
+            savedPlayerName = uiManager.getConfigManager().getConfig().getPlayerName();
+        }
+        playerNameField = new TextField(savedPlayerName, skin);
 
         connectionTable.add(hostLabel).right().padRight(10f);
         connectionTable.add(hostField).width(200f).row();
@@ -236,6 +241,12 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
             return;
         }
 
+        // 保存玩家名称到ConfigManager
+        if (uiManager.getConfigManager() != null) {
+            uiManager.getConfigManager().getConfig().setPlayerName(playerName);
+            uiManager.getConfigManager().saveSettings(uiManager.getConfigManager().getConfig());
+        }
+
         setStatus(ConnectionState.INITIAL, lang().get("connecting.to.server"));
 
         if (networkManager.connect(host, port, playerName)) {
@@ -301,6 +312,12 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
             String playerName = playerNameField.getText();
             if (playerName.isEmpty()) {
                 playerName = lang().get("default.player.name") + (int) (Math.random() * 1000);
+            }
+
+            // 保存玩家名称到ConfigManager
+            if (uiManager.getConfigManager() != null) {
+                uiManager.getConfigManager().getConfig().setPlayerName(playerName);
+                uiManager.getConfigManager().saveSettings(uiManager.getConfigManager().getConfig());
             }
 
             if (!networkManager.connect("localhost", actualPort, playerName)) {

@@ -20,7 +20,7 @@ public class LanguageManager {
         // 尝试从配置中加载语言设置
         try {
             ConfigManager configManager = new ConfigManager();
-            String savedLanguage = configManager.getLanguage();
+            String savedLanguage = configManager.getConfig().getLanguage();
             setLanguage(savedLanguage);
         } catch (Exception e) {
             // 如果加载失败，使用默认语言
@@ -46,7 +46,7 @@ public class LanguageManager {
     public void reloadLanguageFromConfig() {
         try {
             ConfigManager configManager = new ConfigManager();
-            String savedLanguage = configManager.getLanguage();
+            String savedLanguage = configManager.getConfig().getLanguage();
             setLanguage(savedLanguage);
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,18 +85,9 @@ public class LanguageManager {
         // 保存语言设置到配置中
         try {
             ConfigManager configManager = new ConfigManager();
-            // 保存当前语言设置，使用配置中的其他值
-            configManager.saveSettings(
-                configManager.getDifficulty(),
-                configManager.getLeftKey(),
-                configManager.getRightKey(),
-                configManager.getDownKey(),
-                configManager.getRotateKey(),
-                configManager.getDropKey(),
-                configManager.getDefaultHost(),
-                configManager.getDefaultPort(),
-                languageCode
-            );
+            Config config = configManager.getConfig();
+            config.setLanguage(languageCode);
+            configManager.saveSettings(config);
         } catch (Exception e) {
         }
     }

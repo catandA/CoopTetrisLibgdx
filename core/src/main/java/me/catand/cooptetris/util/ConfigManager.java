@@ -14,70 +14,80 @@ public class ConfigManager {
     private static final String KEY_DEFAULT_HOST = "default_host";
     private static final String KEY_DEFAULT_PORT = "default_port";
     private static final String KEY_LANGUAGE = "language";
+    private static final String KEY_PLAYER_NAME = "player_name";
 
     private final Preferences prefs;
+    private Config currentConfig;
 
     public ConfigManager() {
         prefs = Gdx.app.getPreferences(PREFS_NAME);
+        loadConfig();
     }
 
-    public void saveSettings(int difficulty, String leftKey, String rightKey, String downKey, String rotateKey, String dropKey, String defaultHost, int defaultPort, String language) {
-        prefs.putInteger(KEY_DIFFICULTY, difficulty);
-        prefs.putString(KEY_LEFT_KEY, leftKey);
-        prefs.putString(KEY_RIGHT_KEY, rightKey);
-        prefs.putString(KEY_DOWN_KEY, downKey);
-        prefs.putString(KEY_ROTATE_KEY, rotateKey);
-        prefs.putString(KEY_DROP_KEY, dropKey);
-        prefs.putString(KEY_DEFAULT_HOST, defaultHost);
-        prefs.putInteger(KEY_DEFAULT_PORT, defaultPort);
-        prefs.putString(KEY_LANGUAGE, language);
+    /**
+     * 从Preferences加载配置到Config对象
+     */
+    private void loadConfig() {
+        currentConfig = new Config(
+            prefs.getInteger(KEY_DIFFICULTY, 1),
+            prefs.getString(KEY_LEFT_KEY, "LEFT"),
+            prefs.getString(KEY_RIGHT_KEY, "RIGHT"),
+            prefs.getString(KEY_DOWN_KEY, "DOWN"),
+            prefs.getString(KEY_ROTATE_KEY, "UP"),
+            prefs.getString(KEY_DROP_KEY, "SPACE"),
+            prefs.getString(KEY_DEFAULT_HOST, "localhost"),
+            prefs.getInteger(KEY_DEFAULT_PORT, 8080),
+            prefs.getString(KEY_LANGUAGE, "en"),
+            prefs.getString(KEY_PLAYER_NAME, "Player" + (int)(Math.random() * 1000))
+        );
+    }
+
+    /**
+     * 保存Config对象到Preferences
+     */
+    private void saveConfig() {
+        if (currentConfig == null) {
+            currentConfig = Config.createDefault();
+        }
+        
+        prefs.putInteger(KEY_DIFFICULTY, currentConfig.getDifficulty());
+        prefs.putString(KEY_LEFT_KEY, currentConfig.getLeftKey());
+        prefs.putString(KEY_RIGHT_KEY, currentConfig.getRightKey());
+        prefs.putString(KEY_DOWN_KEY, currentConfig.getDownKey());
+        prefs.putString(KEY_ROTATE_KEY, currentConfig.getRotateKey());
+        prefs.putString(KEY_DROP_KEY, currentConfig.getDropKey());
+        prefs.putString(KEY_DEFAULT_HOST, currentConfig.getDefaultHost());
+        prefs.putInteger(KEY_DEFAULT_PORT, currentConfig.getDefaultPort());
+        prefs.putString(KEY_LANGUAGE, currentConfig.getLanguage());
+        prefs.putString(KEY_PLAYER_NAME, currentConfig.getPlayerName());
         prefs.flush();
     }
 
-    // 保持向后兼容的方法
-    public void saveSettings(int difficulty, String leftKey, String rightKey, String downKey, String rotateKey, String dropKey, String defaultHost, int defaultPort) {
-        String currentLanguage = LanguageManager.getInstance().getCurrentLanguageCode();
-        saveSettings(difficulty, leftKey, rightKey, downKey, rotateKey, dropKey, defaultHost, defaultPort, currentLanguage);
+    /**
+     * 保存设置（使用Config对象）
+     */
+    public void saveSettings(Config config) {
+        this.currentConfig = config;
+        saveConfig();
     }
 
-    public int getDifficulty() {
-        return prefs.getInteger(KEY_DIFFICULTY, 1);
+    /**
+     * 获取当前配置
+     */
+    public Config getConfig() {
+        return currentConfig;
     }
 
-    public String getLeftKey() {
-        return prefs.getString(KEY_LEFT_KEY, "LEFT");
-    }
-
-    public String getRightKey() {
-        return prefs.getString(KEY_RIGHT_KEY, "RIGHT");
-    }
-
-    public String getDownKey() {
-        return prefs.getString(KEY_DOWN_KEY, "DOWN");
-    }
-
-    public String getRotateKey() {
-        return prefs.getString(KEY_ROTATE_KEY, "UP");
-    }
-
-    public String getDropKey() {
-        return prefs.getString(KEY_DROP_KEY, "SPACE");
-    }
-
-    public String getDefaultHost() {
-        return prefs.getString(KEY_DEFAULT_HOST, "localhost");
-    }
-
-    public int getDefaultPort() {
-        return prefs.getInteger(KEY_DEFAULT_PORT, 8080);
-    }
-
-    public String getLanguage() {
-        return prefs.getString(KEY_LANGUAGE, "en");
+    /**
+     * 设置当前配置
+     */
+    public void setConfig(Config config) {
+        this.currentConfig = config;
     }
 
     public void resetToDefaults() {
         prefs.clear();
         prefs.flush();
+        currentConfig = Config.createDefault();
     }
 }

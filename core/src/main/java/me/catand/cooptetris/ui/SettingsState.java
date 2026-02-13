@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 
 import me.catand.cooptetris.util.ConfigManager;
+import me.catand.cooptetris.util.Config;
 import me.catand.cooptetris.util.LanguageManager;
 
 public class SettingsState implements UIState {
@@ -18,7 +19,8 @@ public class SettingsState implements UIState {
     private Skin skin;
     private Table table;
     private final UIManager uiManager;
-    private final ConfigManager configManager;
+    private ConfigManager configManager;
+    private Config config;
     private TextField difficultyField;
     private TextField leftKeyField;
     private TextField rightKeyField;
@@ -33,7 +35,7 @@ public class SettingsState implements UIState {
 
     public SettingsState(UIManager uiManager) {
         this.uiManager = uiManager;
-        this.configManager = new ConfigManager();
+        this.configManager = uiManager.getConfigManager();
     }
 
     @Override
@@ -51,6 +53,9 @@ public class SettingsState implements UIState {
         titleFont = uiManager.generateFont(24);
         sectionFont = uiManager.generateFont(19);
 
+        // 获取配置
+        config = configManager.getConfig();
+
         // 创建标题
         Label title;
         if (titleFont != null) {
@@ -62,7 +67,7 @@ public class SettingsState implements UIState {
 
         // 难度设置
         Label difficultyLabel = new Label(lang.get("difficulty"), skin);
-        difficultyField = new TextField(String.valueOf(configManager.getDifficulty()), skin);
+        difficultyField = new TextField(String.valueOf(config.getDifficulty()), skin);
 
         // 控制设置
         Label controlsLabel;
@@ -74,19 +79,19 @@ public class SettingsState implements UIState {
         }
 
         Label leftKeyLabel = new Label(lang.get("left"), skin);
-        leftKeyField = new TextField(configManager.getLeftKey(), skin);
+        leftKeyField = new TextField(config.getLeftKey(), skin);
 
         Label rightKeyLabel = new Label(lang.get("right"), skin);
-        rightKeyField = new TextField(configManager.getRightKey(), skin);
+        rightKeyField = new TextField(config.getRightKey(), skin);
 
         Label downKeyLabel = new Label(lang.get("down"), skin);
-        downKeyField = new TextField(configManager.getDownKey(), skin);
+        downKeyField = new TextField(config.getDownKey(), skin);
 
         Label rotateKeyLabel = new Label(lang.get("rotate"), skin);
-        rotateKeyField = new TextField(configManager.getRotateKey(), skin);
+        rotateKeyField = new TextField(config.getRotateKey(), skin);
 
         Label dropKeyLabel = new Label(lang.get("drop"), skin);
-        dropKeyField = new TextField(configManager.getDropKey(), skin);
+        dropKeyField = new TextField(config.getDropKey(), skin);
 
         // 网络设置
         Label networkLabel;
@@ -98,10 +103,10 @@ public class SettingsState implements UIState {
         }
 
         Label defaultHostLabel = new Label(lang.get("default.host"), skin);
-        defaultHostField = new TextField(configManager.getDefaultHost(), skin);
+        defaultHostField = new TextField(config.getDefaultHost(), skin);
 
         Label defaultPortLabel = new Label(lang.get("default.port"), skin);
-        defaultPortField = new TextField(String.valueOf(configManager.getDefaultPort()), skin);
+        defaultPortField = new TextField(String.valueOf(config.getDefaultPort()), skin);
 
         // 语言设置
         Label languageLabel = new Label(lang.get("language"), skin);
@@ -190,20 +195,21 @@ public class SettingsState implements UIState {
 
     private void saveSettings() {
         // 保存设置到配置文件
-        int difficulty = Integer.parseInt(difficultyField.getText());
-        String leftKey = leftKeyField.getText();
-        String rightKey = rightKeyField.getText();
-        String downKey = downKeyField.getText();
-        String rotateKey = rotateKeyField.getText();
-        String dropKey = dropKeyField.getText();
-        String defaultHost = defaultHostField.getText();
-        int defaultPort = Integer.parseInt(defaultPortField.getText());
+        config.setDifficulty(Integer.parseInt(difficultyField.getText()));
+        config.setLeftKey(leftKeyField.getText());
+        config.setRightKey(rightKeyField.getText());
+        config.setDownKey(downKeyField.getText());
+        config.setRotateKey(rotateKeyField.getText());
+        config.setDropKey(dropKeyField.getText());
+        config.setDefaultHost(defaultHostField.getText());
+        config.setDefaultPort(Integer.parseInt(defaultPortField.getText()));
 
         // 获取当前选择的语言
         LanguageManager lang = LanguageManager.getInstance();
-        String currentLanguage = lang.getCurrentLanguageCode();
+        config.setLanguage(lang.getCurrentLanguageCode());
 
-        configManager.saveSettings(difficulty, leftKey, rightKey, downKey, rotateKey, dropKey, defaultHost, defaultPort, currentLanguage);
+        // 保存配置
+        configManager.saveSettings(config);
     }
 
     /**
@@ -212,19 +218,10 @@ public class SettingsState implements UIState {
     private void saveLanguageSetting() {
         // 获取当前选择的语言
         LanguageManager lang = LanguageManager.getInstance();
-        String currentLanguage = lang.getCurrentLanguageCode();
+        config.setLanguage(lang.getCurrentLanguageCode());
 
-        // 保存语言设置，使用当前的其他设置值
-        int difficulty = Integer.parseInt(difficultyField.getText());
-        String leftKey = leftKeyField.getText();
-        String rightKey = rightKeyField.getText();
-        String downKey = downKeyField.getText();
-        String rotateKey = rotateKeyField.getText();
-        String dropKey = dropKeyField.getText();
-        String defaultHost = defaultHostField.getText();
-        int defaultPort = Integer.parseInt(defaultPortField.getText());
-
-        configManager.saveSettings(difficulty, leftKey, rightKey, downKey, rotateKey, dropKey, defaultHost, defaultPort, currentLanguage);
+        // 保存配置
+        configManager.saveSettings(config);
     }
 
     @Override
