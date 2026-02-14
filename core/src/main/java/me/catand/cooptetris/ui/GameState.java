@@ -36,10 +36,12 @@ public class GameState implements UIState {
     private float lastSoftDropTime = 0;
     private float boardX; // 游戏板X坐标
     private float boardY; // 游戏板Y坐标
+    private me.catand.cooptetris.util.ConfigManager configManager;
 
     public GameState(UIManager uiManager, GameStateManager gameStateManager) {
         this.uiManager = uiManager;
         this.gameStateManager = gameStateManager;
+        this.configManager = uiManager.getConfigManager();
         shapeRenderer = new ShapeRenderer();
         cellSize = 30f;
         calculateBoardPosition();
@@ -125,18 +127,19 @@ public class GameState implements UIState {
     private boolean isProcessingSoftDrop = false;
 
     private void handleInput() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) {
+        // 检查第一套和第二套控制键位
+        if (isKeyPressed("LEFT", "LEFT_KEY") || isKeyPressed("A", "LEFT_KEY2")) {
             gameStateManager.handleInput(MoveMessage.MoveType.LEFT);
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) {
+        } else if (isKeyPressed("RIGHT", "RIGHT_KEY") || isKeyPressed("D", "RIGHT_KEY2")) {
             gameStateManager.handleInput(MoveMessage.MoveType.RIGHT);
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+        } else if (isKeyPressed("UP", "ROTATE_KEY") || isKeyPressed("W", "ROTATE_KEY2")) {
             gameStateManager.handleInput(MoveMessage.MoveType.ROTATE_CLOCKWISE);
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+        } else if (isKeyPressed("SPACE", "DROP_KEY") || isKeyPressed("SPACE", "DROP_KEY2")) {
             gameStateManager.handleInput(MoveMessage.MoveType.DROP);
         }
         
         // 单独处理下方向键
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+        if (isKeyPressed("DOWN", "DOWN_KEY", true) || isKeyPressed("S", "DOWN_KEY2", true)) {
             if (!isDownKeyPressed) {
                 // 第一次按下，发送下落请求
                 gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
@@ -158,6 +161,92 @@ public class GameState implements UIState {
         } else {
             // 松开下方向键
             isDownKeyPressed = false;
+        }
+    }
+    
+    /**
+     * 检查按键是否按下
+     * @param defaultKey 默认键位
+     * @param configKey 配置键名
+     * @return 是否按下
+     */
+    private boolean isKeyPressed(String defaultKey, String configKey) {
+        return isKeyPressed(defaultKey, configKey, false);
+    }
+    
+    /**
+     * 检查按键是否按下
+     * @param defaultKey 默认键位
+     * @param configKey 配置键名
+     * @param isContinuous 是否检查持续按住
+     * @return 是否按下
+     */
+    private boolean isKeyPressed(String defaultKey, String configKey, boolean isContinuous) {
+        if (configManager != null) {
+            me.catand.cooptetris.util.Config config = configManager.getConfig();
+            String keyName = defaultKey;
+            
+            switch (configKey) {
+                case "LEFT_KEY":
+                    keyName = config.getLeftKey();
+                    break;
+                case "RIGHT_KEY":
+                    keyName = config.getRightKey();
+                    break;
+                case "DOWN_KEY":
+                    keyName = config.getDownKey();
+                    break;
+                case "ROTATE_KEY":
+                    keyName = config.getRotateKey();
+                    break;
+                case "DROP_KEY":
+                    keyName = config.getDropKey();
+                    break;
+                case "LEFT_KEY2":
+                    keyName = config.getLeftKey2();
+                    break;
+                case "RIGHT_KEY2":
+                    keyName = config.getRightKey2();
+                    break;
+                case "DOWN_KEY2":
+                    keyName = config.getDownKey2();
+                    break;
+                case "ROTATE_KEY2":
+                    keyName = config.getRotateKey2();
+                    break;
+                case "DROP_KEY2":
+                    keyName = config.getDropKey2();
+                    break;
+            }
+            
+            // 转换键名到Input.Keys枚举值
+            int keyCode = getKeyCode(keyName);
+            if (keyCode != -1) {
+                if (isContinuous) {
+                    return Gdx.input.isKeyPressed(keyCode);
+                } else {
+                    return Gdx.input.isKeyJustPressed(keyCode);
+                }
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * 将键名字符串转换为Input.Keys枚举值
+     * @param keyName 键名字符串
+     * @return 对应的Input.Keys枚举值，-1表示未找到
+     */
+    private int getKeyCode(String keyName) {
+        try {
+            // 尝试直接通过枚举名获取
+            return Input.Keys.class.getField(keyName.toUpperCase()).getInt(null);
+        } catch (Exception e) {
+            // 如果是单个字符，返回对应的ASCII码
+            if (keyName.length() == 1) {
+                return keyName.toUpperCase().charAt(0);
+            }
+            return -1;
         }
     }
 

@@ -11,6 +11,12 @@ public class ConfigManager {
     private static final String KEY_DOWN_KEY = "down_key";
     private static final String KEY_ROTATE_KEY = "rotate_key";
     private static final String KEY_DROP_KEY = "drop_key";
+    // 第二套控制键位
+    private static final String KEY_LEFT_KEY2 = "left_key2";
+    private static final String KEY_RIGHT_KEY2 = "right_key2";
+    private static final String KEY_DOWN_KEY2 = "down_key2";
+    private static final String KEY_ROTATE_KEY2 = "rotate_key2";
+    private static final String KEY_DROP_KEY2 = "drop_key2";
     private static final String KEY_DEFAULT_HOST = "default_host";
     private static final String KEY_DEFAULT_PORT = "default_port";
     private static final String KEY_LANGUAGE = "language";
@@ -35,6 +41,11 @@ public class ConfigManager {
             prefs.getString(KEY_DOWN_KEY, "DOWN"),
             prefs.getString(KEY_ROTATE_KEY, "UP"),
             prefs.getString(KEY_DROP_KEY, "SPACE"),
+            prefs.getString(KEY_LEFT_KEY2, "A"),
+            prefs.getString(KEY_RIGHT_KEY2, "D"),
+            prefs.getString(KEY_DOWN_KEY2, "S"),
+            prefs.getString(KEY_ROTATE_KEY2, "W"),
+            prefs.getString(KEY_DROP_KEY2, "SPACE"),
             prefs.getString(KEY_DEFAULT_HOST, "localhost"),
             prefs.getInteger(KEY_DEFAULT_PORT, 8080),
             prefs.getString(KEY_LANGUAGE, "en"),
@@ -56,6 +67,12 @@ public class ConfigManager {
         prefs.putString(KEY_DOWN_KEY, currentConfig.getDownKey());
         prefs.putString(KEY_ROTATE_KEY, currentConfig.getRotateKey());
         prefs.putString(KEY_DROP_KEY, currentConfig.getDropKey());
+        // 保存第二套控制键位
+        prefs.putString(KEY_LEFT_KEY2, currentConfig.getLeftKey2());
+        prefs.putString(KEY_RIGHT_KEY2, currentConfig.getRightKey2());
+        prefs.putString(KEY_DOWN_KEY2, currentConfig.getDownKey2());
+        prefs.putString(KEY_ROTATE_KEY2, currentConfig.getRotateKey2());
+        prefs.putString(KEY_DROP_KEY2, currentConfig.getDropKey2());
         prefs.putString(KEY_DEFAULT_HOST, currentConfig.getDefaultHost());
         prefs.putInteger(KEY_DEFAULT_PORT, currentConfig.getDefaultPort());
         prefs.putString(KEY_LANGUAGE, currentConfig.getLanguage());

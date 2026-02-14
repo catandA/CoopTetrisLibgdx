@@ -13,6 +13,13 @@ public class Config {
     private String rotateKey;
     private String dropKey;
     
+    // 第二套控制键位
+    private String leftKey2;
+    private String rightKey2;
+    private String downKey2;
+    private String rotateKey2;
+    private String dropKey2;
+    
     // 网络设置
     private String defaultHost;
     private int defaultPort;
@@ -31,6 +38,12 @@ public class Config {
         this.downKey = "DOWN";
         this.rotateKey = "UP";
         this.dropKey = "SPACE";
+        // 第二套控制键位默认值
+        this.leftKey2 = "A";
+        this.rightKey2 = "D";
+        this.downKey2 = "S";
+        this.rotateKey2 = "W";
+        this.dropKey2 = "SPACE";
         this.defaultHost = "localhost";
         this.defaultPort = 8080;
         this.language = "en";
@@ -38,14 +51,20 @@ public class Config {
     }
 
     public Config(int difficulty, String leftKey, String rightKey, String downKey, 
-                  String rotateKey, String dropKey, String defaultHost, int defaultPort, 
-                  String language, String playerName) {
+                  String rotateKey, String dropKey, String leftKey2, String rightKey2, 
+                  String downKey2, String rotateKey2, String dropKey2, String defaultHost, 
+                  int defaultPort, String language, String playerName) {
         this.difficulty = difficulty;
         this.leftKey = leftKey;
         this.rightKey = rightKey;
         this.downKey = downKey;
         this.rotateKey = rotateKey;
         this.dropKey = dropKey;
+        this.leftKey2 = leftKey2;
+        this.rightKey2 = rightKey2;
+        this.downKey2 = downKey2;
+        this.rotateKey2 = rotateKey2;
+        this.dropKey2 = dropKey2;
         this.defaultHost = defaultHost;
         this.defaultPort = defaultPort;
         this.language = language;
@@ -101,6 +120,46 @@ public class Config {
         this.dropKey = dropKey;
     }
 
+    public String getLeftKey2() {
+        return leftKey2;
+    }
+
+    public void setLeftKey2(String leftKey2) {
+        this.leftKey2 = leftKey2;
+    }
+
+    public String getRightKey2() {
+        return rightKey2;
+    }
+
+    public void setRightKey2(String rightKey2) {
+        this.rightKey2 = rightKey2;
+    }
+
+    public String getDownKey2() {
+        return downKey2;
+    }
+
+    public void setDownKey2(String downKey2) {
+        this.downKey2 = downKey2;
+    }
+
+    public String getRotateKey2() {
+        return rotateKey2;
+    }
+
+    public void setRotateKey2(String rotateKey2) {
+        this.rotateKey2 = rotateKey2;
+    }
+
+    public String getDropKey2() {
+        return dropKey2;
+    }
+
+    public void setDropKey2(String dropKey2) {
+        this.dropKey2 = dropKey2;
+    }
+
     public String getDefaultHost() {
         return defaultHost;
     }
@@ -145,6 +204,11 @@ public class Config {
                 Objects.equals(downKey, config.downKey) &&
                 Objects.equals(rotateKey, config.rotateKey) &&
                 Objects.equals(dropKey, config.dropKey) &&
+                Objects.equals(leftKey2, config.leftKey2) &&
+                Objects.equals(rightKey2, config.rightKey2) &&
+                Objects.equals(downKey2, config.downKey2) &&
+                Objects.equals(rotateKey2, config.rotateKey2) &&
+                Objects.equals(dropKey2, config.dropKey2) &&
                 Objects.equals(defaultHost, config.defaultHost) &&
                 Objects.equals(language, config.language) &&
                 Objects.equals(playerName, config.playerName);
@@ -153,6 +217,7 @@ public class Config {
     @Override
     public int hashCode() {
         return Objects.hash(difficulty, leftKey, rightKey, downKey, rotateKey, dropKey, 
+                          leftKey2, rightKey2, downKey2, rotateKey2, dropKey2, 
                           defaultHost, defaultPort, language, playerName);
     }
 
@@ -165,6 +230,11 @@ public class Config {
                 ", downKey='" + downKey + '\'' +
                 ", rotateKey='" + rotateKey + '\'' +
                 ", dropKey='" + dropKey + '\'' +
+                ", leftKey2='" + leftKey2 + '\'' +
+                ", rightKey2='" + rightKey2 + '\'' +
+                ", downKey2='" + downKey2 + '\'' +
+                ", rotateKey2='" + rotateKey2 + '\'' +
+                ", dropKey2='" + dropKey2 + '\'' +
                 ", defaultHost='" + defaultHost + '\'' +
                 ", defaultPort=" + defaultPort +
                 ", language='" + language + '\'' +
@@ -190,6 +260,11 @@ public class Config {
                 this.downKey,
                 this.rotateKey,
                 this.dropKey,
+                this.leftKey2,
+                this.rightKey2,
+                this.downKey2,
+                this.rotateKey2,
+                this.dropKey2,
                 this.defaultHost,
                 this.defaultPort,
                 this.language,

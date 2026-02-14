@@ -23,11 +23,6 @@ public class SettingsState implements UIState {
     private ConfigManager configManager;
     private Config config;
     private TextField difficultyField;
-    private TextField leftKeyField;
-    private TextField rightKeyField;
-    private TextField downKeyField;
-    private TextField rotateKeyField;
-    private TextField dropKeyField;
     private TextField defaultHostField;
     private TextField defaultPortField;
     private com.badlogic.gdx.scenes.scene2d.ui.SelectBox<String> languageBox;
@@ -76,30 +71,6 @@ public class SettingsState implements UIState {
         Label difficultyLabel = new Label(lang.get("difficulty"), skin);
         difficultyField = new TextField(String.valueOf(config.getDifficulty()), skin);
 
-        // 控制设置
-        Label controlsLabel;
-        if (sectionFont != null) {
-            Label.LabelStyle labelStyle = new Label.LabelStyle(sectionFont, skin.getColor("font"));
-            controlsLabel = new Label(lang.get("controls"), labelStyle);
-        } else {
-            controlsLabel = new Label(lang.get("controls"), skin);
-        }
-
-        Label leftKeyLabel = new Label(lang.get("left"), skin);
-        leftKeyField = new TextField(config.getLeftKey(), skin);
-
-        Label rightKeyLabel = new Label(lang.get("right"), skin);
-        rightKeyField = new TextField(config.getRightKey(), skin);
-
-        Label downKeyLabel = new Label(lang.get("down"), skin);
-        downKeyField = new TextField(config.getDownKey(), skin);
-
-        Label rotateKeyLabel = new Label(lang.get("rotate"), skin);
-        rotateKeyField = new TextField(config.getRotateKey(), skin);
-
-        Label dropKeyLabel = new Label(lang.get("drop"), skin);
-        dropKeyField = new TextField(config.getDropKey(), skin);
-
         // 网络设置
         Label networkLabel;
         if (sectionFont != null) {
@@ -146,6 +117,15 @@ public class SettingsState implements UIState {
             }
         });
 
+        TextButton controlsButton = new TextButton(lang.get("controls"), skin);
+        controlsButton.addListener(event -> {
+            if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
+                // 打开控制设置界面
+                uiManager.pushState(new ControlsSettingsState(uiManager));
+            }
+            return true;
+        });
+
         TextButton saveButton = new TextButton(lang.get("save"), skin);
         saveButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -179,19 +159,6 @@ public class SettingsState implements UIState {
         table.add(difficultyLabel).right().padRight(padRight);
         table.add(difficultyField).width(smallFieldWidth).padBottom(padBottomSection).row();
 
-        // 控制设置
-        table.add(controlsLabel).colspan(2).padBottom(padBottomField).row();
-        table.add(leftKeyLabel).right().padRight(padRight);
-        table.add(leftKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(rightKeyLabel).right().padRight(padRight);
-        table.add(rightKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(downKeyLabel).right().padRight(padRight);
-        table.add(downKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(rotateKeyLabel).right().padRight(padRight);
-        table.add(rotateKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(dropKeyLabel).right().padRight(padRight);
-        table.add(dropKeyField).width(smallFieldWidth).padBottom(padBottomSection).row();
-
         // 网络设置
         table.add(networkLabel).colspan(2).padBottom(padBottomField).row();
         table.add(defaultHostLabel).right().padRight(padRight);
@@ -204,6 +171,7 @@ public class SettingsState implements UIState {
         table.add(languageBox).width(mediumFieldWidth).padBottom(padBottomSection).row();
 
         // 按钮
+        table.add(controlsButton).width(buttonWidth).padBottom(padBottomField).row();
         table.add(saveButton).width(buttonWidth).padBottom(padBottomField).row();
         table.add(backButton).width(buttonWidth).row();
 
@@ -213,11 +181,6 @@ public class SettingsState implements UIState {
     private void saveSettings() {
         // 保存设置到配置文件
         config.setDifficulty(Integer.parseInt(difficultyField.getText()));
-        config.setLeftKey(leftKeyField.getText());
-        config.setRightKey(rightKeyField.getText());
-        config.setDownKey(downKeyField.getText());
-        config.setRotateKey(rotateKeyField.getText());
-        config.setDropKey(dropKeyField.getText());
         config.setDefaultHost(defaultHostField.getText());
         config.setDefaultPort(Integer.parseInt(defaultPortField.getText()));
 
