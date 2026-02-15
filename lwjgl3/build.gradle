@@ -54,7 +54,7 @@ run {
   // 添加系统属性，用于版本信息
   systemProperty 'Specification-Title', appName
   systemProperty 'Implementation-Title', 'me.catand.cooptetris'
-  systemProperty 'Specification-Version', rootProject.ext.appVersionName
+  systemProperty 'Specification-Version', rootProject.ext.fullVersionName
   systemProperty 'Implementation-Version', rootProject.ext.appVersionCode
 }
 
@@ -76,7 +76,7 @@ jar {
     attributes 'Main-Class': application.mainClass, 'Enable-Native-Access': 'ALL-UNNAMED'
     attributes 'Specification-Title': appName
     attributes 'Implementation-Title': 'me.catand.cooptetris'
-    attributes 'Specification-Version': rootProject.ext.appVersionName
+    attributes 'Specification-Version': rootProject.ext.fullVersionName
     attributes 'Implementation-Version': rootProject.ext.appVersionCode
   }
 // this last step may help on some OSes that need extra instruction to make runnable JARs.

@@ -1,8 +1,5 @@
 package me.catand.cooptetris.util;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 public class VersionManager {
 
     private static VersionManager instance;
@@ -18,7 +15,21 @@ public class VersionManager {
     }
 
     public String getVersion() {
-        return me.catand.cooptetris.Main.version;
+        String fullVersion = me.catand.cooptetris.Main.version;
+        // 提取版本号部分（不包含构建时间）
+        if (fullVersion != null && fullVersion.contains("-")) {
+            return fullVersion.split("-", 2)[0];
+        }
+        return fullVersion;
+    }
+
+    public String getBuildTime() {
+        String fullVersion = me.catand.cooptetris.Main.version;
+        // 提取构建时间部分
+        if (fullVersion != null && fullVersion.contains("-")) {
+            return fullVersion.split("-", 2)[1];
+        }
+        return null;
     }
 
     public int getVersionCode() {
@@ -26,6 +37,12 @@ public class VersionManager {
     }
 
     public String getVersionInfo() {
-        return "v" + getVersion() + " (" + getVersionCode() + ")";
+        String version = getVersion();
+        String buildTime = getBuildTime();
+        String versionInfo = "v" + version + " (" + getVersionCode() + ")";
+        if (buildTime != null) {
+            versionInfo += "\nBuild: " + buildTime;
+        }
+        return versionInfo;
     }
 }

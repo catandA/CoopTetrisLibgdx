@@ -35,7 +35,7 @@ android {
     minSdkVersion 21
     targetSdkVersion 35
     versionCode appVersionCode
-    versionName appVersionName
+    versionName fullVersionName
   }
   compileOptions {
     sourceCompatibility "11"

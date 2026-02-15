@@ -60,8 +60,12 @@ allprojects {
         appVersionCode = 1
         appVersionName = '1.0.0'
         appJavaCompatibility = JavaVersion.VERSION_11
+        // 生成构建时间（使用不包含冒号的格式，避免Windows文件系统问题）
+        buildTime = new Date().format('yyyy.MM.dd.HHmmss')
+        // 组合版本号和构建时间
+        fullVersionName = "${appVersionName}-${buildTime}"
     }
-    version = appVersionName
+    version = fullVersionName
 
     repositories {
         mavenCentral()
