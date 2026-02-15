@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.Align;
 
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.UIScaler;
+import me.catand.cooptetris.util.VersionManager;
 
 public class MainMenuState implements UIState {
     private Stage stage;
@@ -19,6 +20,7 @@ public class MainMenuState implements UIState {
     private Table table;
     private final UIManager uiManager;
     private BitmapFont titleFont;
+    private Label versionLabel;
 
     public MainMenuState(UIManager uiManager) {
         this.uiManager = uiManager;
@@ -108,11 +110,27 @@ public class MainMenuState implements UIState {
         table.add(exitButton).width(buttonWidth).height(buttonHeight).row();
 
         stage.addActor(table);
+
+        // 添加版本信息标签，显示在右下角
+        VersionManager versionManager = VersionManager.getInstance();
+        String versionInfo = versionManager.getVersionInfo();
+        versionLabel = new Label(versionInfo, skin);
+        versionLabel.setAlignment(Align.bottomRight);
+        // 使用setPosition的正确方法，考虑标签的宽度
+        versionLabel.setPosition(
+            stage.getViewport().getWorldWidth() - versionLabel.getWidth() - 20 * scale,
+            20 * scale
+        );
+        stage.addActor(versionLabel);
     }
 
     @Override
     public void hide() {
         table.remove();
+        if (versionLabel != null) {
+            versionLabel.remove();
+            versionLabel = null;
+        }
     }
 
     @Override
@@ -126,8 +144,10 @@ public class MainMenuState implements UIState {
         UIScaler.getInstance().update();
         
         // 重新创建表格，确保UI元素正确缩放
-        if (table != null) {
-            table.remove();
+        if (table != null && stage != null) {
+            // 移除旧的UI元素
+            hide();
+            // 重新创建UI元素
             show(stage, skin);
         }
     }
