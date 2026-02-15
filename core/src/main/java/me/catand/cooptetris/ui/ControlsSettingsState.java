@@ -73,54 +73,66 @@ public class ControlsSettingsState implements UIState {
             title = new Label(lang.get("controls.settings"), skin);
         }
 
-        // 控制设置
-        Label controlsLabel;
-        if (sectionFont != null) {
-            Label.LabelStyle labelStyle = new Label.LabelStyle(sectionFont, skin.getColor("font"));
-            controlsLabel = new Label(lang.get("controls"), labelStyle);
-        } else {
-            controlsLabel = new Label(lang.get("controls"), skin);
-        }
+        // 创建控制设置区域
+        Table controlsContentTable = new Table();
 
+        // 创建标签
         Label leftKeyLabel = new Label(lang.get("left"), skin);
-        leftKeyField = new TextField(config.getLeftKey(), skin);
-
         Label rightKeyLabel = new Label(lang.get("right"), skin);
-        rightKeyField = new TextField(config.getRightKey(), skin);
-
         Label downKeyLabel = new Label(lang.get("down"), skin);
-        downKeyField = new TextField(config.getDownKey(), skin);
-
         Label rotateKeyLabel = new Label(lang.get("rotate"), skin);
-        rotateKeyField = new TextField(config.getRotateKey(), skin);
-
         Label dropKeyLabel = new Label(lang.get("drop"), skin);
+
+        // 创建文本字段
+        leftKeyField = new TextField(config.getLeftKey(), skin);
+        rightKeyField = new TextField(config.getRightKey(), skin);
+        downKeyField = new TextField(config.getDownKey(), skin);
+        rotateKeyField = new TextField(config.getRotateKey(), skin);
         dropKeyField = new TextField(config.getDropKey(), skin);
-
-        // 第二套控制键位
-        Label controls2Label;
-        if (sectionFont != null) {
-            Label.LabelStyle labelStyle = new Label.LabelStyle(sectionFont, skin.getColor("font"));
-            controls2Label = new Label(lang.get("controls.2"), labelStyle);
-        } else {
-            controls2Label = new Label(lang.get("controls.2"), skin);
-        }
-
-        Label leftKey2Label = new Label(lang.get("left"), skin);
         leftKey2Field = new TextField(config.getLeftKey2(), skin);
-
-        Label rightKey2Label = new Label(lang.get("right"), skin);
         rightKey2Field = new TextField(config.getRightKey2(), skin);
-
-        Label downKey2Label = new Label(lang.get("down"), skin);
         downKey2Field = new TextField(config.getDownKey2(), skin);
-
-        Label rotateKey2Label = new Label(lang.get("rotate"), skin);
         rotateKey2Field = new TextField(config.getRotateKey2(), skin);
-
-        Label dropKey2Label = new Label(lang.get("drop"), skin);
         dropKey2Field = new TextField(config.getDropKey2(), skin);
 
+        // 使用UIScaler缩放间距和元素大小
+        float padBottomTitle = scaler.toScreenHeight(30f);
+        float padRight = scaler.toScreenWidth(10f);
+        float padLeft = scaler.toScreenWidth(10f);
+        float padBottomRow = scaler.toScreenHeight(15f);
+        float smallFieldWidth = scaler.toScreenWidth(80f);
+        float buttonWidth = scaler.toScreenWidth(150f);
+        float scrollPaneHeight = scaler.toScreenHeight(300f);
+
+        // 添加控制设置行
+        controlsContentTable.add(leftKeyLabel).right().padRight(padRight);
+        controlsContentTable.add(leftKeyField).width(smallFieldWidth).padRight(padLeft * 2);
+        controlsContentTable.add(leftKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+
+        controlsContentTable.add(rightKeyLabel).right().padRight(padRight);
+        controlsContentTable.add(rightKeyField).width(smallFieldWidth).padRight(padLeft * 2);
+        controlsContentTable.add(rightKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+
+        controlsContentTable.add(downKeyLabel).right().padRight(padRight);
+        controlsContentTable.add(downKeyField).width(smallFieldWidth).padRight(padLeft * 2);
+        controlsContentTable.add(downKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+
+        controlsContentTable.add(rotateKeyLabel).right().padRight(padRight);
+        controlsContentTable.add(rotateKeyField).width(smallFieldWidth).padRight(padLeft * 2);
+        controlsContentTable.add(rotateKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+
+        controlsContentTable.add(dropKeyLabel).right().padRight(padRight);
+        controlsContentTable.add(dropKeyField).width(smallFieldWidth).padRight(padLeft * 2);
+        controlsContentTable.add(dropKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+
+        // 创建滚动窗
+        com.badlogic.gdx.scenes.scene2d.ui.ScrollPane scrollPane = new com.badlogic.gdx.scenes.scene2d.ui.ScrollPane(controlsContentTable, skin);
+        scrollPane.setHeight(scrollPaneHeight);
+        scrollPane.setWidth(scaler.toScreenWidth(500f));
+        scrollPane.setFadeScrollBars(false);
+        scrollPane.setScrollingDisabled(false, true);
+
+        // 创建按钮
         TextButton saveButton = new TextButton(lang.get("save"), skin);
         saveButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -138,44 +150,10 @@ public class ControlsSettingsState implements UIState {
             return true;
         });
 
-        // 使用UIScaler缩放间距和元素大小
-        float padBottomTitle = scaler.toScreenHeight(30f);
-        float padRight = scaler.toScreenWidth(10f);
-        float padBottomField = scaler.toScreenHeight(10f);
-        float padBottomSection = scaler.toScreenHeight(20f);
-        float smallFieldWidth = scaler.toScreenWidth(100f);
-        float buttonWidth = scaler.toScreenWidth(150f);
-
+        // 组装主表格
         table.add(title).padBottom(padBottomTitle).row();
-
-        // 控制设置
-        table.add(controlsLabel).colspan(2).padBottom(padBottomField).row();
-        table.add(leftKeyLabel).right().padRight(padRight);
-        table.add(leftKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(rightKeyLabel).right().padRight(padRight);
-        table.add(rightKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(downKeyLabel).right().padRight(padRight);
-        table.add(downKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(rotateKeyLabel).right().padRight(padRight);
-        table.add(rotateKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(dropKeyLabel).right().padRight(padRight);
-        table.add(dropKeyField).width(smallFieldWidth).padBottom(padBottomField).row();
-        
-        // 第二套控制设置
-        table.add(controls2Label).colspan(2).padBottom(padBottomField).row();
-        table.add(leftKey2Label).right().padRight(padRight);
-        table.add(leftKey2Field).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(rightKey2Label).right().padRight(padRight);
-        table.add(rightKey2Field).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(downKey2Label).right().padRight(padRight);
-        table.add(downKey2Field).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(rotateKey2Label).right().padRight(padRight);
-        table.add(rotateKey2Field).width(smallFieldWidth).padBottom(padBottomField).row();
-        table.add(dropKey2Label).right().padRight(padRight);
-        table.add(dropKey2Field).width(smallFieldWidth).padBottom(padBottomSection).row();
-
-        // 按钮
-        table.add(saveButton).width(buttonWidth).padBottom(padBottomField).row();
+        table.add(scrollPane).padBottom(padBottomRow).row();
+        table.add(saveButton).width(buttonWidth).padBottom(padBottomRow).row();
         table.add(backButton).width(buttonWidth).row();
 
         stage.addActor(table);
