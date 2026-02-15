@@ -1,5 +1,10 @@
 package me.catand.cooptetris.shared.message;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@EqualsAndHashCode(callSuper = false)
 public class MoveMessage extends NetworkMessage {
     public enum MoveType {
         LEFT,
@@ -17,14 +22,6 @@ public class MoveMessage extends NetworkMessage {
 
     public MoveMessage(MoveType moveType) {
         super("move");
-        this.moveType = moveType;
-    }
-
-    public MoveType getMoveType() {
-        return moveType;
-    }
-
-    public void setMoveType(MoveType moveType) {
         this.moveType = moveType;
     }
 }

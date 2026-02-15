@@ -4,8 +4,10 @@ import com.esotericsoftware.kryonet.Connection;
 
 import java.util.UUID;
 
+import lombok.Data;
 import me.catand.cooptetris.shared.message.NetworkMessage;
 
+@Data
 public class ClientConnection {
     private final Connection connection;
     private final String clientId;
@@ -45,33 +47,5 @@ public class ClientConnection {
                 e.printStackTrace();
             }
         }
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getPlayerName() {
-        return playerName;
-    }
-
-    public void setPlayerName(String playerName) {
-        this.playerName = playerName;
-    }
-
-    public Room getCurrentRoom() {
-        return currentRoom;
-    }
-
-    public void setCurrentRoom(Room currentRoom) {
-        this.currentRoom = currentRoom;
-    }
-
-    public boolean isConnected() {
-        return connected;
-    }
-
-    public Connection getConnection() {
-        return connection;
     }
 }

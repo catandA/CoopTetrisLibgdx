@@ -2,8 +2,10 @@ package me.catand.cooptetris.shared.tetris;
 
 import java.util.Random;
 
+import lombok.Data;
 import me.catand.cooptetris.shared.model.Tetromino;
 
+@Data
 public class GameLogic {
     public static final int BOARD_WIDTH = 10;
     public static final int BOARD_HEIGHT = 20;
@@ -226,50 +228,6 @@ public class GameLogic {
         if (!canMove(currentPieceX, currentPieceY, currentPieceRotation)) {
             gameOver = true;
         }
-    }
-
-    public int[][] getBoard() {
-        return board;
-    }
-
-    public int getCurrentPiece() {
-        return currentPiece;
-    }
-
-    public int getCurrentPieceX() {
-        return currentPieceX;
-    }
-
-    public int getCurrentPieceY() {
-        return currentPieceY;
-    }
-
-    public int getCurrentPieceRotation() {
-        return currentPieceRotation;
-    }
-
-    public int getNextPiece() {
-        return nextPiece;
-    }
-
-    public int getScore() {
-        return score;
-    }
-
-    public int getLevel() {
-        return level;
-    }
-
-    public int getLines() {
-        return lines;
-    }
-
-    public boolean isGameOver() {
-        return gameOver;
-    }
-
-    public void setGameOver(boolean gameOver) {
-        this.gameOver = gameOver;
     }
 
     public void updateFromMessage(int[][] board, int currentPiece, int currentPieceX, int currentPieceY, int currentPieceRotation, int nextPiece, int score, int level, int lines) {

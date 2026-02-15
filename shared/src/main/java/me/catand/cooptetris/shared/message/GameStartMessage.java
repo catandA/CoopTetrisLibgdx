@@ -1,5 +1,10 @@
 package me.catand.cooptetris.shared.message;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@EqualsAndHashCode(callSuper = false)
 public class GameStartMessage extends NetworkMessage {
     private String roomId;
     private int playerCount;
@@ -7,29 +12,5 @@ public class GameStartMessage extends NetworkMessage {
 
     public GameStartMessage() {
         super("gameStart");
-    }
-
-    public String getRoomId() {
-        return roomId;
-    }
-
-    public void setRoomId(String roomId) {
-        this.roomId = roomId;
-    }
-
-    public int getPlayerCount() {
-        return playerCount;
-    }
-
-    public void setPlayerCount(int playerCount) {
-        this.playerCount = playerCount;
-    }
-
-    public int getYourIndex() {
-        return yourIndex;
-    }
-
-    public void setYourIndex(int yourIndex) {
-        this.yourIndex = yourIndex;
     }
 }

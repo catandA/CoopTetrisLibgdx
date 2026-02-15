@@ -1,7 +1,11 @@
 package me.catand.cooptetris.shared.message;
 
 import java.util.List;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@Data
+@EqualsAndHashCode(callSuper = false)
 public class RoomMessage extends NetworkMessage {
     public enum RoomAction {
         CREATE,
@@ -34,86 +38,7 @@ public class RoomMessage extends NetworkMessage {
         this.action = action;
     }
 
-    public RoomAction getAction() {
-        return action;
-    }
-
-    public void setAction(RoomAction action) {
-        this.action = action;
-    }
-
-    public String getRoomId() {
-        return roomId;
-    }
-
-    public void setRoomId(String roomId) {
-        this.roomId = roomId;
-    }
-
-    public String getRoomName() {
-        return roomName;
-    }
-
-    public void setRoomName(String roomName) {
-        this.roomName = roomName;
-    }
-
-    public List<RoomInfo> getRooms() {
-        return rooms;
-    }
-
-    public void setRooms(List<RoomInfo> rooms) {
-        this.rooms = rooms;
-    }
-
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public List<String> getPlayers() {
-        return players;
-    }
-
-    public void setPlayers(List<String> players) {
-        this.players = players;
-    }
-
-    public boolean isStarted() {
-        return started;
-    }
-
-    public void setStarted(boolean started) {
-        this.started = started;
-    }
-
-    public String getTargetPlayer() {
-        return targetPlayer;
-    }
-
-    public void setTargetPlayer(String targetPlayer) {
-        this.targetPlayer = targetPlayer;
-    }
-
-    public String getChatMessage() {
-        return chatMessage;
-    }
-
-    public void setChatMessage(String chatMessage) {
-        this.chatMessage = chatMessage;
-    }
-
+    @Data
     public static class RoomInfo {
         private String id;
         private String name;
@@ -129,46 +54,6 @@ public class RoomMessage extends NetworkMessage {
             this.name = name;
             this.playerCount = playerCount;
             this.maxPlayers = maxPlayers;
-            this.started = started;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public int getPlayerCount() {
-            return playerCount;
-        }
-
-        public void setPlayerCount(int playerCount) {
-            this.playerCount = playerCount;
-        }
-
-        public int getMaxPlayers() {
-            return maxPlayers;
-        }
-
-        public void setMaxPlayers(int maxPlayers) {
-            this.maxPlayers = maxPlayers;
-        }
-
-        public boolean isStarted() {
-            return started;
-        }
-
-        public void setStarted(boolean started) {
             this.started = started;
         }
     }

@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import lombok.Data;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.shared.tetris.GameLogic;
 
+@Data
 public class Room {
     private final String id;
     private final String name;
@@ -165,30 +167,6 @@ public class Room {
             message.setSuccess(true);
             client.sendMessage(message);
         }
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public List<ClientConnection> getPlayers() {
-        return players;
-    }
-
-    public int getMaxPlayers() {
-        return maxPlayers;
-    }
-
-    public boolean isStarted() {
-        return started;
-    }
-
-    public ClientConnection getHost() {
-        return host;
     }
 
     public boolean kickPlayer(ClientConnection requester, String playerName) {
