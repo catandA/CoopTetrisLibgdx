@@ -352,7 +352,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
 
         // 创建房间
         String roomName = lang().get("default.room.name") + (int) (Math.random() * 1000);
-        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("creating.room").replace("%s", roomName));
+        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("creating.room.short").replace("%s", roomName));
         networkManager.createRoom(roomName);
     }
 
@@ -375,7 +375,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
      */
     private void joinSelectedRoom() {
         if (selectedRoomButton == null) {
-            setStatus(ConnectionState.ERROR, lang().get("no.room.selected"));
+            setStatus(ConnectionState.ERROR, lang().get("no.room.selected.short"));
             return;
         }
 
@@ -386,7 +386,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         }
 
         String roomId = selectedRoomButton.getUserObject().toString();
-        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("joining.room"));
+        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("joining.room.short"));
         networkManager.joinRoom(roomId);
     }
 
@@ -523,7 +523,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
                         }
                         selectedRoomButton = roomButton;
                         selectedRoomButton.setColor(Color.GREEN);
-                        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("selected.room").replace("%s", room.getName()));
+                        setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("selected.room.short").replace("%s", room.getName()));
                     }
                     return true;
                 });
