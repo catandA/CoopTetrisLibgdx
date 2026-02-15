@@ -40,15 +40,18 @@ public class ServerManager {
         try {
             System.out.println("ServerManager: 正在启动服务器...");
             // 创建kryonet服务器
-            server = new Server();
+            server = new Server(32768, 16384);
 
             // 注册消息类
             registerMessages();
             System.out.println("ServerManager: 消息类注册完成");
 
             // 启动服务器
-            server.start();
             server.bind(port);
+            System.out.println("ServerManager: 端口绑定完成: " + port);
+
+            // 启动服务器
+            server.start();
             running = true;
             System.out.println("ServerManager: 服务器启动成功，监听端口: " + port);
             System.out.println("ServerManager: 服务器类型: " + (serverType == ServerType.LOCAL_SERVER ? "本地服务器" : "专用服务器"));

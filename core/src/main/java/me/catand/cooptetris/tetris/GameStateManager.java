@@ -32,7 +32,7 @@ public class GameStateManager implements NetworkManager.NetworkListener {
         isSinglePlayerMode = true;
         // 启动本地服务器（如果尚未启动）
         if (!isLocalServerStarted && localServerManager != null && !localServerManager.isRunning()) {
-            int actualPort = localServerManager.startServer(12345);
+            int actualPort = localServerManager.startServer(56148);
             if (actualPort > 0) {
                 System.out.println("Local server started for single player mode on port: " + actualPort);
                 isLocalServerStarted = true;

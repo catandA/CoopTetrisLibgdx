@@ -184,7 +184,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         float padRightConnection = scaler.toScreenWidth(20f);
         float padTopRoomList = scaler.toScreenHeight(20f);
         float roomListHeight = scaler.toScreenHeight(200f);
-        
+
         mainTable.add(title).colspan(2).padBottom(padBottomTitle).row();
         mainTable.add(statusLabel).colspan(2).padBottom(padBottomStatus).row();
         mainTable.add(connectionTable).left().padRight(padRightConnection);
@@ -220,7 +220,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     public void resize(int width, int height) {
         // 更新UIScaler
         UIScaler.getInstance().update();
-        
+
         // 重新创建表格，确保UI元素正确缩放
         if (mainTable != null) {
             mainTable.remove();
@@ -322,8 +322,8 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         // 如果未连接到服务器，启动本地服务器
         if (!networkManager.isConnected()) {
             setStatus(ConnectionState.INITIAL, lang().get("starting.local.server"));
-            // 使用不常见的默认端口12345
-            int actualPort = startLocalServer(12345);
+            // 使用不常见的默认端口56148
+            int actualPort = startLocalServer(56148);
             if (actualPort == -1) {
                 setStatus(ConnectionState.ERROR, lang().get("failed.to.start.local.server"));
                 return;
