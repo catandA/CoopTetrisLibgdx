@@ -1,5 +1,6 @@
 package me.catand.cooptetris.tetris;
 
+import lombok.Setter;
 import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.GameStateMessage;
@@ -8,6 +9,7 @@ import me.catand.cooptetris.shared.message.MoveMessage;
 public class GameStateManager implements NetworkManager.NetworkListener {
     private final me.catand.cooptetris.shared.tetris.GameStateManager sharedManager;
     private NetworkManager networkManager;
+    @Setter
     private LocalServerManager localServerManager;
     private boolean isLocalServerStarted;
     private boolean isSinglePlayerMode;
@@ -23,10 +25,6 @@ public class GameStateManager implements NetworkManager.NetworkListener {
         if (networkManager != null) {
             networkManager.addListener(this);
         }
-    }
-
-    public void setLocalServerManager(LocalServerManager localServerManager) {
-        this.localServerManager = localServerManager;
     }
 
     public void startSinglePlayer() {
