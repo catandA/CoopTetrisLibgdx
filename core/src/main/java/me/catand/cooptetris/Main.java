@@ -20,6 +20,8 @@ import me.catand.cooptetris.util.Config;
  * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
  */
 public class Main extends ApplicationAdapter {
+    public static String version;
+    public static int versionCode;
     private SpriteBatch batch;
     private ShapeRenderer shapeRenderer;
     private UIManager uiManager;

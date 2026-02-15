@@ -50,11 +50,17 @@ run {
   //setIgnoreExitValue(true)
 
   if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
+  
+  // 添加系统属性，用于版本信息
+  systemProperty 'Specification-Title', appName
+  systemProperty 'Implementation-Title', 'me.catand.cooptetris'
+  systemProperty 'Specification-Version', rootProject.ext.appVersionName
+  systemProperty 'Implementation-Version', rootProject.ext.appVersionCode
 }
 
 jar {
 // sets the name of the .jar file this produces to the name of the game or app, with the version after.
-  archiveFileName.set("${appName}-${projectVersion}.jar")
+  archiveFileName.set("${appName}.jar")
 // the duplicatesStrategy matters starting in Gradle 7.0; this setting works.
   duplicatesStrategy = DuplicatesStrategy.EXCLUDE
   dependsOn configurations.runtimeClasspath
@@ -68,6 +74,10 @@ jar {
 // enabling native access helps avoid a warning when Java 24 or later runs the JAR.
   manifest {
     attributes 'Main-Class': application.mainClass, 'Enable-Native-Access': 'ALL-UNNAMED'
+    attributes 'Specification-Title': appName
+    attributes 'Implementation-Title': 'me.catand.cooptetris'
+    attributes 'Specification-Version': rootProject.ext.appVersionName
+    attributes 'Implementation-Version': rootProject.ext.appVersionCode
   }
 // this last step may help on some OSes that need extra instruction to make runnable JARs.
   doLast {

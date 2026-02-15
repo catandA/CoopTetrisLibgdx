@@ -8,6 +8,23 @@ import me.catand.cooptetris.Main;
 public class Lwjgl3Launcher {
     public static void main(String[] args) {
         if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
+        
+        // 获取版本信息
+        Main.version = Lwjgl3Launcher.class.getPackage().getSpecificationVersion();
+        if (Main.version == null) {
+            Main.version = System.getProperty("Specification-Version");
+        }
+        
+        try {
+            Main.versionCode = Integer.parseInt(Lwjgl3Launcher.class.getPackage().getImplementationVersion());
+        } catch (NumberFormatException e) {
+            try {
+                Main.versionCode = Integer.parseInt(System.getProperty("Implementation-Version"));
+            } catch (NumberFormatException ex) {
+                Main.versionCode = 1;
+            }
+        }
+        
         createApplication(args);
     }
 
