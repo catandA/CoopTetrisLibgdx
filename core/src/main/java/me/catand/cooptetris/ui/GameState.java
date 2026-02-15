@@ -24,7 +24,6 @@ public class GameState implements UIState {
     private Table uiTable;
     private final UIManager uiManager;
     private final GameStateManager gameStateManager;
-    private final ShapeRenderer shapeRenderer;
     private float cellSize;
     private Label scoreLabel;
     private Label levelLabel;
@@ -42,7 +41,6 @@ public class GameState implements UIState {
         this.uiManager = uiManager;
         this.gameStateManager = gameStateManager;
         this.configManager = uiManager.getConfigManager();
-        shapeRenderer = new ShapeRenderer();
         cellSize = 30f;
         calculateBoardPosition();
     }
@@ -123,7 +121,7 @@ public class GameState implements UIState {
         gameStateManager.update(delta);
         updateUI();
     }
-    
+
     private boolean isProcessingSoftDrop = false;
 
     private void handleInput() {
@@ -137,7 +135,7 @@ public class GameState implements UIState {
         } else if (isKeyPressed("SPACE", "DROP_KEY") || isKeyPressed("SPACE", "DROP_KEY2")) {
             gameStateManager.handleInput(MoveMessage.MoveType.DROP);
         }
-        
+
         // 单独处理下方向键
         if (isKeyPressed("DOWN", "DOWN_KEY", true) || isKeyPressed("S", "DOWN_KEY2", true)) {
             if (!isDownKeyPressed) {
@@ -163,21 +161,23 @@ public class GameState implements UIState {
             isDownKeyPressed = false;
         }
     }
-    
+
     /**
      * 检查按键是否按下
+     *
      * @param defaultKey 默认键位
-     * @param configKey 配置键名
+     * @param configKey  配置键名
      * @return 是否按下
      */
     private boolean isKeyPressed(String defaultKey, String configKey) {
         return isKeyPressed(defaultKey, configKey, false);
     }
-    
+
     /**
      * 检查按键是否按下
-     * @param defaultKey 默认键位
-     * @param configKey 配置键名
+     *
+     * @param defaultKey   默认键位
+     * @param configKey    配置键名
      * @param isContinuous 是否检查持续按住
      * @return 是否按下
      */
@@ -185,7 +185,7 @@ public class GameState implements UIState {
         if (configManager != null) {
             me.catand.cooptetris.util.Config config = configManager.getConfig();
             String keyName = defaultKey;
-            
+
             switch (configKey) {
                 case "LEFT_KEY":
                     keyName = config.getLeftKey();
@@ -218,7 +218,7 @@ public class GameState implements UIState {
                     keyName = config.getDropKey2();
                     break;
             }
-            
+
             // 转换键名到Input.Keys枚举值
             int keyCode = getKeyCode(keyName);
             if (keyCode != -1) {
@@ -231,9 +231,10 @@ public class GameState implements UIState {
         }
         return false;
     }
-    
+
     /**
      * 将键名字符串转换为Input.Keys枚举值
+     *
      * @param keyName 键名字符串
      * @return 对应的Input.Keys枚举值，-1表示未找到
      */
@@ -320,27 +321,27 @@ public class GameState implements UIState {
         // 使用UIScaler获取缩放比例
         UIScaler scaler = UIScaler.getInstance();
         float scale = scaler.getScale();
-        
+
         // 设计时的cellSize（基于1280x720分辨率）
         float designCellSize = 30f;
-        
+
         // 根据缩放比例计算实际的cellSize
         cellSize = designCellSize * scale;
-        
+
         // 确保cellSize不会太大
         float maxCellSize = 40f * scale;
         if (cellSize > maxCellSize) {
             cellSize = maxCellSize;
         }
-        
+
         // 计算游戏板大小
         float boardWidth = GameLogic.BOARD_WIDTH * cellSize;
         float boardHeight = GameLogic.BOARD_HEIGHT * cellSize;
-        
+
         // 使用UIScaler计算游戏板位置，基于设计时的坐标
         boardX = scaler.toScreenX(100); // 设计时X坐标
         boardY = scaler.toScreenY((720 - boardHeight) / 2); // 垂直居中
-        
+
         // 确保游戏板不会超出屏幕
         if (boardY < scaler.getOffsetY()) {
             boardY = scaler.getOffsetY();
@@ -352,16 +353,16 @@ public class GameState implements UIState {
         // 更新UIScaler
         UIScaler scaler = UIScaler.getInstance();
         scaler.update();
-        
+
         // 调整游戏板大小和位置
         calculateBoardPosition();
-        
+
         // 调整UI表的位置
         if (uiTable != null) {
             float x = scaler.toScreenX(1080); // 设计时X坐标
             float y = scaler.toScreenY(100);  // 设计时Y坐标
             uiTable.setPosition(x, y);
-            
+
             // 调整按钮宽度
             float buttonWidth = scaler.toScreenWidth(150f);
             uiTable.getCells().forEach(cell -> {
@@ -375,10 +376,6 @@ public class GameState implements UIState {
 
     @Override
     public void dispose() {
-        shapeRenderer.dispose();
     }
 
-    public ShapeRenderer getShapeRenderer() {
-        return shapeRenderer;
-    }
 }

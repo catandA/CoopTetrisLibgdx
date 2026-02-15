@@ -50,7 +50,7 @@ run {
   //setIgnoreExitValue(true)
 
   if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
-  
+
   // 添加系统属性，用于版本信息
   systemProperty 'Specification-Title', appName
   systemProperty 'Implementation-Title', 'me.catand.cooptetris'
@@ -90,7 +90,7 @@ jar {
 tasks.register("jarMac") {
   dependsOn("jar")
   group("build")
-  jar.archiveFileName.set("${appName}-${projectVersion}-mac.jar")
+  jar.archiveFileName.set("${appName}-mac.jar")
   jar.exclude("windows/x86/**", "windows/x64/**", "linux/arm32/**", "linux/arm64/**", "linux/x64/**", "**/*.dll", "**/*.so",
     'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
   dependencies {
@@ -104,7 +104,7 @@ tasks.register("jarMac") {
 tasks.register("jarLinux") {
   dependsOn("jar")
   group("build")
-  jar.archiveFileName.set("${appName}-${projectVersion}-linux.jar")
+  jar.archiveFileName.set("${appName}-linux.jar")
   jar.exclude("windows/x86/**", "windows/x64/**", "macos/arm64/**", "macos/x64/**", "**/*.dll", "**/*.dylib",
     'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
   dependencies {
@@ -118,7 +118,7 @@ tasks.register("jarLinux") {
 tasks.register("jarWin") {
   dependsOn("jar")
   group("build")
-  jar.archiveFileName.set("${appName}-${projectVersion}-win.jar")
+  jar.archiveFileName.set("${appName}-win.jar")
   jar.exclude("macos/arm64/**", "macos/x64/**", "linux/arm32/**", "linux/arm64/**", "linux/x64/**", "**/*.dylib", "**/*.so",
     'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
   dependencies {
