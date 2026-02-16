@@ -20,17 +20,18 @@ public class DesktopPlatformSupport extends PlatformSupport {
 
     @Override
     public void updateDisplaySize() {
-        // TODO 等待修改配置方法后来读取配置
-//		if (previousSizes == null){
-//			previousSizes = new Point[2];
-//			previousSizes[1] = SPDSettings.windowResolution();
-//		} else {
-//			previousSizes[1] = previousSizes[0];
-//		}
-//		previousSizes[0] = new Point(Main.width, Main.height);
-//		if (!SPDSettings.fullscreen()) {
-//			SPDSettings.windowResolution( previousSizes[0] );
-//		}
+        // 读取和保存窗口分辨率配置
+        if (previousSizes == null){
+            previousSizes = new Point[2];
+            previousSizes[1] = me.catand.cooptetris.util.TetrisSettings.windowResolution();
+        } else {
+            previousSizes[1] = previousSizes[0];
+        }
+        previousSizes[0] = new Point(me.catand.cooptetris.Main.width, me.catand.cooptetris.Main.height);
+        // 只在非全屏模式下保存窗口分辨率
+        if (!me.catand.cooptetris.util.TetrisSettings.fullscreen()) {
+            me.catand.cooptetris.util.TetrisSettings.windowResolution(previousSizes[0].x, previousSizes[0].y);
+        }
     }
 
     private static boolean first = true;
@@ -40,31 +41,29 @@ public class DesktopPlatformSupport extends PlatformSupport {
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
-                // TODO 等待修改配置方法后来读取配置
-//				if (SPDSettings.fullscreen()){
-//					int monitorNum = 0;
-//					if (!first){
-//						Graphics.Monitor[] monitors = Gdx.graphics.getMonitors();
-//						for (int i = 0; i < monitors.length; i++){
-//							if (((Lwjgl3Graphics.Lwjgl3Monitor)Gdx.graphics.getMonitor()).getMonitorHandle()
-//									== ((Lwjgl3Graphics.Lwjgl3Monitor)monitors[i]).getMonitorHandle()) {
-//								monitorNum = i;
-//							}
-//						}
-//					} else {
-//						monitorNum = SPDSettings.fulLScreenMonitor();
-//					}
-//
-//					Graphics.Monitor[] monitors = Gdx.graphics.getMonitors();
-//					if (monitors.length <= monitorNum) {
-//						monitorNum = 0;
-//					}
-//					Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode(monitors[monitorNum]));
-//					SPDSettings.fulLScreenMonitor(monitorNum);
-//				} else {
-//					Point p = SPDSettings.windowResolution();
-//					Gdx.graphics.setWindowedMode( p.x, p.y );
-//				}
+                // 读取全屏配置
+                boolean isFullscreen = me.catand.cooptetris.util.TetrisSettings.fullscreen();
+                if (isFullscreen){
+                    int monitorNum = 0;
+                    if (!first){
+                        com.badlogic.gdx.Graphics.Monitor[] monitors = Gdx.graphics.getMonitors();
+                        for (int i = 0; i < monitors.length; i++){
+                            if (((com.badlogic.gdx.backends.lwjgl3.Lwjgl3Graphics.Lwjgl3Monitor)Gdx.graphics.getMonitor()).getMonitorHandle()
+                                    == ((com.badlogic.gdx.backends.lwjgl3.Lwjgl3Graphics.Lwjgl3Monitor)monitors[i]).getMonitorHandle()) {
+                                monitorNum = i;
+                            }
+                        }
+                    }
+                    
+                    com.badlogic.gdx.Graphics.Monitor[] monitors = Gdx.graphics.getMonitors();
+                    if (monitors.length <= monitorNum) {
+                        monitorNum = 0;
+                    }
+                    Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode(monitors[monitorNum]));
+                } else {
+                    me.catand.cooptetris.util.Point p = me.catand.cooptetris.util.TetrisSettings.windowResolution();
+                    Gdx.graphics.setWindowedMode(p.x, p.y);
+                }
                 first = false;
             }
         });

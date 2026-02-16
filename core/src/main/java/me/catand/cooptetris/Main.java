@@ -13,9 +13,8 @@ import me.catand.cooptetris.ui.GameState;
 import me.catand.cooptetris.ui.MainMenuState;
 import me.catand.cooptetris.ui.UIManager;
 import me.catand.cooptetris.ui.UIState;
-import me.catand.cooptetris.util.Config;
-import me.catand.cooptetris.util.ConfigManager;
 import me.catand.cooptetris.util.PlatformSupport;
+import me.catand.cooptetris.util.TetrisSettings;
 
 /**
  * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
@@ -29,7 +28,6 @@ public class Main extends ApplicationAdapter {
     private GameStateManager gameStateManager;
     private NetworkManager networkManager;
     private LocalServerManager localServerManager;
-    private ConfigManager configManager;
     private final String[] args;
     public static PlatformSupport platform;
 
@@ -50,7 +48,6 @@ public class Main extends ApplicationAdapter {
     public void create() {
         batch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
-        configManager = new ConfigManager();
         uiManager = new UIManager();
         gameStateManager = new GameStateManager();
         networkManager = new NetworkManager();
@@ -60,7 +57,6 @@ public class Main extends ApplicationAdapter {
         uiManager.setNetworkManager(networkManager);
         uiManager.setLocalServerManager(localServerManager);
         uiManager.gameStateManager = gameStateManager;
-        uiManager.setConfigManager(configManager);
 
         // 处理启动参数
         handleStartupParameters();
@@ -103,39 +99,33 @@ public class Main extends ApplicationAdapter {
      * 处理单个参数
      */
     private void handleParameter(String key, String value) {
-        Config config = configManager.getConfig();
         switch (key) {
             case "playerName":
             case "name":
-                config.setPlayerName(value);
-                configManager.saveSettings(config);
+                TetrisSettings.playerName(value);
                 System.out.println("Main: 设置玩家名称: " + value);
                 break;
             case "difficulty":
                 try {
                     int difficulty = Integer.parseInt(value);
-                    config.setDifficulty(difficulty);
-                    configManager.saveSettings(config);
+                    TetrisSettings.difficulty(difficulty);
                     System.out.println("Main: 设置难度: " + difficulty);
                 } catch (NumberFormatException e) {
                     System.err.println("Main: 无效的难度值: " + value);
                 }
                 break;
             case "language":
-                config.setLanguage(value);
-                configManager.saveSettings(config);
+                TetrisSettings.language(value);
                 System.out.println("Main: 设置语言: " + value);
                 break;
             case "host":
-                config.setDefaultHost(value);
-                configManager.saveSettings(config);
+                TetrisSettings.defaultHost(value);
                 System.out.println("Main: 设置默认主机: " + value);
                 break;
             case "port":
                 try {
                     int port = Integer.parseInt(value);
-                    config.setDefaultPort(port);
-                    configManager.saveSettings(config);
+                    TetrisSettings.defaultPort(port);
                     System.out.println("Main: 设置默认端口: " + port);
                 } catch (NumberFormatException e) {
                     System.err.println("Main: 无效的端口值: " + value);

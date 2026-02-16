@@ -189,23 +189,20 @@ public class AndroidPlatformSupport extends PlatformSupport {
         if (Gdx.files.absolute("/system/fonts/NotoSansCJK-Regular.ttc").exists()) {
             //typefaces are 0-JP, 1-KR, 2-SC, 3-TC.
             int typeFace;
-            // TODO 等待修改配置方法后来读取语言配置
-//			switch (Config.) {
-//				case JAPANESE:
-//					typeFace = 0;
-//					break;
-//				case KOREAN:
-//					typeFace = 1;
-//					break;
-//				case CHI_SMPL:
-//				default:
-//					typeFace = 2;
-//					break;
-//				case CHI_TRAD:
-//					typeFace = 3;
-//					break;
-//			}
-            typeFace = 2;
+            // 读取语言配置
+            String language = me.catand.cooptetris.util.TetrisSettings.language();
+            switch (language) {
+                case "ja":
+                    typeFace = 0;
+                    break;
+                case "ko":
+                    typeFace = 1;
+                    break;
+                case "zh":
+                default:
+                    typeFace = 2;
+                    break;
+            }
             KRFontGenerator = ZHFontGenerator = JPFontGenerator = new FreeTypeFontGenerator(Gdx.files.absolute("/system/fonts/NotoSansCJK-Regular.ttc"), typeFace);
 
             //otherwise we have to go over a few possibilities.

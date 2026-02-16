@@ -10,9 +10,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 
 import me.catand.cooptetris.Main;
-import me.catand.cooptetris.util.Config;
-import me.catand.cooptetris.util.ConfigManager;
 import me.catand.cooptetris.util.LanguageManager;
+import me.catand.cooptetris.util.TetrisSettings;
 import me.catand.cooptetris.util.UIScaler;
 
 public class ControlsSettingsState implements UIState {
@@ -20,8 +19,6 @@ public class ControlsSettingsState implements UIState {
     private Skin skin;
     private Table table;
     private final UIManager uiManager;
-    private final ConfigManager configManager;
-    private Config config;
     private TextField leftKeyField;
     private TextField rightKeyField;
     private TextField downKeyField;
@@ -38,7 +35,6 @@ public class ControlsSettingsState implements UIState {
 
     public ControlsSettingsState(UIManager uiManager) {
         this.uiManager = uiManager;
-        this.configManager = uiManager.getConfigManager();
     }
 
     @Override
@@ -62,9 +58,6 @@ public class ControlsSettingsState implements UIState {
         titleFont = Main.platform.getFont(titleFontSize, lang.get("controls.title"), false, false);
         sectionFont = Main.platform.getFont(sectionFontSize, "Section Title", false, false);
 
-        // 获取配置
-        config = configManager.getConfig();
-
         // 创建标题
         Label title;
         if (titleFont != null) {
@@ -85,16 +78,16 @@ public class ControlsSettingsState implements UIState {
         Label dropKeyLabel = new Label(lang.get("drop"), skin);
 
         // 创建文本字段
-        leftKeyField = new TextField(config.getLeftKey(), skin);
-        rightKeyField = new TextField(config.getRightKey(), skin);
-        downKeyField = new TextField(config.getDownKey(), skin);
-        rotateKeyField = new TextField(config.getRotateKey(), skin);
-        dropKeyField = new TextField(config.getDropKey(), skin);
-        leftKey2Field = new TextField(config.getLeftKey2(), skin);
-        rightKey2Field = new TextField(config.getRightKey2(), skin);
-        downKey2Field = new TextField(config.getDownKey2(), skin);
-        rotateKey2Field = new TextField(config.getRotateKey2(), skin);
-        dropKey2Field = new TextField(config.getDropKey2(), skin);
+        leftKeyField = new TextField(TetrisSettings.leftKey(), skin);
+        rightKeyField = new TextField(TetrisSettings.rightKey(), skin);
+        downKeyField = new TextField(TetrisSettings.downKey(), skin);
+        rotateKeyField = new TextField(TetrisSettings.rotateKey(), skin);
+        dropKeyField = new TextField(TetrisSettings.dropKey(), skin);
+        leftKey2Field = new TextField(TetrisSettings.leftKey2(), skin);
+        rightKey2Field = new TextField(TetrisSettings.rightKey2(), skin);
+        downKey2Field = new TextField(TetrisSettings.downKey2(), skin);
+        rotateKey2Field = new TextField(TetrisSettings.rotateKey2(), skin);
+        dropKey2Field = new TextField(TetrisSettings.dropKey2(), skin);
 
         // 使用UIScaler缩放间距和元素大小
         float padBottomTitle = scaler.toScreenHeight(30f);
@@ -162,20 +155,17 @@ public class ControlsSettingsState implements UIState {
 
     private void saveSettings() {
         // 保存设置到配置文件
-        config.setLeftKey(leftKeyField.getText());
-        config.setRightKey(rightKeyField.getText());
-        config.setDownKey(downKeyField.getText());
-        config.setRotateKey(rotateKeyField.getText());
-        config.setDropKey(dropKeyField.getText());
+        TetrisSettings.leftKey(leftKeyField.getText());
+        TetrisSettings.rightKey(rightKeyField.getText());
+        TetrisSettings.downKey(downKeyField.getText());
+        TetrisSettings.rotateKey(rotateKeyField.getText());
+        TetrisSettings.dropKey(dropKeyField.getText());
         // 保存第二套控制键位
-        config.setLeftKey2(leftKey2Field.getText());
-        config.setRightKey2(rightKey2Field.getText());
-        config.setDownKey2(downKey2Field.getText());
-        config.setRotateKey2(rotateKey2Field.getText());
-        config.setDropKey2(dropKey2Field.getText());
-
-        // 保存配置
-        configManager.saveSettings(config);
+        TetrisSettings.leftKey2(leftKey2Field.getText());
+        TetrisSettings.rightKey2(rightKey2Field.getText());
+        TetrisSettings.downKey2(downKey2Field.getText());
+        TetrisSettings.rotateKey2(rotateKey2Field.getText());
+        TetrisSettings.dropKey2(dropKey2Field.getText());
     }
 
     @Override

@@ -16,6 +16,7 @@ import me.catand.cooptetris.shared.model.Tetromino;
 import me.catand.cooptetris.shared.tetris.GameLogic;
 import me.catand.cooptetris.tetris.GameStateManager;
 import me.catand.cooptetris.util.LanguageManager;
+import me.catand.cooptetris.util.TetrisSettings;
 import me.catand.cooptetris.util.UIScaler;
 
 public class GameState implements UIState {
@@ -35,12 +36,10 @@ public class GameState implements UIState {
     private float lastSoftDropTime = 0;
     private float boardX; // 游戏板X坐标
     private float boardY; // 游戏板Y坐标
-    private me.catand.cooptetris.util.ConfigManager configManager;
 
     public GameState(UIManager uiManager, GameStateManager gameStateManager) {
         this.uiManager = uiManager;
         this.gameStateManager = gameStateManager;
-        this.configManager = uiManager.getConfigManager();
         cellSize = 30f;
         calculateBoardPosition();
     }
@@ -122,7 +121,7 @@ public class GameState implements UIState {
         updateUI();
     }
 
-    private boolean isProcessingSoftDrop = false;
+    private final boolean isProcessingSoftDrop = false;
 
     private void handleInput() {
         // 检查第一套和第二套控制键位
@@ -182,51 +181,48 @@ public class GameState implements UIState {
      * @return 是否按下
      */
     private boolean isKeyPressed(String defaultKey, String configKey, boolean isContinuous) {
-        if (configManager != null) {
-            me.catand.cooptetris.util.Config config = configManager.getConfig();
-            String keyName = defaultKey;
+        String keyName = defaultKey;
 
-            switch (configKey) {
-                case "LEFT_KEY":
-                    keyName = config.getLeftKey();
-                    break;
-                case "RIGHT_KEY":
-                    keyName = config.getRightKey();
-                    break;
-                case "DOWN_KEY":
-                    keyName = config.getDownKey();
-                    break;
-                case "ROTATE_KEY":
-                    keyName = config.getRotateKey();
-                    break;
-                case "DROP_KEY":
-                    keyName = config.getDropKey();
-                    break;
-                case "LEFT_KEY2":
-                    keyName = config.getLeftKey2();
-                    break;
-                case "RIGHT_KEY2":
-                    keyName = config.getRightKey2();
-                    break;
-                case "DOWN_KEY2":
-                    keyName = config.getDownKey2();
-                    break;
-                case "ROTATE_KEY2":
-                    keyName = config.getRotateKey2();
-                    break;
-                case "DROP_KEY2":
-                    keyName = config.getDropKey2();
-                    break;
-            }
+        switch (configKey) {
+            case "LEFT_KEY":
+                keyName = TetrisSettings.leftKey();
+                break;
+            case "RIGHT_KEY":
+                keyName = TetrisSettings.rightKey();
+                break;
+            case "DOWN_KEY":
+                keyName = TetrisSettings.downKey();
+                break;
+            case "ROTATE_KEY":
+                keyName = TetrisSettings.rotateKey();
+                break;
+            case "DROP_KEY":
+                keyName = TetrisSettings.dropKey();
+                break;
+            case "LEFT_KEY2":
+                keyName = TetrisSettings.leftKey2();
+                break;
+            case "RIGHT_KEY2":
+                keyName = TetrisSettings.rightKey2();
+                break;
+            case "DOWN_KEY2":
+                keyName = TetrisSettings.downKey2();
+                break;
+            case "ROTATE_KEY2":
+                keyName = TetrisSettings.rotateKey2();
+                break;
+            case "DROP_KEY2":
+                keyName = TetrisSettings.dropKey2();
+                break;
+        }
 
-            // 转换键名到Input.Keys枚举值
-            int keyCode = getKeyCode(keyName);
-            if (keyCode != -1) {
-                if (isContinuous) {
-                    return Gdx.input.isKeyPressed(keyCode);
-                } else {
-                    return Gdx.input.isKeyJustPressed(keyCode);
-                }
+        // 转换键名到Input.Keys枚举值
+        int keyCode = getKeyCode(keyName);
+        if (keyCode != -1) {
+            if (isContinuous) {
+                return Gdx.input.isKeyPressed(keyCode);
+            } else {
+                return Gdx.input.isKeyJustPressed(keyCode);
             }
         }
         return false;

@@ -20,8 +20,7 @@ public class LanguageManager {
     private LanguageManager() {
         // 尝试从配置中加载语言设置
         try {
-            ConfigManager configManager = new ConfigManager();
-            String savedLanguage = configManager.getConfig().getLanguage();
+            String savedLanguage = TetrisSettings.language();
             setLanguage(savedLanguage);
         } catch (Exception e) {
             // 如果加载失败，使用默认语言
@@ -72,10 +71,7 @@ public class LanguageManager {
 
         // 保存语言设置到配置中
         try {
-            ConfigManager configManager = new ConfigManager();
-            Config config = configManager.getConfig();
-            config.setLanguage(languageCode);
-            configManager.saveSettings(config);
+            TetrisSettings.language(languageCode);
         } catch (Exception e) {
         }
     }

@@ -11,9 +11,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 
 import me.catand.cooptetris.Main;
-import me.catand.cooptetris.util.Config;
-import me.catand.cooptetris.util.ConfigManager;
 import me.catand.cooptetris.util.LanguageManager;
+import me.catand.cooptetris.util.TetrisSettings;
 import me.catand.cooptetris.util.UIScaler;
 
 public class SettingsState implements UIState {
@@ -21,8 +20,6 @@ public class SettingsState implements UIState {
     private Skin skin;
     private Table table;
     private final UIManager uiManager;
-    private final ConfigManager configManager;
-    private Config config;
     private TextField difficultyField;
     private TextField defaultHostField;
     private TextField defaultPortField;
@@ -32,7 +29,6 @@ public class SettingsState implements UIState {
 
     public SettingsState(UIManager uiManager) {
         this.uiManager = uiManager;
-        this.configManager = uiManager.getConfigManager();
     }
 
     @Override
@@ -56,9 +52,6 @@ public class SettingsState implements UIState {
         titleFont = Main.platform.getFont(titleFontSize, lang.get("settings.title"), false, false);
         sectionFont = Main.platform.getFont(sectionFontSize, "Section Title", false, false);
 
-        // 获取配置
-        config = configManager.getConfig();
-
         // 创建标题
         Label title;
         if (titleFont != null) {
@@ -70,7 +63,7 @@ public class SettingsState implements UIState {
 
         // 难度设置
         Label difficultyLabel = new Label(lang.get("difficulty"), skin);
-        difficultyField = new TextField(String.valueOf(config.getDifficulty()), skin);
+        difficultyField = new TextField(String.valueOf(TetrisSettings.difficulty()), skin);
 
         // 网络设置
         Label networkLabel;
@@ -82,10 +75,10 @@ public class SettingsState implements UIState {
         }
 
         Label defaultHostLabel = new Label(lang.get("default.host"), skin);
-        defaultHostField = new TextField(config.getDefaultHost(), skin);
+        defaultHostField = new TextField(TetrisSettings.defaultHost(), skin);
 
         Label defaultPortLabel = new Label(lang.get("default.port"), skin);
-        defaultPortField = new TextField(String.valueOf(config.getDefaultPort()), skin);
+        defaultPortField = new TextField(String.valueOf(TetrisSettings.defaultPort()), skin);
 
         // 语言设置
         Label languageLabel = new Label(lang.get("language"), skin);
@@ -181,16 +174,13 @@ public class SettingsState implements UIState {
 
     private void saveSettings() {
         // 保存设置到配置文件
-        config.setDifficulty(Integer.parseInt(difficultyField.getText()));
-        config.setDefaultHost(defaultHostField.getText());
-        config.setDefaultPort(Integer.parseInt(defaultPortField.getText()));
+        TetrisSettings.difficulty(Integer.parseInt(difficultyField.getText()));
+        TetrisSettings.defaultHost(defaultHostField.getText());
+        TetrisSettings.defaultPort(Integer.parseInt(defaultPortField.getText()));
 
         // 获取当前选择的语言
         LanguageManager lang = LanguageManager.getInstance();
-        config.setLanguage(lang.getCurrentLanguageCode());
-
-        // 保存配置
-        configManager.saveSettings(config);
+        TetrisSettings.language(lang.getCurrentLanguageCode());
     }
 
     /**
@@ -199,10 +189,7 @@ public class SettingsState implements UIState {
     private void saveLanguageSetting() {
         // 获取当前选择的语言
         LanguageManager lang = LanguageManager.getInstance();
-        config.setLanguage(lang.getCurrentLanguageCode());
-
-        // 保存配置
-        configManager.saveSettings(config);
+        TetrisSettings.language(lang.getCurrentLanguageCode());
     }
 
     @Override

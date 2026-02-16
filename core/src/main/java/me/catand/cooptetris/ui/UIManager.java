@@ -18,7 +18,6 @@ import lombok.Setter;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
-import me.catand.cooptetris.util.ConfigManager;
 import me.catand.cooptetris.util.UIScaler;
 
 public class UIManager {
@@ -33,9 +32,6 @@ public class UIManager {
     @Setter
     @Getter
     private LocalServerManager localServerManager;
-    @Getter
-    @Setter
-    private ConfigManager configManager;
     public me.catand.cooptetris.tetris.GameStateManager gameStateManager;
 
     public UIManager() {
