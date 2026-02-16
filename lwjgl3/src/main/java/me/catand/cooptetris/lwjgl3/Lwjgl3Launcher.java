@@ -2,19 +2,23 @@ package me.catand.cooptetris.lwjgl3;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+
 import me.catand.cooptetris.Main;
 
-/** Launches the desktop (LWJGL3) application. */
+/**
+ * Launches the desktop (LWJGL3) application.
+ */
 public class Lwjgl3Launcher {
     public static void main(String[] args) {
-        if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
-        
+        if (StartupHelper.startNewJvmIfRequired())
+            return; // This handles macOS support and helps on Windows.
+
         // 获取版本信息
         Main.version = Lwjgl3Launcher.class.getPackage().getSpecificationVersion();
         if (Main.version == null) {
             Main.version = System.getProperty("Specification-Version");
         }
-        
+
         try {
             Main.versionCode = Integer.parseInt(Lwjgl3Launcher.class.getPackage().getImplementationVersion());
         } catch (NumberFormatException e) {
@@ -24,12 +28,8 @@ public class Lwjgl3Launcher {
                 Main.versionCode = 1;
             }
         }
-        
-        createApplication(args);
-    }
 
-    private static Lwjgl3Application createApplication(String[] args) {
-        return new Lwjgl3Application(new Main(args), getDefaultConfiguration());
+        new Lwjgl3Application(new Main(args, new DesktopPlatformSupport()), getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

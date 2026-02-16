@@ -11,6 +11,7 @@ import java.util.Set;
 public class LanguageManager {
     private static LanguageManager instance;
     private Properties properties;
+    @lombok.Getter
     private Locale currentLocale;
     private static final String BUNDLE_PATH = "i18n/strings";
     private static String cachedCharacterSet;
@@ -38,19 +39,6 @@ public class LanguageManager {
         }
 
         return instance;
-    }
-
-    /**
-     * 重新加载语言设置，从配置中读取
-     */
-    public void reloadLanguageFromConfig() {
-        try {
-            ConfigManager configManager = new ConfigManager();
-            String savedLanguage = configManager.getConfig().getLanguage();
-            setLanguage(savedLanguage);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public void setLanguage(String languageCode) {
@@ -111,10 +99,6 @@ public class LanguageManager {
         } catch (Exception e) {
             return value;
         }
-    }
-
-    public Locale getCurrentLocale() {
-        return currentLocale;
     }
 
     public String getCurrentLanguageCode() {

@@ -15,6 +15,7 @@ import com.badlogic.gdx.utils.Align;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.GameStartMessage;
@@ -71,7 +72,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
 
         // 生成适当大小的标题字体，考虑缩放比例
         int titleFontSize = (int) (24 * scale);
-        titleFont = uiManager.generateFont(titleFontSize);
+        titleFont = Main.platform.getFont(titleFontSize, lang.get("online.mode.title"), false, false);
         Label title;
         if (titleFont != null) {
             Label.LabelStyle labelStyle = new Label.LabelStyle(titleFont, skin.getColor("font"));

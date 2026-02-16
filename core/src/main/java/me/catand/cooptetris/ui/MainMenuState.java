@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
 
+import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.UIScaler;
 import me.catand.cooptetris.util.VersionManager;
@@ -43,7 +44,7 @@ public class MainMenuState implements UIState {
 
         // 为标题创建一个更大的字体，考虑缩放比例
         int titleFontSize = (int) (32 * scale);
-        titleFont = uiManager.generateFont(titleFontSize);
+        titleFont = Main.platform.getFont(titleFontSize, lang.get("title"), false, false);
 
         // 创建标题
         Label title;
@@ -142,7 +143,7 @@ public class MainMenuState implements UIState {
     public void resize(int width, int height) {
         // 更新UIScaler
         UIScaler.getInstance().update();
-        
+
         // 重新创建表格，确保UI元素正确缩放
         if (table != null && stage != null) {
             // 移除旧的UI元素

@@ -22,7 +22,7 @@ public class ConfigManager {
     private static final String KEY_LANGUAGE = "language";
     private static final String KEY_PLAYER_NAME = "player_name";
 
-    private final Preferences prefs;
+    private static Preferences prefs;
     private Config currentConfig;
 
     public ConfigManager() {
@@ -49,7 +49,7 @@ public class ConfigManager {
             prefs.getString(KEY_DEFAULT_HOST, "localhost"),
             prefs.getInteger(KEY_DEFAULT_PORT, 8080),
             prefs.getString(KEY_LANGUAGE, "en"),
-            prefs.getString(KEY_PLAYER_NAME, "Player" + (int)(Math.random() * 1000))
+            prefs.getString(KEY_PLAYER_NAME, "Player" + (int) (Math.random() * 1000))
         );
     }
 
@@ -60,14 +60,13 @@ public class ConfigManager {
         if (currentConfig == null) {
             currentConfig = Config.createDefault();
         }
-        
+
         prefs.putInteger(KEY_DIFFICULTY, currentConfig.getDifficulty());
         prefs.putString(KEY_LEFT_KEY, currentConfig.getLeftKey());
         prefs.putString(KEY_RIGHT_KEY, currentConfig.getRightKey());
         prefs.putString(KEY_DOWN_KEY, currentConfig.getDownKey());
         prefs.putString(KEY_ROTATE_KEY, currentConfig.getRotateKey());
         prefs.putString(KEY_DROP_KEY, currentConfig.getDropKey());
-        // 保存第二套控制键位
         prefs.putString(KEY_LEFT_KEY2, currentConfig.getLeftKey2());
         prefs.putString(KEY_RIGHT_KEY2, currentConfig.getRightKey2());
         prefs.putString(KEY_DOWN_KEY2, currentConfig.getDownKey2());

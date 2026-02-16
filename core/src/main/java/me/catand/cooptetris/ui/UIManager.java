@@ -3,8 +3,6 @@ package me.catand.cooptetris.ui;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
@@ -15,25 +13,35 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import java.util.Stack;
 
+import lombok.Getter;
+import lombok.Setter;
+import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.util.ConfigManager;
-import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.UIScaler;
 
 public class UIManager {
+    @Getter
     private final Stage stage;
+    @Getter
     private final Skin skin;
     private final Stack<UIState> uiStates;
+    @Setter
+    @Getter
     private NetworkManager networkManager;
+    @Setter
+    @Getter
     private LocalServerManager localServerManager;
+    @Getter
+    @Setter
     private ConfigManager configManager;
     public me.catand.cooptetris.tetris.GameStateManager gameStateManager;
 
     public UIManager() {
         // 初始化UIScaler
         UIScaler.getInstance().update();
-        
+
         stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
 
@@ -43,37 +51,38 @@ public class UIManager {
         uiStates = new Stack<>();
         Gdx.input.setInputProcessor(stage);
     }
-    
+
     /**
      * 更新skin中的字体，考虑当前的缩放比例
      */
     public void updateSkinFonts() {
         try {
-            // 检查是否有默认字体文件
-            if (Gdx.files.internal("fonts/NotoSansSC-Regular.ttf").exists()) {
-                // 获取当前缩放比例
-                float scale = UIScaler.getInstance().getScale();
-                
-                // 根据缩放比例计算字体大小
-                int baseSize = 16;
-                int scaledSize = (int) (baseSize * scale);
-                
-                // 使用高分辨率字体，提高显示质量
-                BitmapFont font = generateHighResolutionFont(scaledSize, 2);
-                if (font != null) {
-                    // 替换skin中的默认字体
-                    skin.add("default", font, BitmapFont.class);
-                    skin.add("font", font, BitmapFont.class);
-                    skin.add("list", font, BitmapFont.class);
-                    skin.add("subtitle", font, BitmapFont.class);
-                    skin.add("window", font, BitmapFont.class);
+            // 首先初始化字体生成器
+            if (Main.platform != null) {
+                Main.platform.setupFontGenerators(1024);
+            }
 
-                    // 同时更新所有样式中的字体
-                    skin.get(Label.LabelStyle.class).font = font;
-                    skin.get(TextButton.TextButtonStyle.class).font = font;
-                    skin.get(TextField.TextFieldStyle.class).font = font;
-                    skin.get(SelectBox.SelectBoxStyle.class).font = font;
-                }
+            // 获取当前缩放比例
+            float scale = UIScaler.getInstance().getScale();
+
+            // 根据缩放比例计算字体大小
+            int baseSize = 16;
+            int scaledSize = (int) (baseSize * scale);
+
+            BitmapFont font = Main.platform.getFont(scaledSize, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", false, false);
+            if (font != null) {
+                // 替换skin中的默认字体
+                skin.add("default", font, BitmapFont.class);
+                skin.add("font", font, BitmapFont.class);
+                skin.add("list", font, BitmapFont.class);
+                skin.add("subtitle", font, BitmapFont.class);
+                skin.add("window", font, BitmapFont.class);
+
+                // 同时更新所有样式中的字体
+                skin.get(Label.LabelStyle.class).font = font;
+                skin.get(TextButton.TextButtonStyle.class).font = font;
+                skin.get(TextField.TextFieldStyle.class).font = font;
+                skin.get(SelectBox.SelectBoxStyle.class).font = font;
             }
         } catch (Exception e) {
             // 字体加载失败，使用默认字体
@@ -123,10 +132,10 @@ public class UIManager {
     public void resize(int width, int height) {
         // 更新UIScaler
         UIScaler.getInstance().update();
-        
+
         // 更新skin中的字体大小
         updateSkinFonts();
-        
+
         stage.getViewport().update(width, height, true);
         if (!uiStates.isEmpty()) {
             uiStates.peek().resize(width, height);
@@ -141,107 +150,9 @@ public class UIManager {
         skin.dispose();
     }
 
-    public Stage getStage() {
-        return stage;
-    }
-
-    public Skin getSkin() {
-        return skin;
-    }
-
     public UIState getCurrentState() {
         return uiStates.isEmpty() ? null : uiStates.peek();
     }
 
-    public void setNetworkManager(NetworkManager networkManager) {
-        this.networkManager = networkManager;
-    }
 
-    public NetworkManager getNetworkManager() {
-        return networkManager;
-    }
-
-    public void setLocalServerManager(LocalServerManager localServerManager) {
-        this.localServerManager = localServerManager;
-    }
-
-    public LocalServerManager getLocalServerManager() {
-        return localServerManager;
-    }
-
-    public void setConfigManager(ConfigManager configManager) {
-        this.configManager = configManager;
-    }
-
-    public ConfigManager getConfigManager() {
-        return configManager;
-    }
-
-    /**
-     * 生成指定大小的字体
-     *
-     * @param size 字体大小
-     * @return 生成的BitmapFont对象，如果失败则返回null
-     */
-    public BitmapFont generateFont(int size) {
-        try {
-            if (Gdx.files.internal("fonts/NotoSansSC-Regular.ttf").exists()) {
-                FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/NotoSansSC-Regular.ttf"));
-                FreeTypeFontParameter parameter = new FreeTypeFontParameter();
-                parameter.size = size;
-                parameter.characters = LanguageManager.getAllCharacters();
-
-                // 优化字体渲染质量
-                parameter.hinting = FreeTypeFontGenerator.Hinting.Full; // 完整的字体微调
-                parameter.genMipMaps = true; // 生成mipmap，提高缩放时的质量
-                parameter.minFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Linear; // 缩小过滤
-                parameter.magFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Linear; // 放大过滤
-
-                BitmapFont font = generator.generateFont(parameter);
-                generator.dispose();
-                return font;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * 生成高分辨率字体，用于在小尺寸下显示时保持清晰
-     *
-     * @param targetSize           目标显示大小
-     * @param resolutionMultiplier 分辨率倍率，建议为2或3
-     * @return 生成的高分辨率BitmapFont对象，如果失败则返回null
-     */
-    public BitmapFont generateHighResolutionFont(int targetSize, int resolutionMultiplier) {
-        try {
-            if (Gdx.files.internal("fonts/NotoSansSC-Regular.ttf").exists()) {
-                FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/NotoSansSC-Regular.ttf"));
-                FreeTypeFontParameter parameter = new FreeTypeFontParameter();
-
-                // 生成更高分辨率的字体
-                int actualSize = targetSize * resolutionMultiplier;
-                parameter.size = actualSize;
-                parameter.characters = LanguageManager.getAllCharacters();
-
-                // 优化字体渲染质量
-                parameter.hinting = FreeTypeFontGenerator.Hinting.Full;
-                parameter.genMipMaps = true;
-                parameter.minFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Linear;
-                parameter.magFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Linear;
-
-                BitmapFont font = generator.generateFont(parameter);
-                generator.dispose();
-
-                // 设置字体缩放到目标大小
-                font.getData().setScale(1.0f / resolutionMultiplier);
-
-                return font;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 }

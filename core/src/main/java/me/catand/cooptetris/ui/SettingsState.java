@@ -10,8 +10,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 
-import me.catand.cooptetris.util.ConfigManager;
+import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.Config;
+import me.catand.cooptetris.util.ConfigManager;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.UIScaler;
 
@@ -20,7 +21,7 @@ public class SettingsState implements UIState {
     private Skin skin;
     private Table table;
     private final UIManager uiManager;
-    private ConfigManager configManager;
+    private final ConfigManager configManager;
     private Config config;
     private TextField difficultyField;
     private TextField defaultHostField;
@@ -52,8 +53,8 @@ public class SettingsState implements UIState {
         // 生成标题字体和section字体，考虑缩放比例
         int titleFontSize = (int) (24 * scale);
         int sectionFontSize = (int) (19 * scale);
-        titleFont = uiManager.generateFont(titleFontSize);
-        sectionFont = uiManager.generateFont(sectionFontSize);
+        titleFont = Main.platform.getFont(titleFontSize, lang.get("settings.title"), false, false);
+        sectionFont = Main.platform.getFont(sectionFontSize, "Section Title", false, false);
 
         // 获取配置
         config = configManager.getConfig();
@@ -218,7 +219,7 @@ public class SettingsState implements UIState {
     public void resize(int width, int height) {
         // 更新UIScaler
         UIScaler.getInstance().update();
-        
+
         // 重新创建表格，确保UI元素正确缩放
         if (table != null) {
             table.remove();

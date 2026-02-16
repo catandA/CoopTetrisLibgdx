@@ -13,8 +13,9 @@ import me.catand.cooptetris.ui.GameState;
 import me.catand.cooptetris.ui.MainMenuState;
 import me.catand.cooptetris.ui.UIManager;
 import me.catand.cooptetris.ui.UIState;
-import me.catand.cooptetris.util.ConfigManager;
 import me.catand.cooptetris.util.Config;
+import me.catand.cooptetris.util.ConfigManager;
+import me.catand.cooptetris.util.PlatformSupport;
 
 /**
  * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
@@ -29,14 +30,20 @@ public class Main extends ApplicationAdapter {
     private NetworkManager networkManager;
     private LocalServerManager localServerManager;
     private ConfigManager configManager;
-    private String[] args;
+    private final String[] args;
+    public static PlatformSupport platform;
 
-    public Main() {
-        this(new String[0]);
+    // Size of the EGL surface view
+    public static int width;
+    public static int height;
+
+    public Main(PlatformSupport platform) {
+        this(new String[0], platform);
     }
 
-    public Main(String[] args) {
+    public Main(String[] args, PlatformSupport platform) {
         this.args = args;
+        Main.platform = platform;
     }
 
     @Override
@@ -66,7 +73,7 @@ public class Main extends ApplicationAdapter {
      * 处理启动参数，支持通过命令行参数覆盖配置
      */
     private void handleStartupParameters() {
-        if (args == null || args.length == 0) {
+        if (args == null) {
             return;
         }
 
@@ -159,6 +166,14 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void resize(int width, int height) {
+        if (width == 0 || height == 0) {
+            return;
+        }
+
+        if (height != Main.height || width != Main.width) {
+            Main.width = width;
+            Main.height = height;
+        }
         uiManager.resize(width, height);
     }
 

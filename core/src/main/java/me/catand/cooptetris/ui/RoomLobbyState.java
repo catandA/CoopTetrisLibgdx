@@ -15,6 +15,7 @@ import com.badlogic.gdx.utils.Align;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.util.LanguageManager;
@@ -110,7 +111,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
 
         // 生成适当大小的标题字体，考虑缩放比例
         int titleFontSize = (int) (24 * scale);
-        titleFont = uiManager.generateFont(titleFontSize);
+        titleFont = Main.platform.getFont(titleFontSize, lang().get("room.lobby"), false, false);
         Label title;
         if (titleFont != null) {
             Label.LabelStyle labelStyle = new Label.LabelStyle(titleFont, skin.getColor("font"));
@@ -231,7 +232,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         float padRightPlayerList = scaler.toScreenWidth(20f);
         float padTopButtons = scaler.toScreenHeight(20f);
         float playerListWidth = scaler.toScreenWidth(200f);
-        
+
         mainTable.add(title).colspan(2).padBottom(padBottomTitle).row();
         mainTable.add(statusLabel).colspan(2).padBottom(padBottomStatus).row();
         mainTable.add(roomNameLabel).colspan(2).padBottom(padBottomRoomInfo).row();
@@ -305,7 +306,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
     public void resize(int width, int height) {
         // 更新UIScaler
         UIScaler.getInstance().update();
-        
+
         // 重新创建表格，确保UI元素正确缩放
         if (mainTable != null) {
             mainTable.remove();
