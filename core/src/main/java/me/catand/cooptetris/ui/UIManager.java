@@ -38,7 +38,8 @@ public class UIManager {
         // 初始化UIScaler
         UIScaler.getInstance().update();
 
-        stage = new Stage(new ScreenViewport());
+        // 使用FitViewport保持16:9的宽高比
+        stage = new Stage(new com.badlogic.gdx.utils.viewport.FitViewport(UIScaler.TARGET_WIDTH, UIScaler.TARGET_HEIGHT));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
 
         // 尝试加载支持中文的字体
@@ -132,6 +133,7 @@ public class UIManager {
         // 更新skin中的字体大小
         updateSkinFonts();
 
+        // 使用FitViewport的update方法，保持宽高比
         stage.getViewport().update(width, height, true);
         if (!uiStates.isEmpty()) {
             uiStates.peek().resize(width, height);
