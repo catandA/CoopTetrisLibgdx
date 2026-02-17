@@ -12,38 +12,29 @@ import com.badlogic.gdx.utils.Align;
 
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.LanguageManager;
-import me.catand.cooptetris.util.UIScaler;
 import me.catand.cooptetris.util.VersionManager;
 
-public class MainMenuState implements UIState {
-    private Stage stage;
-    private Skin skin;
+public class MainMenuState extends BaseUIState {
     private Table table;
-    private final UIManager uiManager;
     private BitmapFont titleFont;
     private Label versionLabel;
 
     public MainMenuState(UIManager uiManager) {
-        this.uiManager = uiManager;
+        super(uiManager);
     }
 
     @Override
     public void show(Stage stage, Skin skin) {
-        this.stage = stage;
-        this.skin = skin;
+        super.show(stage, skin);
 
         table = new Table();
         table.setFillParent(true);
         table.center();
 
-        // 使用UIScaler获取缩放比例
-        UIScaler scaler = UIScaler.getInstance();
-        float scale = scaler.getScale();
-
         LanguageManager lang = LanguageManager.getInstance();
 
         // 为标题创建一个更大的字体，考虑缩放比例
-        int titleFontSize = (int) (32 * scale);
+        int titleFontSize = (int) (32 * getScale());
         titleFont = Main.platform.getFont(titleFontSize, lang.get("title"), false, false);
 
         // 创建标题
@@ -99,10 +90,10 @@ public class MainMenuState implements UIState {
         });
 
         // 使用UIScaler缩放按钮大小和间距
-        float buttonWidth = scaler.toScreenWidth(200f);
-        float buttonHeight = scaler.toScreenHeight(60f);
-        float padBottomTitle = scaler.toScreenHeight(50f);
-        float padBottomButton = scaler.toScreenHeight(20f);
+        float buttonWidth = toScreenWidth(200f);
+        float buttonHeight = toScreenHeight(60f);
+        float padBottomTitle = toScreenHeight(50f);
+        float padBottomButton = toScreenHeight(20f);
 
         table.add(title).padBottom(padBottomTitle).row();
         table.add(startButton).width(buttonWidth).height(buttonHeight).padBottom(padBottomButton).row();
@@ -119,15 +110,17 @@ public class MainMenuState implements UIState {
         versionLabel.setAlignment(Align.bottomRight);
         // 使用setPosition的正确方法，考虑标签的宽度
         versionLabel.setPosition(
-            stage.getViewport().getWorldWidth() - versionLabel.getWidth() - 20 * scale,
-            20 * scale
+            stage.getViewport().getWorldWidth() - versionLabel.getWidth() - toScreenWidth(20f),
+            toScreenHeight(20f)
         );
         stage.addActor(versionLabel);
     }
 
     @Override
     public void hide() {
-        table.remove();
+        if (table != null) {
+            table.remove();
+        }
         if (versionLabel != null) {
             versionLabel.remove();
             versionLabel = null;
@@ -137,20 +130,6 @@ public class MainMenuState implements UIState {
     @Override
     public void update(float delta) {
         // 主菜单不需要更新逻辑
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        // 更新UIScaler
-        UIScaler.getInstance().update();
-
-        // 重新创建表格，确保UI元素正确缩放
-        if (table != null && stage != null) {
-            // 移除旧的UI元素
-            hide();
-            // 重新创建UI元素
-            show(stage, skin);
-        }
     }
 
     @Override

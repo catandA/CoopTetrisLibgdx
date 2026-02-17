@@ -19,14 +19,10 @@ import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.util.LanguageManager;
-import me.catand.cooptetris.util.UIScaler;
 
-public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
-    private Stage stage;
-    private Skin skin;
+public class RoomLobbyState extends BaseUIState implements NetworkManager.NetworkListener {
     private Table mainTable;
     private Table playerListTable;
-    private final UIManager uiManager;
     private final NetworkManager networkManager;
     private Label statusLabel;
     private Label roomNameLabel;
@@ -47,7 +43,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
     private TextButton sendChatButton;
 
     public RoomLobbyState(UIManager uiManager, NetworkManager networkManager) {
-        this.uiManager = uiManager;
+        super(uiManager);
         this.networkManager = networkManager;
         this.playerNames = new ArrayList<>();
         this.chatMessages = new ArrayList<>();
@@ -95,22 +91,17 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
 
     @Override
     public void show(Stage stage, Skin skin) {
-        this.stage = stage;
-        this.skin = skin;
-
-        // 使用UIScaler获取缩放比例
-        UIScaler scaler = UIScaler.getInstance();
-        float scale = scaler.getScale();
+        super.show(stage, skin);
 
         mainTable = new Table();
         mainTable.setFillParent(true);
         mainTable.center();
-        mainTable.pad(scaler.toScreenHeight(20f));
+        mainTable.pad(toScreenHeight(20f));
 
         LanguageManager lang = LanguageManager.getInstance();
 
         // 生成适当大小的标题字体，考虑缩放比例
-        int titleFontSize = (int) (24 * scale);
+        int titleFontSize = (int) (24 * getScale());
         titleFont = Main.platform.getFont(titleFontSize, lang().get("room.lobby"), false, false);
         Label title;
         if (titleFont != null) {
@@ -132,29 +123,29 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
 
         // 玩家列表
         playerListTable = new Table();
-        playerListTable.defaults().padBottom(scaler.toScreenHeight(5f));
-        playerListTable.add(new Label(lang().get("players.title"), skin)).left().padBottom(scaler.toScreenHeight(10f)).row();
+        playerListTable.defaults().padBottom(toScreenHeight(5f));
+        playerListTable.add(new Label(lang().get("players.title"), skin)).left().padBottom(toScreenHeight(10f)).row();
         updatePlayerListUI();
 
         // 聊天区域
         Table chatContainer = new Table();
-        chatContainer.defaults().width(scaler.toScreenWidth(400f)).padBottom(scaler.toScreenHeight(10f));
+        chatContainer.defaults().width(toScreenWidth(400f)).padBottom(toScreenHeight(10f));
 
         chatTable = new Table();
-        chatTable.defaults().left().padBottom(scaler.toScreenHeight(5f)).width(scaler.toScreenWidth(380f));
+        chatTable.defaults().left().padBottom(toScreenHeight(5f)).width(toScreenWidth(380f));
 
         // 创建一个带有滚动条的滚动窗
         chatScrollPane = new ScrollPane(chatTable, skin);
-        chatScrollPane.setHeight(scaler.toScreenHeight(200f));
-        chatScrollPane.setWidth(scaler.toScreenWidth(392f));
+        chatScrollPane.setHeight(toScreenHeight(200f));
+        chatScrollPane.setWidth(toScreenWidth(392f));
         chatScrollPane.setScrollingDisabled(false, true);
         chatScrollPane.setFlickScroll(true);
         chatScrollPane.setSmoothScrolling(true);
 
         // 为滚动窗添加外边框
         Table borderTable = new Table(skin);
-        borderTable.setWidth(scaler.toScreenWidth(400f));
-        borderTable.setHeight(scaler.toScreenHeight(200f));
+        borderTable.setWidth(toScreenWidth(400f));
+        borderTable.setHeight(toScreenHeight(200f));
         // 添加聊天滚动窗
         borderTable.add(chatScrollPane).expand().fill().pad(4f);
         // 尝试使用skin中的默认背景作为边框
@@ -165,10 +156,10 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         }
 
         Table chatInputContainer = new Table();
-        chatInputContainer.defaults().padRight(scaler.toScreenWidth(5f));
+        chatInputContainer.defaults().padRight(toScreenWidth(5f));
 
         chatInputField = new TextField("", skin);
-        chatInputField.setWidth(scaler.toScreenWidth(320f));
+        chatInputField.setWidth(toScreenWidth(320f));
         chatInputField.setMessageText(lang().get("type.message"));
         chatInputField.addListener(event -> {
             if (event instanceof InputEvent) {
@@ -183,7 +174,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         });
 
         sendChatButton = new TextButton(lang().get("send.button"), skin);
-        sendChatButton.setWidth(scaler.toScreenWidth(70f));
+        sendChatButton.setWidth(toScreenWidth(70f));
         sendChatButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 sendChatMessage();
@@ -192,7 +183,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         });
 
         chatInputContainer.add(chatInputField).fillX().expandX();
-        chatInputContainer.add(sendChatButton).width(scaler.toScreenWidth(70f));
+        chatInputContainer.add(sendChatButton).width(toScreenWidth(70f));
 
         chatContainer.add(borderTable).row();
         chatContainer.add(chatInputContainer).row();
@@ -202,7 +193,7 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
 
         // 按钮区域
         Table buttonTable = new Table();
-        buttonTable.defaults().width(scaler.toScreenWidth(200f)).height(scaler.toScreenHeight(50f)).padBottom(scaler.toScreenHeight(10f));
+        buttonTable.defaults().width(toScreenWidth(200f)).height(toScreenHeight(50f)).padBottom(toScreenHeight(10f));
 
         startGameButton = new TextButton(lang().get("start.game.button"), skin);
         startGameButton.setVisible(isHost); // 只有房主可以开始游戏
@@ -225,13 +216,13 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         buttonTable.add(leaveRoomButton).row();
 
         // 组装主表格
-        float padBottomTitle = scaler.toScreenHeight(20f);
-        float padBottomStatus = scaler.toScreenHeight(10f);
-        float padBottomRoomInfo = scaler.toScreenHeight(5f);
-        float padBottomPlayerInfo = scaler.toScreenHeight(20f);
-        float padRightPlayerList = scaler.toScreenWidth(20f);
-        float padTopButtons = scaler.toScreenHeight(20f);
-        float playerListWidth = scaler.toScreenWidth(200f);
+        float padBottomTitle = toScreenHeight(20f);
+        float padBottomStatus = toScreenHeight(10f);
+        float padBottomRoomInfo = toScreenHeight(5f);
+        float padBottomPlayerInfo = toScreenHeight(20f);
+        float padRightPlayerList = toScreenWidth(20f);
+        float padTopButtons = toScreenHeight(20f);
+        float playerListWidth = toScreenWidth(200f);
 
         mainTable.add(title).colspan(2).padBottom(padBottomTitle).row();
         mainTable.add(statusLabel).colspan(2).padBottom(padBottomStatus).row();
@@ -259,7 +250,9 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
         if (networkManager != null) {
             networkManager.removeListener(this);
         }
-        mainTable.remove();
+        if (mainTable != null) {
+            mainTable.remove();
+        }
     }
 
     @Override
@@ -299,18 +292,6 @@ public class RoomLobbyState implements UIState, NetworkManager.NetworkListener {
                     }
                 }
             }
-        }
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        // 更新UIScaler
-        UIScaler.getInstance().update();
-
-        // 重新创建表格，确保UI元素正确缩放
-        if (mainTable != null) {
-            mainTable.remove();
-            show(stage, skin);
         }
     }
 

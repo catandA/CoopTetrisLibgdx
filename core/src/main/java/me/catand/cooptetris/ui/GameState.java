@@ -17,13 +17,9 @@ import me.catand.cooptetris.shared.tetris.GameLogic;
 import me.catand.cooptetris.tetris.GameStateManager;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
-import me.catand.cooptetris.util.UIScaler;
 
-public class GameState implements UIState {
-    private Stage stage;
-    private Skin skin;
+public class GameState extends BaseUIState {
     private Table uiTable;
-    private final UIManager uiManager;
     private final GameStateManager gameStateManager;
     private float cellSize;
     private Label scoreLabel;
@@ -38,7 +34,7 @@ public class GameState implements UIState {
     private float boardY; // 游戏板Y坐标
 
     public GameState(UIManager uiManager, GameStateManager gameStateManager) {
-        this.uiManager = uiManager;
+        super(uiManager);
         this.gameStateManager = gameStateManager;
         cellSize = 30f;
         calculateBoardPosition();
@@ -51,14 +47,12 @@ public class GameState implements UIState {
 
     @Override
     public void show(Stage stage, Skin skin) {
-        this.stage = stage;
-        this.skin = skin;
+        super.show(stage, skin);
 
         uiTable = new Table();
         // 使用UIScaler计算UI表的位置，使其在屏幕右侧
-        UIScaler scaler = UIScaler.getInstance();
-        float x = scaler.toScreenX(1080); // 设计时X坐标
-        float y = scaler.toScreenY(100);  // 设计时Y坐标
+        float x = toScreenX(1080); // 设计时X坐标
+        float y = toScreenY(100);  // 设计时Y坐标
         uiTable.setPosition(x, y);
 
         Label scoreTitle = new Label(lang().get("score.title"), skin);
@@ -96,14 +90,14 @@ public class GameState implements UIState {
         });
 
         // 使用UIScaler缩放按钮宽度
-        float buttonWidth = scaler.toScreenWidth(150f);
-        uiTable.add(scoreTitle).right().padRight(10f);
-        uiTable.add(scoreLabel).padBottom(10f).row();
-        uiTable.add(levelTitle).right().padRight(10f);
-        uiTable.add(levelLabel).padBottom(10f).row();
-        uiTable.add(linesTitle).right().padRight(10f);
-        uiTable.add(linesLabel).padBottom(30f).row();
-        uiTable.add(pauseButton).colspan(2).width(buttonWidth).padBottom(10f).row();
+        float buttonWidth = toScreenWidth(150f);
+        uiTable.add(scoreTitle).right().padRight(toScreenWidth(10f));
+        uiTable.add(scoreLabel).padBottom(toScreenHeight(10f)).row();
+        uiTable.add(levelTitle).right().padRight(toScreenWidth(10f));
+        uiTable.add(levelLabel).padBottom(toScreenHeight(10f)).row();
+        uiTable.add(linesTitle).right().padRight(toScreenWidth(10f));
+        uiTable.add(linesLabel).padBottom(toScreenHeight(30f)).row();
+        uiTable.add(pauseButton).colspan(2).width(buttonWidth).padBottom(toScreenHeight(10f)).row();
         uiTable.add(exitButton).colspan(2).width(buttonWidth).row();
 
         stage.addActor(uiTable);
@@ -111,7 +105,9 @@ public class GameState implements UIState {
 
     @Override
     public void hide() {
-        uiTable.remove();
+        if (uiTable != null) {
+            uiTable.remove();
+        }
     }
 
     @Override
@@ -314,18 +310,14 @@ public class GameState implements UIState {
      * 计算游戏板的位置，确保它在屏幕内
      */
     private void calculateBoardPosition() {
-        // 使用UIScaler获取缩放比例
-        UIScaler scaler = UIScaler.getInstance();
-        float scale = scaler.getScale();
-
         // 设计时的cellSize（基于1280x720分辨率）
         float designCellSize = 30f;
 
         // 根据缩放比例计算实际的cellSize
-        cellSize = designCellSize * scale;
+        cellSize = designCellSize * getScale();
 
         // 确保cellSize不会太大
-        float maxCellSize = 40f * scale;
+        float maxCellSize = 40f * getScale();
         if (cellSize > maxCellSize) {
             cellSize = maxCellSize;
         }
@@ -335,8 +327,8 @@ public class GameState implements UIState {
         float boardHeight = GameLogic.BOARD_HEIGHT * cellSize;
 
         // 使用UIScaler计算游戏板位置，基于设计时的坐标
-        boardX = scaler.toScreenX(100); // 设计时X坐标
-        boardY = scaler.toScreenY((720 - boardHeight) / 2); // 垂直居中
+        boardX = toScreenX(100); // 设计时X坐标
+        boardY = toScreenY((720 - boardHeight) / 2); // 垂直居中
 
         // 确保游戏板不会超出屏幕
         if (boardY < scaler.getOffsetY()) {
@@ -346,21 +338,19 @@ public class GameState implements UIState {
 
     @Override
     public void resize(int width, int height) {
-        // 更新UIScaler
-        UIScaler scaler = UIScaler.getInstance();
-        scaler.update();
-
+        super.resize(width, height);
+        
         // 调整游戏板大小和位置
         calculateBoardPosition();
 
         // 调整UI表的位置
         if (uiTable != null) {
-            float x = scaler.toScreenX(1080); // 设计时X坐标
-            float y = scaler.toScreenY(100);  // 设计时Y坐标
+            float x = toScreenX(1080); // 设计时X坐标
+            float y = toScreenY(100);  // 设计时Y坐标
             uiTable.setPosition(x, y);
 
             // 调整按钮宽度
-            float buttonWidth = scaler.toScreenWidth(150f);
+            float buttonWidth = toScreenWidth(150f);
             uiTable.getCells().forEach(cell -> {
                 if (cell.getActor() instanceof TextButton) {
                     cell.width(buttonWidth);

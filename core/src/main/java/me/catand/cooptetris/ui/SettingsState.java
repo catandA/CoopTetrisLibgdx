@@ -13,13 +13,9 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
-import me.catand.cooptetris.util.UIScaler;
 
-public class SettingsState implements UIState {
-    private Stage stage;
-    private Skin skin;
+public class SettingsState extends BaseUIState {
     private Table table;
-    private final UIManager uiManager;
     private TextField difficultyField;
     private TextField defaultHostField;
     private TextField defaultPortField;
@@ -28,17 +24,12 @@ public class SettingsState implements UIState {
     private BitmapFont sectionFont;
 
     public SettingsState(UIManager uiManager) {
-        this.uiManager = uiManager;
+        super(uiManager);
     }
 
     @Override
     public void show(Stage stage, Skin skin) {
-        this.stage = stage;
-        this.skin = skin;
-
-        // 使用UIScaler获取缩放比例
-        UIScaler scaler = UIScaler.getInstance();
-        float scale = scaler.getScale();
+        super.show(stage, skin);
 
         table = new Table();
         table.setFillParent(true);
@@ -47,8 +38,8 @@ public class SettingsState implements UIState {
         LanguageManager lang = LanguageManager.getInstance();
 
         // 生成标题字体和section字体，考虑缩放比例
-        int titleFontSize = (int) (24 * scale);
-        int sectionFontSize = (int) (19 * scale);
+        int titleFontSize = (int) (24 * getScale());
+        int sectionFontSize = (int) (19 * getScale());
         titleFont = Main.platform.getFont(titleFontSize, lang.get("settings.title"), false, false);
         sectionFont = Main.platform.getFont(sectionFontSize, "Section Title", false, false);
 
@@ -138,14 +129,14 @@ public class SettingsState implements UIState {
         });
 
         // 使用UIScaler缩放间距和元素大小
-        float padBottomTitle = scaler.toScreenHeight(30f);
-        float padRight = scaler.toScreenWidth(10f);
-        float padBottomField = scaler.toScreenHeight(10f);
-        float padBottomSection = scaler.toScreenHeight(20f);
-        float smallFieldWidth = scaler.toScreenWidth(100f);
-        float mediumFieldWidth = scaler.toScreenWidth(150f);
-        float largeFieldWidth = scaler.toScreenWidth(200f);
-        float buttonWidth = scaler.toScreenWidth(150f);
+        float padBottomTitle = toScreenHeight(30f);
+        float padRight = toScreenWidth(10f);
+        float padBottomField = toScreenHeight(10f);
+        float padBottomSection = toScreenHeight(20f);
+        float smallFieldWidth = toScreenWidth(100f);
+        float mediumFieldWidth = toScreenWidth(150f);
+        float largeFieldWidth = toScreenWidth(200f);
+        float buttonWidth = toScreenWidth(150f);
 
         table.add(title).padBottom(padBottomTitle).row();
 
@@ -194,24 +185,14 @@ public class SettingsState implements UIState {
 
     @Override
     public void hide() {
-        table.remove();
+        if (table != null) {
+            table.remove();
+        }
     }
 
     @Override
     public void update(float delta) {
         // 设置界面不需要更新逻辑
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        // 更新UIScaler
-        UIScaler.getInstance().update();
-
-        // 重新创建表格，确保UI元素正确缩放
-        if (table != null) {
-            table.remove();
-            show(stage, skin);
-        }
     }
 
     @Override

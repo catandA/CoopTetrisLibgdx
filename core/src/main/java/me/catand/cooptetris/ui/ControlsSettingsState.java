@@ -12,13 +12,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
-import me.catand.cooptetris.util.UIScaler;
 
-public class ControlsSettingsState implements UIState {
-    private Stage stage;
-    private Skin skin;
+public class ControlsSettingsState extends BaseUIState {
     private Table table;
-    private final UIManager uiManager;
     private TextField leftKeyField;
     private TextField rightKeyField;
     private TextField downKeyField;
@@ -34,17 +30,12 @@ public class ControlsSettingsState implements UIState {
     private BitmapFont sectionFont;
 
     public ControlsSettingsState(UIManager uiManager) {
-        this.uiManager = uiManager;
+        super(uiManager);
     }
 
     @Override
     public void show(Stage stage, Skin skin) {
-        this.stage = stage;
-        this.skin = skin;
-
-        // 使用UIScaler获取缩放比例
-        UIScaler scaler = UIScaler.getInstance();
-        float scale = scaler.getScale();
+        super.show(stage, skin);
 
         table = new Table();
         table.setFillParent(true);
@@ -53,8 +44,8 @@ public class ControlsSettingsState implements UIState {
         LanguageManager lang = LanguageManager.getInstance();
 
         // 生成标题字体和section字体，考虑缩放比例
-        int titleFontSize = (int) (24 * scale);
-        int sectionFontSize = (int) (19 * scale);
+        int titleFontSize = (int) (24 * getScale());
+        int sectionFontSize = (int) (19 * getScale());
         titleFont = Main.platform.getFont(titleFontSize, lang.get("controls.title"), false, false);
         sectionFont = Main.platform.getFont(sectionFontSize, "Section Title", false, false);
 
@@ -90,13 +81,13 @@ public class ControlsSettingsState implements UIState {
         dropKey2Field = new TextField(TetrisSettings.dropKey2(), skin);
 
         // 使用UIScaler缩放间距和元素大小
-        float padBottomTitle = scaler.toScreenHeight(30f);
-        float padRight = scaler.toScreenWidth(10f);
-        float padLeft = scaler.toScreenWidth(10f);
-        float padBottomRow = scaler.toScreenHeight(15f);
-        float smallFieldWidth = scaler.toScreenWidth(80f);
-        float buttonWidth = scaler.toScreenWidth(150f);
-        float scrollPaneHeight = scaler.toScreenHeight(300f);
+        float padBottomTitle = toScreenHeight(30f);
+        float padRight = toScreenWidth(10f);
+        float padLeft = toScreenWidth(10f);
+        float padBottomRow = toScreenHeight(15f);
+        float smallFieldWidth = toScreenWidth(80f);
+        float buttonWidth = toScreenWidth(150f);
+        float scrollPaneHeight = toScreenHeight(300f);
 
         // 添加控制设置行
         controlsContentTable.add(leftKeyLabel).right().padRight(padRight);
@@ -122,7 +113,7 @@ public class ControlsSettingsState implements UIState {
         // 创建滚动窗
         com.badlogic.gdx.scenes.scene2d.ui.ScrollPane scrollPane = new com.badlogic.gdx.scenes.scene2d.ui.ScrollPane(controlsContentTable, skin);
         scrollPane.setHeight(scrollPaneHeight);
-        scrollPane.setWidth(scaler.toScreenWidth(500f));
+        scrollPane.setWidth(toScreenWidth(500f));
         scrollPane.setFadeScrollBars(false);
         scrollPane.setScrollingDisabled(false, true);
 
@@ -170,24 +161,14 @@ public class ControlsSettingsState implements UIState {
 
     @Override
     public void hide() {
-        table.remove();
+        if (table != null) {
+            table.remove();
+        }
     }
 
     @Override
     public void update(float delta) {
         // 设置界面不需要更新逻辑
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        // 更新UIScaler
-        UIScaler.getInstance().update();
-
-        // 重新创建表格，确保UI元素正确缩放
-        if (table != null) {
-            table.remove();
-            show(stage, skin);
-        }
     }
 
     @Override

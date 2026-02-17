@@ -23,16 +23,12 @@ import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
-import me.catand.cooptetris.util.UIScaler;
 
-public class OnlineMenuState implements UIState, NetworkManager.NetworkListener {
-    private Stage stage;
-    private Skin skin;
+public class OnlineMenuState extends BaseUIState implements NetworkManager.NetworkListener {
     private Table mainTable;
     private Table connectionTable;
     private Table roomListTable;
     private ScrollPane roomListScrollPane;
-    private final UIManager uiManager;
     private TextField hostField;
     private TextField portField;
     private TextField playerNameField;
@@ -50,29 +46,24 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
     }
 
     public OnlineMenuState(UIManager uiManager) {
-        this.uiManager = uiManager;
+        super(uiManager);
         this.availableRooms = new ArrayList<>();
         this.currentState = ConnectionState.INITIAL;
     }
 
     @Override
     public void show(Stage stage, Skin skin) {
-        this.stage = stage;
-        this.skin = skin;
-
-        // 使用UIScaler获取缩放比例
-        UIScaler scaler = UIScaler.getInstance();
-        float scale = scaler.getScale();
+        super.show(stage, skin);
 
         mainTable = new Table();
         mainTable.setFillParent(true);
         mainTable.center();
-        mainTable.pad(scaler.toScreenHeight(20f));
+        mainTable.pad(toScreenHeight(20f));
 
         LanguageManager lang = LanguageManager.getInstance();
 
         // 生成适当大小的标题字体，考虑缩放比例
-        int titleFontSize = (int) (24 * scale);
+        int titleFontSize = (int) (24 * getScale());
         titleFont = Main.platform.getFont(titleFontSize, lang.get("online.mode.title"), false, false);
         Label title;
         if (titleFont != null) {
@@ -91,7 +82,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
 
         // 连接设置区域
         connectionTable = new Table();
-        connectionTable.defaults().padBottom(scaler.toScreenHeight(10f));
+        connectionTable.defaults().padBottom(toScreenHeight(10f));
 
         Label hostLabel = new Label(lang.get("host"), skin);
         hostField = new TextField("localhost", skin);
@@ -104,8 +95,8 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         String savedPlayerName = TetrisSettings.playerName();
         playerNameField = new TextField(savedPlayerName, skin);
 
-        float fieldWidth = scaler.toScreenWidth(200f);
-        float padRight = scaler.toScreenWidth(10f);
+        float fieldWidth = toScreenWidth(200f);
+        float padRight = toScreenWidth(10f);
         connectionTable.add(hostLabel).right().padRight(padRight);
         connectionTable.add(hostField).width(fieldWidth).row();
         connectionTable.add(portLabel).right().padRight(padRight);
@@ -116,7 +107,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
 
         // 房间列表区域
         roomListTable = new Table();
-        roomListTable.defaults().width(scaler.toScreenWidth(300f)).padBottom(scaler.toScreenHeight(5f));
+        roomListTable.defaults().width(toScreenWidth(300f)).padBottom(toScreenHeight(5f));
         roomListTable.add(new Label(lang.get("no.rooms.available"), skin)).center().row();
 
         roomListScrollPane = new ScrollPane(roomListTable, skin);
@@ -126,7 +117,7 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
 
         // 按钮区域
         Table buttonTable = new Table();
-        buttonTable.defaults().width(scaler.toScreenWidth(200f)).height(scaler.toScreenHeight(50f)).padBottom(scaler.toScreenHeight(10f));
+        buttonTable.defaults().width(toScreenWidth(200f)).height(toScreenHeight(50f)).padBottom(toScreenHeight(10f));
 
         TextButton connectServerButton = new TextButton(lang.get("connect"), skin);
         connectServerButton.addListener(event -> {
@@ -178,11 +169,11 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         buttonTable.add(backButton).row();
 
         // 组装主表格
-        float padBottomTitle = scaler.toScreenHeight(20f);
-        float padBottomStatus = scaler.toScreenHeight(10f);
-        float padRightConnection = scaler.toScreenWidth(20f);
-        float padTopRoomList = scaler.toScreenHeight(20f);
-        float roomListHeight = scaler.toScreenHeight(200f);
+        float padBottomTitle = toScreenHeight(20f);
+        float padBottomStatus = toScreenHeight(10f);
+        float padRightConnection = toScreenWidth(20f);
+        float padTopRoomList = toScreenHeight(20f);
+        float roomListHeight = toScreenHeight(200f);
 
         mainTable.add(title).colspan(2).padBottom(padBottomTitle).row();
         mainTable.add(statusLabel).colspan(2).padBottom(padBottomStatus).row();
@@ -206,25 +197,15 @@ public class OnlineMenuState implements UIState, NetworkManager.NetworkListener 
         if (networkManager != null) {
             networkManager.removeListener(this);
         }
-        mainTable.remove();
+        if (mainTable != null) {
+            mainTable.remove();
+        }
     }
 
     @Override
     public void update(float delta) {
         // 更新状态显示
         updateStatus();
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        // 更新UIScaler
-        UIScaler.getInstance().update();
-
-        // 重新创建表格，确保UI元素正确缩放
-        if (mainTable != null) {
-            mainTable.remove();
-            show(stage, skin);
-        }
     }
 
     @Override
