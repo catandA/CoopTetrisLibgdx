@@ -3,10 +3,8 @@ package me.catand.cooptetris.ui;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
@@ -20,6 +18,9 @@ import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.util.LanguageManager;
 
+/**
+ * 房间大厅状态 - 使用新的简化缩放接口
+ */
 public class RoomLobbyState extends BaseUIState implements NetworkManager.NetworkListener {
     private Table mainTable;
     private Table playerListTable;
@@ -90,62 +91,60 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     }
 
     @Override
-    public void show(Stage stage, Skin skin) {
-        super.show(stage, skin);
-
+    protected void createUI() {
         mainTable = new Table();
-        mainTable.setFillParent(true);
+        mainTable.setPosition(offsetX(), offsetY());
+        mainTable.setSize(displayWidth(), displayHeight());
         mainTable.center();
-        mainTable.pad(toScreenHeight(20f));
+        mainTable.pad(h(20f));
 
         LanguageManager lang = LanguageManager.getInstance();
 
         // 生成适当大小的标题字体，考虑缩放比例
-        int titleFontSize = (int) (24 * getScale());
-        titleFont = Main.platform.getFont(titleFontSize, lang().get("room.lobby"), false, false);
+        titleFont = Main.platform.getFont(fontSize(24), lang.get("room.lobby"), false, false);
         Label title;
         if (titleFont != null) {
             Label.LabelStyle labelStyle = new Label.LabelStyle(titleFont, skin.getColor("font"));
-            title = new Label(lang().get("room.lobby"), labelStyle);
+            title = new Label(lang.get("room.lobby"), labelStyle);
         } else {
             // 如果字体生成失败，使用默认字体
-            title = new Label(lang().get("room.lobby"), skin);
+            title = new Label(lang.get("room.lobby"), skin);
         }
         title.setAlignment(Align.center);
 
         // 状态标签
-        statusLabel = new Label(lang().get("waiting.players"), skin);
+        statusLabel = new Label(lang.get("waiting.players"), skin);
         statusLabel.setColor(Color.YELLOW);
 
         // 房间信息
-        roomNameLabel = new Label(lang().get("room.label") + " " + roomName, skin);
-        playerCountLabel = new Label(lang().get("players.label") + " 0/" + maxPlayers, skin);
+        roomNameLabel = new Label(lang.get("room.label") + " " + roomName, skin);
+        playerCountLabel = new Label(lang.get("players.label") + " 0/" + maxPlayers, skin);
 
         // 玩家列表
         playerListTable = new Table();
-        playerListTable.defaults().padBottom(toScreenHeight(5f));
-        playerListTable.add(new Label(lang().get("players.title"), skin)).left().padBottom(toScreenHeight(10f)).row();
+        playerListTable.defaults().padBottom(h(5f));
+        playerListTable.add(new Label(lang.get("players.title"), skin)).left().padBottom(h(10f)).row();
         updatePlayerListUI();
 
         // 聊天区域
         Table chatContainer = new Table();
-        chatContainer.defaults().width(toScreenWidth(400f)).padBottom(toScreenHeight(10f));
+        chatContainer.defaults().width(w(400f)).padBottom(h(10f));
 
         chatTable = new Table();
-        chatTable.defaults().left().padBottom(toScreenHeight(5f)).width(toScreenWidth(380f));
+        chatTable.defaults().left().padBottom(h(5f)).width(w(380f));
 
         // 创建一个带有滚动条的滚动窗
         chatScrollPane = new ScrollPane(chatTable, skin);
-        chatScrollPane.setHeight(toScreenHeight(200f));
-        chatScrollPane.setWidth(toScreenWidth(392f));
+        chatScrollPane.setHeight(h(200f));
+        chatScrollPane.setWidth(w(392f));
         chatScrollPane.setScrollingDisabled(false, true);
         chatScrollPane.setFlickScroll(true);
         chatScrollPane.setSmoothScrolling(true);
 
         // 为滚动窗添加外边框
         Table borderTable = new Table(skin);
-        borderTable.setWidth(toScreenWidth(400f));
-        borderTable.setHeight(toScreenHeight(200f));
+        borderTable.setWidth(w(400f));
+        borderTable.setHeight(h(200f));
         // 添加聊天滚动窗
         borderTable.add(chatScrollPane).expand().fill().pad(4f);
         // 尝试使用skin中的默认背景作为边框
@@ -156,11 +155,11 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         }
 
         Table chatInputContainer = new Table();
-        chatInputContainer.defaults().padRight(toScreenWidth(5f));
+        chatInputContainer.defaults().padRight(w(5f));
 
         chatInputField = new TextField("", skin);
-        chatInputField.setWidth(toScreenWidth(320f));
-        chatInputField.setMessageText(lang().get("type.message"));
+        chatInputField.setWidth(w(320f));
+        chatInputField.setMessageText(lang.get("type.message"));
         chatInputField.addListener(event -> {
             if (event instanceof InputEvent) {
                 InputEvent inputEvent = (InputEvent) event;
@@ -173,8 +172,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             return true;
         });
 
-        sendChatButton = new TextButton(lang().get("send.button"), skin);
-        sendChatButton.setWidth(toScreenWidth(70f));
+        sendChatButton = new TextButton(lang.get("send.button"), skin);
+        sendChatButton.setWidth(w(70f));
         sendChatButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 sendChatMessage();
@@ -183,7 +182,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         });
 
         chatInputContainer.add(chatInputField).fillX().expandX();
-        chatInputContainer.add(sendChatButton).width(toScreenWidth(70f));
+        chatInputContainer.add(sendChatButton).width(w(70f));
 
         chatContainer.add(borderTable).row();
         chatContainer.add(chatInputContainer).row();
@@ -193,9 +192,9 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
 
         // 按钮区域
         Table buttonTable = new Table();
-        buttonTable.defaults().width(toScreenWidth(200f)).height(toScreenHeight(50f)).padBottom(toScreenHeight(10f));
+        buttonTable.defaults().width(w(200f)).height(h(50f)).padBottom(h(10f));
 
-        startGameButton = new TextButton(lang().get("start.game.button"), skin);
+        startGameButton = new TextButton(lang.get("start.game.button"), skin);
         startGameButton.setVisible(isHost); // 只有房主可以开始游戏
         startGameButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -204,7 +203,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             return true;
         });
 
-        leaveRoomButton = new TextButton(lang().get("leave.room.button"), skin);
+        leaveRoomButton = new TextButton(lang.get("leave.room.button"), skin);
         leaveRoomButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 leaveRoom();
@@ -216,22 +215,14 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         buttonTable.add(leaveRoomButton).row();
 
         // 组装主表格
-        float padBottomTitle = toScreenHeight(20f);
-        float padBottomStatus = toScreenHeight(10f);
-        float padBottomRoomInfo = toScreenHeight(5f);
-        float padBottomPlayerInfo = toScreenHeight(20f);
-        float padRightPlayerList = toScreenWidth(20f);
-        float padTopButtons = toScreenHeight(20f);
-        float playerListWidth = toScreenWidth(200f);
-
-        mainTable.add(title).colspan(2).padBottom(padBottomTitle).row();
-        mainTable.add(statusLabel).colspan(2).padBottom(padBottomStatus).row();
-        mainTable.add(roomNameLabel).colspan(2).padBottom(padBottomRoomInfo).row();
-        mainTable.add(playerCountLabel).colspan(2).padBottom(padBottomPlayerInfo).row();
-        mainTable.add(playerListTable).width(playerListWidth).padRight(padRightPlayerList).left();
+        mainTable.add(title).colspan(2).padBottom(h(20f)).row();
+        mainTable.add(statusLabel).colspan(2).padBottom(h(10f)).row();
+        mainTable.add(roomNameLabel).colspan(2).padBottom(h(5f)).row();
+        mainTable.add(playerCountLabel).colspan(2).padBottom(h(20f)).row();
+        mainTable.add(playerListTable).width(w(200f)).padRight(w(20f)).left();
         mainTable.add(chatContainer).fillX().expandX().right();
         mainTable.row();
-        mainTable.add(buttonTable).center().colspan(2).padTop(padTopButtons).row();
+        mainTable.add(buttonTable).center().colspan(2).padTop(h(20f)).row();
 
         stage.addActor(mainTable);
 
@@ -245,13 +236,14 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     }
 
     @Override
-    public void hide() {
+    protected void clearUI() {
         // 从NetworkManager的监听器中移除
         if (networkManager != null) {
             networkManager.removeListener(this);
         }
         if (mainTable != null) {
             mainTable.remove();
+            mainTable = null;
         }
     }
 
@@ -300,6 +292,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         // 释放生成的标题字体
         if (titleFont != null) {
             titleFont.dispose();
+            titleFont = null;
         }
     }
 
@@ -309,7 +302,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private void updatePlayerListUI() {
         // 清空玩家列表表格
         playerListTable.clear();
-        playerListTable.add(new Label(lang().get("players.title"), skin)).left().padBottom(10f).row();
+        playerListTable.add(new Label(lang().get("players.title"), skin)).left().padBottom(h(10f)).row();
 
         if (playerNames.isEmpty()) {
             playerListTable.add(new Label(lang().get("no.players"), skin)).left().row();
@@ -322,11 +315,11 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
 
                 if (isHost && i > 0) { // 房主可以踢出其他玩家，但不能踢自己
                     Table playerRow = new Table();
-                    playerRow.defaults().padRight(10f);
+                    playerRow.defaults().padRight(w(10f));
                     playerRow.add(playerLabel).left().expandX();
 
                     TextButton kickButton = new TextButton(lang().get("kick.button"), skin);
-                    kickButton.setWidth(60f);
+                    kickButton.setWidth(w(60f));
                     final String targetPlayerName = playerName;
                     kickButton.addListener(event -> {
                         if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -395,13 +388,13 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         if (chatTable != null) {
             // 清空并添加标题行
             chatTable.clear();
-            chatTable.add(new Label(lang().get("chat.label"), skin)).left().padBottom(10f).row();
+            chatTable.add(new Label(lang().get("chat.label"), skin)).left().padBottom(h(10f)).row();
 
             // 添加所有聊天消息
             if (chatMessages.isEmpty()) {
                 // 添加空消息占位符，确保聊天框保持最小高度
                 Label emptyLabel = new Label("", skin);
-                emptyLabel.setHeight(180f);
+                emptyLabel.setHeight(h(180f));
                 chatTable.add(emptyLabel).left().row();
             } else {
                 for (String msg : chatMessages) {
@@ -426,7 +419,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             // 移除空消息占位符（如果存在）
             if (chatMessages.size() == 1 && chatTable.getChildren().size > 1) {
                 chatTable.clear();
-                chatTable.add(new Label(lang().get("chat.label"), skin)).left().padBottom(10f).row();
+                chatTable.add(new Label(lang().get("chat.label"), skin)).left().padBottom(h(10f)).row();
             }
 
             // 添加新消息

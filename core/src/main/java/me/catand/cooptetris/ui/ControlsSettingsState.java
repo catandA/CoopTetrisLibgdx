@@ -2,9 +2,7 @@ package me.catand.cooptetris.ui;
 
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
@@ -13,6 +11,9 @@ import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
 
+/**
+ * 控制设置界面状态 - 使用新的简化缩放接口
+ */
 public class ControlsSettingsState extends BaseUIState {
     private Table table;
     private TextField leftKeyField;
@@ -34,20 +35,17 @@ public class ControlsSettingsState extends BaseUIState {
     }
 
     @Override
-    public void show(Stage stage, Skin skin) {
-        super.show(stage, skin);
-
+    protected void createUI() {
         table = new Table();
-        table.setFillParent(true);
+        table.setPosition(offsetX(), offsetY());
+        table.setSize(displayWidth(), displayHeight());
         table.center();
 
         LanguageManager lang = LanguageManager.getInstance();
 
         // 生成标题字体和section字体，考虑缩放比例
-        int titleFontSize = (int) (24 * getScale());
-        int sectionFontSize = (int) (19 * getScale());
-        titleFont = Main.platform.getFont(titleFontSize, lang.get("controls.title"), false, false);
-        sectionFont = Main.platform.getFont(sectionFontSize, "Section Title", false, false);
+        titleFont = Main.platform.getFont(fontSize(24), lang.get("controls.title"), false, false);
+        sectionFont = Main.platform.getFont(fontSize(19), "Section Title", false, false);
 
         // 创建标题
         Label title;
@@ -80,40 +78,32 @@ public class ControlsSettingsState extends BaseUIState {
         rotateKey2Field = new TextField(TetrisSettings.rotateKey2(), skin);
         dropKey2Field = new TextField(TetrisSettings.dropKey2(), skin);
 
-        // 使用UIScaler缩放间距和元素大小
-        float padBottomTitle = toScreenHeight(30f);
-        float padRight = toScreenWidth(10f);
-        float padLeft = toScreenWidth(10f);
-        float padBottomRow = toScreenHeight(15f);
-        float smallFieldWidth = toScreenWidth(80f);
-        float buttonWidth = toScreenWidth(150f);
-        float scrollPaneHeight = toScreenHeight(300f);
-
+        // 使用新的简化方法进行缩放
         // 添加控制设置行
-        controlsContentTable.add(leftKeyLabel).right().padRight(padRight);
-        controlsContentTable.add(leftKeyField).width(smallFieldWidth).padRight(padLeft * 2);
-        controlsContentTable.add(leftKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+        controlsContentTable.add(leftKeyLabel).right().padRight(w(10f));
+        controlsContentTable.add(leftKeyField).width(w(80f)).padRight(w(20f));
+        controlsContentTable.add(leftKey2Field).width(w(80f)).padBottom(h(15f)).row();
 
-        controlsContentTable.add(rightKeyLabel).right().padRight(padRight);
-        controlsContentTable.add(rightKeyField).width(smallFieldWidth).padRight(padLeft * 2);
-        controlsContentTable.add(rightKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+        controlsContentTable.add(rightKeyLabel).right().padRight(w(10f));
+        controlsContentTable.add(rightKeyField).width(w(80f)).padRight(w(20f));
+        controlsContentTable.add(rightKey2Field).width(w(80f)).padBottom(h(15f)).row();
 
-        controlsContentTable.add(downKeyLabel).right().padRight(padRight);
-        controlsContentTable.add(downKeyField).width(smallFieldWidth).padRight(padLeft * 2);
-        controlsContentTable.add(downKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+        controlsContentTable.add(downKeyLabel).right().padRight(w(10f));
+        controlsContentTable.add(downKeyField).width(w(80f)).padRight(w(20f));
+        controlsContentTable.add(downKey2Field).width(w(80f)).padBottom(h(15f)).row();
 
-        controlsContentTable.add(rotateKeyLabel).right().padRight(padRight);
-        controlsContentTable.add(rotateKeyField).width(smallFieldWidth).padRight(padLeft * 2);
-        controlsContentTable.add(rotateKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+        controlsContentTable.add(rotateKeyLabel).right().padRight(w(10f));
+        controlsContentTable.add(rotateKeyField).width(w(80f)).padRight(w(20f));
+        controlsContentTable.add(rotateKey2Field).width(w(80f)).padBottom(h(15f)).row();
 
-        controlsContentTable.add(dropKeyLabel).right().padRight(padRight);
-        controlsContentTable.add(dropKeyField).width(smallFieldWidth).padRight(padLeft * 2);
-        controlsContentTable.add(dropKey2Field).width(smallFieldWidth).padBottom(padBottomRow).row();
+        controlsContentTable.add(dropKeyLabel).right().padRight(w(10f));
+        controlsContentTable.add(dropKeyField).width(w(80f)).padRight(w(20f));
+        controlsContentTable.add(dropKey2Field).width(w(80f)).padBottom(h(15f)).row();
 
         // 创建滚动窗
         com.badlogic.gdx.scenes.scene2d.ui.ScrollPane scrollPane = new com.badlogic.gdx.scenes.scene2d.ui.ScrollPane(controlsContentTable, skin);
-        scrollPane.setHeight(scrollPaneHeight);
-        scrollPane.setWidth(toScreenWidth(500f));
+        scrollPane.setHeight(h(300f));
+        scrollPane.setWidth(w(500f));
         scrollPane.setFadeScrollBars(false);
         scrollPane.setScrollingDisabled(false, true);
 
@@ -136,12 +126,20 @@ public class ControlsSettingsState extends BaseUIState {
         });
 
         // 组装主表格
-        table.add(title).padBottom(padBottomTitle).row();
-        table.add(scrollPane).padBottom(padBottomRow).row();
-        table.add(saveButton).width(buttonWidth).padBottom(padBottomRow).row();
-        table.add(backButton).width(buttonWidth).row();
+        table.add(title).padBottom(h(30f)).row();
+        table.add(scrollPane).padBottom(h(15f)).row();
+        table.add(saveButton).width(w(150f)).padBottom(h(15f)).row();
+        table.add(backButton).width(w(150f)).row();
 
         stage.addActor(table);
+    }
+
+    @Override
+    protected void clearUI() {
+        if (table != null) {
+            table.remove();
+            table = null;
+        }
     }
 
     private void saveSettings() {
@@ -160,13 +158,6 @@ public class ControlsSettingsState extends BaseUIState {
     }
 
     @Override
-    public void hide() {
-        if (table != null) {
-            table.remove();
-        }
-    }
-
-    @Override
     public void update(float delta) {
         // 设置界面不需要更新逻辑
     }
@@ -176,9 +167,11 @@ public class ControlsSettingsState extends BaseUIState {
         // 释放生成的字体
         if (titleFont != null) {
             titleFont.dispose();
+            titleFont = null;
         }
         if (sectionFont != null) {
             sectionFont.dispose();
+            sectionFont = null;
         }
     }
 }

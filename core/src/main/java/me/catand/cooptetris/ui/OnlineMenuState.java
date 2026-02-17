@@ -3,10 +3,8 @@ package me.catand.cooptetris.ui;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
@@ -24,6 +22,9 @@ import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
 
+/**
+ * 联机菜单状态 - 使用新的简化缩放接口
+ */
 public class OnlineMenuState extends BaseUIState implements NetworkManager.NetworkListener {
     private Table mainTable;
     private Table connectionTable;
@@ -52,19 +53,17 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
     }
 
     @Override
-    public void show(Stage stage, Skin skin) {
-        super.show(stage, skin);
-
+    protected void createUI() {
         mainTable = new Table();
-        mainTable.setFillParent(true);
+        mainTable.setPosition(offsetX(), offsetY());
+        mainTable.setSize(displayWidth(), displayHeight());
         mainTable.center();
-        mainTable.pad(toScreenHeight(20f));
+        mainTable.pad(h(20f));
 
         LanguageManager lang = LanguageManager.getInstance();
 
         // 生成适当大小的标题字体，考虑缩放比例
-        int titleFontSize = (int) (24 * getScale());
-        titleFont = Main.platform.getFont(titleFontSize, lang.get("online.mode.title"), false, false);
+        titleFont = Main.platform.getFont(fontSize(24), lang.get("online.mode.title"), false, false);
         Label title;
         if (titleFont != null) {
             Label.LabelStyle labelStyle = new Label.LabelStyle(titleFont, skin.getColor("font"));
@@ -82,7 +81,7 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
 
         // 连接设置区域
         connectionTable = new Table();
-        connectionTable.defaults().padBottom(toScreenHeight(10f));
+        connectionTable.defaults().padBottom(h(10f));
 
         Label hostLabel = new Label(lang.get("host"), skin);
         hostField = new TextField("localhost", skin);
@@ -95,19 +94,17 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
         String savedPlayerName = TetrisSettings.playerName();
         playerNameField = new TextField(savedPlayerName, skin);
 
-        float fieldWidth = toScreenWidth(200f);
-        float padRight = toScreenWidth(10f);
-        connectionTable.add(hostLabel).right().padRight(padRight);
-        connectionTable.add(hostField).width(fieldWidth).row();
-        connectionTable.add(portLabel).right().padRight(padRight);
-        connectionTable.add(portField).width(fieldWidth).row();
-        connectionTable.add(playerNameLabel).right().padRight(padRight);
-        connectionTable.add(playerNameField).width(fieldWidth).row();
+        connectionTable.add(hostLabel).right().padRight(w(10f));
+        connectionTable.add(hostField).width(w(200f)).row();
+        connectionTable.add(portLabel).right().padRight(w(10f));
+        connectionTable.add(portField).width(w(200f)).row();
+        connectionTable.add(playerNameLabel).right().padRight(w(10f));
+        connectionTable.add(playerNameField).width(w(200f)).row();
 
 
         // 房间列表区域
         roomListTable = new Table();
-        roomListTable.defaults().width(toScreenWidth(300f)).padBottom(toScreenHeight(5f));
+        roomListTable.defaults().width(w(300f)).padBottom(h(5f));
         roomListTable.add(new Label(lang.get("no.rooms.available"), skin)).center().row();
 
         roomListScrollPane = new ScrollPane(roomListTable, skin);
@@ -117,7 +114,7 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
 
         // 按钮区域
         Table buttonTable = new Table();
-        buttonTable.defaults().width(toScreenWidth(200f)).height(toScreenHeight(50f)).padBottom(toScreenHeight(10f));
+        buttonTable.defaults().width(w(200f)).height(h(50f)).padBottom(h(10f));
 
         TextButton connectServerButton = new TextButton(lang.get("connect"), skin);
         connectServerButton.addListener(event -> {
@@ -169,17 +166,11 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
         buttonTable.add(backButton).row();
 
         // 组装主表格
-        float padBottomTitle = toScreenHeight(20f);
-        float padBottomStatus = toScreenHeight(10f);
-        float padRightConnection = toScreenWidth(20f);
-        float padTopRoomList = toScreenHeight(20f);
-        float roomListHeight = toScreenHeight(200f);
-
-        mainTable.add(title).colspan(2).padBottom(padBottomTitle).row();
-        mainTable.add(statusLabel).colspan(2).padBottom(padBottomStatus).row();
-        mainTable.add(connectionTable).left().padRight(padRightConnection);
+        mainTable.add(title).colspan(2).padBottom(h(20f)).row();
+        mainTable.add(statusLabel).colspan(2).padBottom(h(10f)).row();
+        mainTable.add(connectionTable).left().padRight(w(20f));
         mainTable.add(buttonTable).left().row();
-        mainTable.add(roomListScrollPane).colspan(2).height(roomListHeight).padTop(padTopRoomList).row();
+        mainTable.add(roomListScrollPane).colspan(2).height(h(200f)).padTop(h(20f)).row();
 
         // 将当前实例添加为NetworkManager的监听器
         NetworkManager networkManager = uiManager.getNetworkManager();
@@ -191,7 +182,7 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
     }
 
     @Override
-    public void hide() {
+    protected void clearUI() {
         // 将当前实例从NetworkManager的监听器中移除
         NetworkManager networkManager = uiManager.getNetworkManager();
         if (networkManager != null) {
@@ -199,6 +190,7 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
         }
         if (mainTable != null) {
             mainTable.remove();
+            mainTable = null;
         }
     }
 
@@ -213,6 +205,7 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
         // 释放生成的标题字体
         if (titleFont != null) {
             titleFont.dispose();
+            titleFont = null;
         }
     }
 

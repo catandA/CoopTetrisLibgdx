@@ -4,29 +4,37 @@ import com.badlogic.gdx.Gdx;
 
 import lombok.Getter;
 
+/**
+ * UI缩放工具类 - 简化版
+ * <p>
+ * 设计思路：
+ * 1. 以1280x720为设计基准分辨率
+ * 2. 所有UI元素按设计分辨率定位
+ * 3. 运行时根据实际屏幕尺寸进行等比例缩放
+ * 4. 不再计算黑边，UI直接铺满屏幕
+ */
 public class UIScaler {
-    // 目标分辨率（16:9）
-    public static final int TARGET_WIDTH = 1280;
-    public static final int TARGET_HEIGHT = 720;
+    // 设计基准分辨率（16:9）
+    public static final int DESIGN_WIDTH = 1280;
+    public static final int DESIGN_HEIGHT = 720;
 
-    // 实际屏幕尺寸
+    // 当前屏幕尺寸
+    @Getter
     private int screenWidth;
+    @Getter
     private int screenHeight;
 
-    // 缩放比例
+    // 缩放比例（以宽度为基准，保持UI元素比例）
+    @Getter
+    private float scaleX;
+
+    // 缩放比例（以高度为基准）
+    @Getter
+    private float scaleY;
+
+    // 统一缩放比例（取较小值确保UI完整显示）
     @Getter
     private float scale;
-
-    @Getter
-    private float offsetX;
-    @Getter
-    private float offsetY;
-
-    // 实际显示区域的大小
-    @Getter
-    private float displayWidth;
-    @Getter
-    private float displayHeight;
 
     private static UIScaler instance;
 
@@ -48,38 +56,31 @@ public class UIScaler {
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
 
-        // 计算屏幕宽高比
-        float screenAspectRatio = (float) screenWidth / screenHeight;
-        float targetAspectRatio = (float) TARGET_WIDTH / TARGET_HEIGHT; // 16:9 = 1.777...
+        // 计算X和Y方向的缩放比例
+        scaleX = (float) screenWidth / DESIGN_WIDTH;
+        scaleY = (float) screenHeight / DESIGN_HEIGHT;
 
-        if (screenAspectRatio > targetAspectRatio) {
-            // 屏幕比目标更宽，以高度为基准缩放
-            scale = (float) screenHeight / TARGET_HEIGHT;
-            displayHeight = screenHeight;
-            displayWidth = TARGET_WIDTH * scale;
-            offsetX = (screenWidth - displayWidth) / 2;
-            offsetY = 0;
-        } else {
-            // 屏幕比目标更高，以宽度为基准缩放
-            scale = (float) screenWidth / TARGET_WIDTH;
-            displayWidth = screenWidth;
-            displayHeight = TARGET_HEIGHT * scale;
-            offsetX = 0;
-            offsetY = (screenHeight - displayHeight) / 2;
-        }
+        // 使用统一缩放比例（取较小值确保UI完整显示在屏幕内）
+        scale = Math.min(scaleX, scaleY);
     }
 
     /**
      * 将设计时的X坐标转换为实际屏幕X坐标
+     * 居中显示：在宽屏上左右留白，在窄屏上铺满
      */
     public float toScreenX(float designX) {
+        float displayWidth = DESIGN_WIDTH * scale;
+        float offsetX = (screenWidth - displayWidth) / 2;
         return offsetX + designX * scale;
     }
 
     /**
      * 将设计时的Y坐标转换为实际屏幕Y坐标
+     * 居中显示：在超宽屏上上下留白，在窄屏上铺满
      */
     public float toScreenY(float designY) {
+        float displayHeight = DESIGN_HEIGHT * scale;
+        float offsetY = (screenHeight - displayHeight) / 2;
         return offsetY + designY * scale;
     }
 
@@ -98,9 +99,37 @@ public class UIScaler {
     }
 
     /**
-     * 检查点是否在实际显示区域内
+     * 将设计时的字体大小转换为实际字体大小
      */
-    public boolean isInDisplayArea(float screenX, float screenY) {
-        return screenX >= offsetX && screenX <= offsetX + displayWidth && screenY >= offsetY && screenY <= offsetY + displayHeight;
+    public int toFontSize(int designFontSize) {
+        return Math.round(designFontSize * scale);
+    }
+
+    /**
+     * 获取实际显示区域的宽度（缩放后的设计宽度）
+     */
+    public float getDisplayWidth() {
+        return DESIGN_WIDTH * scale;
+    }
+
+    /**
+     * 获取实际显示区域的高度（缩放后的设计高度）
+     */
+    public float getDisplayHeight() {
+        return DESIGN_HEIGHT * scale;
+    }
+
+    /**
+     * 获取水平方向的偏移量（用于居中）
+     */
+    public float getOffsetX() {
+        return (screenWidth - getDisplayWidth()) / 2;
+    }
+
+    /**
+     * 获取垂直方向的偏移量（用于居中）
+     */
+    public float getOffsetY() {
+        return (screenHeight - getDisplayHeight()) / 2;
     }
 }

@@ -3,9 +3,7 @@ package me.catand.cooptetris.ui;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
@@ -14,6 +12,9 @@ import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.VersionManager;
 
+/**
+ * 主菜单状态 - 使用新的简化缩放接口
+ */
 public class MainMenuState extends BaseUIState {
     private Table table;
     private BitmapFont titleFont;
@@ -24,18 +25,16 @@ public class MainMenuState extends BaseUIState {
     }
 
     @Override
-    public void show(Stage stage, Skin skin) {
-        super.show(stage, skin);
-
+    protected void createUI() {
         table = new Table();
-        table.setFillParent(true);
+        table.setPosition(offsetX(), offsetY());
+        table.setSize(displayWidth(), displayHeight());
         table.center();
 
         LanguageManager lang = LanguageManager.getInstance();
 
         // 为标题创建一个更大的字体，考虑缩放比例
-        int titleFontSize = (int) (32 * getScale());
-        titleFont = Main.platform.getFont(titleFontSize, lang.get("title"), false, false);
+        titleFont = Main.platform.getFont(fontSize(32), lang.get("title"), false, false);
 
         // 创建标题
         Label title;
@@ -89,17 +88,12 @@ public class MainMenuState extends BaseUIState {
             return true;
         });
 
-        // 使用UIScaler缩放按钮大小和间距
-        float buttonWidth = toScreenWidth(200f);
-        float buttonHeight = toScreenHeight(60f);
-        float padBottomTitle = toScreenHeight(50f);
-        float padBottomButton = toScreenHeight(20f);
-
-        table.add(title).padBottom(padBottomTitle).row();
-        table.add(startButton).width(buttonWidth).height(buttonHeight).padBottom(padBottomButton).row();
-        table.add(onlineButton).width(buttonWidth).height(buttonHeight).padBottom(padBottomButton).row();
-        table.add(settingsButton).width(buttonWidth).height(buttonHeight).padBottom(padBottomButton).row();
-        table.add(exitButton).width(buttonWidth).height(buttonHeight).row();
+        // 使用新的简化方法进行缩放
+        table.add(title).padBottom(h(50f)).row();
+        table.add(startButton).width(w(200f)).height(h(60f)).padBottom(h(20f)).row();
+        table.add(onlineButton).width(w(200f)).height(h(60f)).padBottom(h(20f)).row();
+        table.add(settingsButton).width(w(200f)).height(h(60f)).padBottom(h(20f)).row();
+        table.add(exitButton).width(w(200f)).height(h(60f)).row();
 
         stage.addActor(table);
 
@@ -110,16 +104,17 @@ public class MainMenuState extends BaseUIState {
         versionLabel.setAlignment(Align.bottomRight);
         // 使用setPosition的正确方法，考虑标签的宽度
         versionLabel.setPosition(
-            stage.getViewport().getWorldWidth() - versionLabel.getWidth() - toScreenWidth(20f),
-            toScreenHeight(20f)
+            stage.getViewport().getWorldWidth() - versionLabel.getWidth() - w(20f),
+            h(20f)
         );
         stage.addActor(versionLabel);
     }
 
     @Override
-    public void hide() {
+    protected void clearUI() {
         if (table != null) {
             table.remove();
+            table = null;
         }
         if (versionLabel != null) {
             versionLabel.remove();
@@ -137,6 +132,7 @@ public class MainMenuState extends BaseUIState {
         // 释放生成的标题字体
         if (titleFont != null) {
             titleFont.dispose();
+            titleFont = null;
         }
     }
 }

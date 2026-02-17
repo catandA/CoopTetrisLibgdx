@@ -5,9 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 
@@ -17,8 +15,10 @@ import me.catand.cooptetris.shared.tetris.GameLogic;
 import me.catand.cooptetris.tetris.GameStateManager;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
-import me.catand.cooptetris.util.UIScaler;
 
+/**
+ * 游戏状态 - 使用新的简化缩放接口
+ */
 public class GameState extends BaseUIState {
     private Table uiTable;
     private final GameStateManager gameStateManager;
@@ -28,8 +28,8 @@ public class GameState extends BaseUIState {
     private Label linesLabel;
     private boolean isDownKeyPressed = false;
     private float downKeyPressTime = 0;
-    private float initialDelay = 0.5f; // 初始延迟0.5秒
-    private float softDropInterval = 0.1f; // 软降间隔0.1秒
+    private final float initialDelay = 0.5f; // 初始延迟0.5秒
+    private final float softDropInterval = 0.1f; // 软降间隔0.1秒
     private float lastSoftDropTime = 0;
     private float boardX; // 游戏板X坐标
     private float boardY; // 游戏板Y坐标
@@ -37,8 +37,6 @@ public class GameState extends BaseUIState {
     public GameState(UIManager uiManager, GameStateManager gameStateManager) {
         super(uiManager);
         this.gameStateManager = gameStateManager;
-        cellSize = 30f;
-        calculateBoardPosition();
     }
 
     // 辅助方法，获取LanguageManager实例
@@ -47,17 +45,20 @@ public class GameState extends BaseUIState {
     }
 
     @Override
-    public void show(Stage stage, Skin skin) {
-        super.show(stage, skin);
+    protected void createUI() {
+        // 计算游戏板位置和大小
+        calculateBoardPosition();
 
+        // 创建根容器，限制在16:9显示区域内
         uiTable = new Table();
-        uiTable.setFillParent(true);
+        uiTable.setPosition(offsetX(), offsetY());
+        uiTable.setSize(displayWidth(), displayHeight());
 
         // 创建一个容器表格来放置UI元素
         Table uiContainer = new Table();
         uiContainer.right().top();
-        uiContainer.padTop(100f);
-        uiContainer.padRight(100f);
+        uiContainer.padTop(h(100f));
+        uiContainer.padRight(w(100f));
 
         Label scoreTitle = new Label(lang().get("score.title"), skin);
         scoreLabel = new Label("0", skin);
@@ -94,14 +95,14 @@ public class GameState extends BaseUIState {
         });
 
         // 按钮宽度（使用设计分辨率的像素值）
-        float buttonWidth = 150f;
-        uiContainer.add(scoreTitle).right().padRight(10f);
-        uiContainer.add(scoreLabel).padBottom(10f).row();
-        uiContainer.add(levelTitle).right().padRight(10f);
-        uiContainer.add(levelLabel).padBottom(10f).row();
-        uiContainer.add(linesTitle).right().padRight(10f);
-        uiContainer.add(linesLabel).padBottom(30f).row();
-        uiContainer.add(pauseButton).colspan(2).width(buttonWidth).padBottom(10f).row();
+        float buttonWidth = w(150f);
+        uiContainer.add(scoreTitle).right().padRight(w(10f));
+        uiContainer.add(scoreLabel).padBottom(h(10f)).row();
+        uiContainer.add(levelTitle).right().padRight(w(10f));
+        uiContainer.add(levelLabel).padBottom(h(10f)).row();
+        uiContainer.add(linesTitle).right().padRight(w(10f));
+        uiContainer.add(linesLabel).padBottom(h(30f)).row();
+        uiContainer.add(pauseButton).colspan(2).width(buttonWidth).padBottom(h(10f)).row();
         uiContainer.add(exitButton).colspan(2).width(buttonWidth).row();
 
         // 将容器表格添加到主表格的右侧
@@ -113,9 +114,10 @@ public class GameState extends BaseUIState {
     }
 
     @Override
-    public void hide() {
+    protected void clearUI() {
         if (uiTable != null) {
             uiTable.remove();
+            uiTable = null;
         }
     }
 
@@ -322,11 +324,14 @@ public class GameState extends BaseUIState {
      * 计算游戏板的位置，确保它在屏幕内
      */
     private void calculateBoardPosition() {
-        // 使用固定的cellSize（基于1280x720分辨率）
-        cellSize = 30f;
+        // 基础cellSize（基于1280x720分辨率）
+        float baseCellSize = 30f;
+
+        // 根据缩放比例调整cellSize
+        cellSize = baseCellSize * scale();
 
         // 确保cellSize不会太大
-        float maxCellSize = 40f;
+        float maxCellSize = h(40f);
         if (cellSize > maxCellSize) {
             cellSize = maxCellSize;
         }
@@ -334,29 +339,22 @@ public class GameState extends BaseUIState {
         // 计算游戏板在设计分辨率下的高度
         float boardHeight = GameLogic.BOARD_HEIGHT * cellSize;
         // 计算游戏板在设计分辨率下的垂直居中位置
-        float boardYPos = (UIScaler.TARGET_HEIGHT - boardHeight) / 2;
+        float boardYPos = (displayHeight() - boardHeight) / 2 + offsetY();
 
-        // 直接使用设计分辨率的坐标
-        boardX = 100f; // 设计时X坐标
-        boardY = boardYPos; // 垂直居中
+        // 计算游戏板X坐标（左侧留出空间）
+        boardX = offsetX() + w(100f);
+        boardY = boardYPos;
     }
 
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
-        
+
         // 调整游戏板大小和位置
         calculateBoardPosition();
-
-        // 调整UI表的布局
-        if (uiTable != null) {
-            // 重新计算布局
-            uiTable.invalidateHierarchy();
-        }
     }
 
     @Override
     public void dispose() {
     }
-
 }

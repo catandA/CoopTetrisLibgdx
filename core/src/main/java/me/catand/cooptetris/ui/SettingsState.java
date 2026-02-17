@@ -2,9 +2,7 @@ package me.catand.cooptetris.ui;
 
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
@@ -14,6 +12,9 @@ import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
 
+/**
+ * 设置界面状态 - 使用新的简化缩放接口
+ */
 public class SettingsState extends BaseUIState {
     private Table table;
     private TextField difficultyField;
@@ -28,20 +29,17 @@ public class SettingsState extends BaseUIState {
     }
 
     @Override
-    public void show(Stage stage, Skin skin) {
-        super.show(stage, skin);
-
+    protected void createUI() {
         table = new Table();
-        table.setFillParent(true);
+        table.setPosition(offsetX(), offsetY());
+        table.setSize(displayWidth(), displayHeight());
         table.center();
 
         LanguageManager lang = LanguageManager.getInstance();
 
         // 生成标题字体和section字体，考虑缩放比例
-        int titleFontSize = (int) (24 * getScale());
-        int sectionFontSize = (int) (19 * getScale());
-        titleFont = Main.platform.getFont(titleFontSize, lang.get("settings.title"), false, false);
-        sectionFont = Main.platform.getFont(sectionFontSize, "Section Title", false, false);
+        titleFont = Main.platform.getFont(fontSize(24), lang.get("settings.title"), false, false);
+        sectionFont = Main.platform.getFont(fontSize(19), "Section Title", false, false);
 
         // 创建标题
         Label title;
@@ -97,8 +95,7 @@ public class SettingsState extends BaseUIState {
                 saveLanguageSetting();
 
                 // 重新加载当前界面以更新语言
-                hide();
-                show(stage, skin);
+                recreateUI();
             }
         });
 
@@ -128,39 +125,38 @@ public class SettingsState extends BaseUIState {
             return true;
         });
 
-        // 使用UIScaler缩放间距和元素大小
-        float padBottomTitle = toScreenHeight(30f);
-        float padRight = toScreenWidth(10f);
-        float padBottomField = toScreenHeight(10f);
-        float padBottomSection = toScreenHeight(20f);
-        float smallFieldWidth = toScreenWidth(100f);
-        float mediumFieldWidth = toScreenWidth(150f);
-        float largeFieldWidth = toScreenWidth(200f);
-        float buttonWidth = toScreenWidth(150f);
-
-        table.add(title).padBottom(padBottomTitle).row();
+        // 使用新的简化方法进行缩放
+        table.add(title).padBottom(h(30f)).row();
 
         // 难度设置
-        table.add(difficultyLabel).right().padRight(padRight);
-        table.add(difficultyField).width(smallFieldWidth).padBottom(padBottomSection).row();
+        table.add(difficultyLabel).right().padRight(w(10f));
+        table.add(difficultyField).width(w(100f)).padBottom(h(20f)).row();
 
         // 网络设置
-        table.add(networkLabel).colspan(2).padBottom(padBottomField).row();
-        table.add(defaultHostLabel).right().padRight(padRight);
-        table.add(defaultHostField).width(largeFieldWidth).padBottom(padBottomField).row();
-        table.add(defaultPortLabel).right().padRight(padRight);
-        table.add(defaultPortField).width(smallFieldWidth).padBottom(padBottomSection).row();
+        table.add(networkLabel).colspan(2).padBottom(h(10f)).row();
+        table.add(defaultHostLabel).right().padRight(w(10f));
+        table.add(defaultHostField).width(w(200f)).padBottom(h(10f)).row();
+        table.add(defaultPortLabel).right().padRight(w(10f));
+        table.add(defaultPortField).width(w(100f)).padBottom(h(20f)).row();
 
         // 语言设置
-        table.add(languageLabel).right().padRight(padRight);
-        table.add(languageBox).width(mediumFieldWidth).padBottom(padBottomSection).row();
+        table.add(languageLabel).right().padRight(w(10f));
+        table.add(languageBox).width(w(150f)).padBottom(h(20f)).row();
 
         // 按钮
-        table.add(controlsButton).width(buttonWidth).padBottom(padBottomField).row();
-        table.add(saveButton).width(buttonWidth).padBottom(padBottomField).row();
-        table.add(backButton).width(buttonWidth).row();
+        table.add(controlsButton).width(w(150f)).padBottom(h(10f)).row();
+        table.add(saveButton).width(w(150f)).padBottom(h(10f)).row();
+        table.add(backButton).width(w(150f)).row();
 
         stage.addActor(table);
+    }
+
+    @Override
+    protected void clearUI() {
+        if (table != null) {
+            table.remove();
+            table = null;
+        }
     }
 
     private void saveSettings() {
@@ -184,13 +180,6 @@ public class SettingsState extends BaseUIState {
     }
 
     @Override
-    public void hide() {
-        if (table != null) {
-            table.remove();
-        }
-    }
-
-    @Override
     public void update(float delta) {
         // 设置界面不需要更新逻辑
     }
@@ -200,9 +189,11 @@ public class SettingsState extends BaseUIState {
         // 释放生成的字体
         if (titleFont != null) {
             titleFont.dispose();
+            titleFont = null;
         }
         if (sectionFont != null) {
             sectionFont.dispose();
+            sectionFont = null;
         }
     }
 }

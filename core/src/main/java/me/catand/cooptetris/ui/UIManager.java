@@ -20,6 +20,11 @@ import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.util.UIScaler;
 
+/**
+ * UI管理器 - 简化版
+ * <p>
+ * 使用ScreenViewport让UI直接以屏幕像素为单位，
+ */
 public class UIManager {
     @Getter
     private final Stage stage;
@@ -38,8 +43,8 @@ public class UIManager {
         // 初始化UIScaler
         UIScaler.getInstance().update();
 
-        // 使用FitViewport保持16:9的宽高比
-        stage = new Stage(new com.badlogic.gdx.utils.viewport.FitViewport(UIScaler.TARGET_WIDTH, UIScaler.TARGET_HEIGHT));
+        // 使用ScreenViewport - UI元素直接使用屏幕像素坐标
+        stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
 
         // 尝试加载支持中文的字体
@@ -64,7 +69,7 @@ public class UIManager {
 
             // 根据缩放比例计算字体大小
             int baseSize = 16;
-            int scaledSize = (int) (baseSize * scale);
+            int scaledSize = Math.round(baseSize * scale);
 
             BitmapFont font = Main.platform.getFont(scaledSize, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", false, false);
             if (font != null) {
@@ -133,8 +138,10 @@ public class UIManager {
         // 更新skin中的字体大小
         updateSkinFonts();
 
-        // 使用FitViewport的update方法，保持宽高比
+        // 更新viewport
         stage.getViewport().update(width, height, true);
+
+        // 通知当前状态重新布局
         if (!uiStates.isEmpty()) {
             uiStates.peek().resize(width, height);
         }
@@ -151,6 +158,4 @@ public class UIManager {
     public UIState getCurrentState() {
         return uiStates.isEmpty() ? null : uiStates.peek();
     }
-
-
 }
