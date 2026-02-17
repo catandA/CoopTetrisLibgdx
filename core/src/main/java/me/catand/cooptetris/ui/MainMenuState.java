@@ -102,10 +102,10 @@ public class MainMenuState extends BaseUIState {
         String versionInfo = versionManager.getVersionInfo();
         versionLabel = new Label(versionInfo, skin);
         versionLabel.setAlignment(Align.bottomRight);
-        // 使用setPosition的正确方法，考虑标签的宽度
+        // 使用displayWidth()和offsetX()来定位，确保在缩放时位置正确
         versionLabel.setPosition(
-            stage.getViewport().getWorldWidth() - versionLabel.getWidth() - w(20f),
-            h(20f)
+            offsetX() + displayWidth() - versionLabel.getWidth() - w(20f),
+            offsetY() + h(20f)
         );
         stage.addActor(versionLabel);
     }

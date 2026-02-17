@@ -94,16 +94,17 @@ public class GameState extends BaseUIState {
             return true;
         });
 
-        // 按钮宽度（使用设计分辨率的像素值）
+        // 按钮宽度和高度（使用设计分辨率的像素值）
         float buttonWidth = w(150f);
+        float buttonHeight = h(50f);
         uiContainer.add(scoreTitle).right().padRight(w(10f));
         uiContainer.add(scoreLabel).padBottom(h(10f)).row();
         uiContainer.add(levelTitle).right().padRight(w(10f));
         uiContainer.add(levelLabel).padBottom(h(10f)).row();
         uiContainer.add(linesTitle).right().padRight(w(10f));
         uiContainer.add(linesLabel).padBottom(h(30f)).row();
-        uiContainer.add(pauseButton).colspan(2).width(buttonWidth).padBottom(h(10f)).row();
-        uiContainer.add(exitButton).colspan(2).width(buttonWidth).row();
+        uiContainer.add(pauseButton).colspan(2).width(buttonWidth).height(buttonHeight).padBottom(h(10f)).row();
+        uiContainer.add(exitButton).colspan(2).width(buttonWidth).height(buttonHeight).row();
 
         // 将容器表格添加到主表格的右侧
         uiTable.add().expandX();

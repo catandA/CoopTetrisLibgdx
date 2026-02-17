@@ -81,24 +81,24 @@ public class ControlsSettingsState extends BaseUIState {
         // 使用新的简化方法进行缩放
         // 添加控制设置行
         controlsContentTable.add(leftKeyLabel).right().padRight(w(10f));
-        controlsContentTable.add(leftKeyField).width(w(80f)).padRight(w(20f));
-        controlsContentTable.add(leftKey2Field).width(w(80f)).padBottom(h(15f)).row();
+        controlsContentTable.add(leftKeyField).width(w(80f)).height(h(40f)).padRight(w(20f));
+        controlsContentTable.add(leftKey2Field).width(w(80f)).height(h(40f)).padBottom(h(15f)).row();
 
         controlsContentTable.add(rightKeyLabel).right().padRight(w(10f));
-        controlsContentTable.add(rightKeyField).width(w(80f)).padRight(w(20f));
-        controlsContentTable.add(rightKey2Field).width(w(80f)).padBottom(h(15f)).row();
+        controlsContentTable.add(rightKeyField).width(w(80f)).height(h(40f)).padRight(w(20f));
+        controlsContentTable.add(rightKey2Field).width(w(80f)).height(h(40f)).padBottom(h(15f)).row();
 
         controlsContentTable.add(downKeyLabel).right().padRight(w(10f));
-        controlsContentTable.add(downKeyField).width(w(80f)).padRight(w(20f));
-        controlsContentTable.add(downKey2Field).width(w(80f)).padBottom(h(15f)).row();
+        controlsContentTable.add(downKeyField).width(w(80f)).height(h(40f)).padRight(w(20f));
+        controlsContentTable.add(downKey2Field).width(w(80f)).height(h(40f)).padBottom(h(15f)).row();
 
         controlsContentTable.add(rotateKeyLabel).right().padRight(w(10f));
-        controlsContentTable.add(rotateKeyField).width(w(80f)).padRight(w(20f));
-        controlsContentTable.add(rotateKey2Field).width(w(80f)).padBottom(h(15f)).row();
+        controlsContentTable.add(rotateKeyField).width(w(80f)).height(h(40f)).padRight(w(20f));
+        controlsContentTable.add(rotateKey2Field).width(w(80f)).height(h(40f)).padBottom(h(15f)).row();
 
         controlsContentTable.add(dropKeyLabel).right().padRight(w(10f));
-        controlsContentTable.add(dropKeyField).width(w(80f)).padRight(w(20f));
-        controlsContentTable.add(dropKey2Field).width(w(80f)).padBottom(h(15f)).row();
+        controlsContentTable.add(dropKeyField).width(w(80f)).height(h(40f)).padRight(w(20f));
+        controlsContentTable.add(dropKey2Field).width(w(80f)).height(h(40f)).padBottom(h(15f)).row();
 
         // 创建滚动窗
         com.badlogic.gdx.scenes.scene2d.ui.ScrollPane scrollPane = new com.badlogic.gdx.scenes.scene2d.ui.ScrollPane(controlsContentTable, skin);
@@ -128,8 +128,8 @@ public class ControlsSettingsState extends BaseUIState {
         // 组装主表格
         table.add(title).padBottom(h(30f)).row();
         table.add(scrollPane).padBottom(h(15f)).row();
-        table.add(saveButton).width(w(150f)).padBottom(h(15f)).row();
-        table.add(backButton).width(w(150f)).row();
+        table.add(saveButton).width(w(150f)).height(h(50f)).padBottom(h(15f)).row();
+        table.add(backButton).width(w(150f)).height(h(50f)).row();
 
         stage.addActor(table);
     }

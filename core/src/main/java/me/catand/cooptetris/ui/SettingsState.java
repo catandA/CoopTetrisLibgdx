@@ -130,23 +130,23 @@ public class SettingsState extends BaseUIState {
 
         // 难度设置
         table.add(difficultyLabel).right().padRight(w(10f));
-        table.add(difficultyField).width(w(100f)).padBottom(h(20f)).row();
+        table.add(difficultyField).width(w(100f)).height(h(40f)).padBottom(h(20f)).row();
 
         // 网络设置
         table.add(networkLabel).colspan(2).padBottom(h(10f)).row();
         table.add(defaultHostLabel).right().padRight(w(10f));
-        table.add(defaultHostField).width(w(200f)).padBottom(h(10f)).row();
+        table.add(defaultHostField).width(w(200f)).height(h(40f)).padBottom(h(10f)).row();
         table.add(defaultPortLabel).right().padRight(w(10f));
-        table.add(defaultPortField).width(w(100f)).padBottom(h(20f)).row();
+        table.add(defaultPortField).width(w(100f)).height(h(40f)).padBottom(h(20f)).row();
 
         // 语言设置
         table.add(languageLabel).right().padRight(w(10f));
-        table.add(languageBox).width(w(150f)).padBottom(h(20f)).row();
+        table.add(languageBox).width(w(150f)).height(h(40f)).padBottom(h(20f)).row();
 
         // 按钮
-        table.add(controlsButton).width(w(150f)).padBottom(h(10f)).row();
-        table.add(saveButton).width(w(150f)).padBottom(h(10f)).row();
-        table.add(backButton).width(w(150f)).row();
+        table.add(controlsButton).width(w(150f)).height(h(50f)).padBottom(h(10f)).row();
+        table.add(saveButton).width(w(150f)).height(h(50f)).padBottom(h(10f)).row();
+        table.add(backButton).width(w(150f)).height(h(50f)).row();
 
         stage.addActor(table);
     }

@@ -95,11 +95,11 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
         playerNameField = new TextField(savedPlayerName, skin);
 
         connectionTable.add(hostLabel).right().padRight(w(10f));
-        connectionTable.add(hostField).width(w(200f)).row();
+        connectionTable.add(hostField).width(w(200f)).height(h(40f)).row();
         connectionTable.add(portLabel).right().padRight(w(10f));
-        connectionTable.add(portField).width(w(200f)).row();
+        connectionTable.add(portField).width(w(200f)).height(h(40f)).row();
         connectionTable.add(playerNameLabel).right().padRight(w(10f));
-        connectionTable.add(playerNameField).width(w(200f)).row();
+        connectionTable.add(playerNameField).width(w(200f)).height(h(40f)).row();
 
 
         // 房间列表区域

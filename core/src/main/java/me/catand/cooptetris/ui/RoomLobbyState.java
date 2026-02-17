@@ -158,7 +158,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         chatInputContainer.defaults().padRight(w(5f));
 
         chatInputField = new TextField("", skin);
-        chatInputField.setWidth(w(320f));
         chatInputField.setMessageText(lang.get("type.message"));
         chatInputField.addListener(event -> {
             if (event instanceof InputEvent) {
@@ -173,7 +172,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         });
 
         sendChatButton = new TextButton(lang.get("send.button"), skin);
-        sendChatButton.setWidth(w(70f));
         sendChatButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 sendChatMessage();
@@ -181,8 +179,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             return true;
         });
 
-        chatInputContainer.add(chatInputField).fillX().expandX();
-        chatInputContainer.add(sendChatButton).width(w(70f));
+        chatInputContainer.add(chatInputField).fillX().expandX().height(h(40f));
+        chatInputContainer.add(sendChatButton).width(w(70f)).height(h(40f));
 
         chatContainer.add(borderTable).row();
         chatContainer.add(chatInputContainer).row();
@@ -319,7 +317,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
                     playerRow.add(playerLabel).left().expandX();
 
                     TextButton kickButton = new TextButton(lang().get("kick.button"), skin);
-                    kickButton.setWidth(w(60f));
                     final String targetPlayerName = playerName;
                     kickButton.addListener(event -> {
                         if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -328,7 +325,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
                         return true;
                     });
 
-                    playerRow.add(kickButton);
+                    playerRow.add(kickButton).width(w(60f)).height(h(40f));
                     playerListTable.add(playerRow).left().row();
                 } else {
                     playerListTable.add(playerLabel).left().row();
