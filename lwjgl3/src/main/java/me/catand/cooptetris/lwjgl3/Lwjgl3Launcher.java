@@ -1,9 +1,16 @@
 package me.catand.cooptetris.lwjgl3;
 
+import com.badlogic.gdx.Files;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3FileHandle;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Preferences;
+
+import java.io.File;
 
 import me.catand.cooptetris.Main;
+import me.catand.cooptetris.util.Point;
+import me.catand.cooptetris.util.TetrisSettings;
 
 /**
  * Launches the desktop (LWJGL3) application.
@@ -29,12 +36,9 @@ public class Lwjgl3Launcher {
             }
         }
 
-        new Lwjgl3Application(new Main(args, new DesktopPlatformSupport()), getDefaultConfiguration());
-    }
-
-    private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
         Lwjgl3ApplicationConfiguration configuration = new Lwjgl3ApplicationConfiguration();
-        configuration.setTitle("CoopTetris");
+        String title = "CoopTetris";
+        configuration.setTitle(title);
         //// Vsync limits the frames per second to what your hardware can display, and helps eliminate
         //// screen tearing. This setting doesn't always work on Linux, so the line after is a safeguard.
         configuration.useVsync(true);
@@ -45,7 +49,31 @@ public class Lwjgl3Launcher {
         //// useful for testing performance, but can also be very stressful to some hardware.
         //// You may also need to configure GPU drivers to fully disable Vsync; this can cause screen tearing.
 
-        configuration.setWindowedMode(640, 480);
+        String basePath;
+        Files.FileType baseFileType = Files.FileType.Absolute;
+
+        String userHome = System.getProperty("user.home");
+        basePath = userHome + "/.prefs/";
+
+        File prefsDir = new File(basePath);
+        if (!prefsDir.exists()) {
+            prefsDir.mkdirs();
+        }
+
+        TetrisSettings.set(new Lwjgl3Preferences(
+            new Lwjgl3FileHandle(
+                basePath + TetrisSettings.DEFAULT_PREFS_FILE, baseFileType)));
+
+
+        Point p = TetrisSettings.windowResolution();
+        configuration.setWindowedMode(p.x, p.y);
+
+        configuration.setMaximized(TetrisSettings.windowMaximized());
+
+        //records whether window is maximized or not for settings
+        DesktopWindowListener listener = new DesktopWindowListener();
+        configuration.setWindowListener(listener);
+
         //// You can change these files; they are in lwjgl3/src/main/resources/ .
         //// They can also be loaded from the root of assets/ .
         configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
@@ -60,6 +88,6 @@ public class Lwjgl3Launcher {
         //// Know that it might not work well in some cases.
 //        configuration.setOpenGLEmulation(Lwjgl3ApplicationConfiguration.GLEmulation.ANGLE_GLES20, 0, 0);
 
-        return configuration;
+        new Lwjgl3Application(new Main(args, new DesktopPlatformSupport()), configuration);
     }
 }

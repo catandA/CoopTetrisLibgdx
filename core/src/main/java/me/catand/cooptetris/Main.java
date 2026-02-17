@@ -165,6 +165,7 @@ public class Main extends ApplicationAdapter {
             Main.height = height;
         }
         uiManager.resize(width, height);
+        platform.updateDisplaySize();
     }
 
     @Override

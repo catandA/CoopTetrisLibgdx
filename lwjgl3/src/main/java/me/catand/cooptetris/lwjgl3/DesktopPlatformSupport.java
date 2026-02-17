@@ -9,8 +9,10 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.PlatformSupport;
 import me.catand.cooptetris.util.Point;
+import me.catand.cooptetris.util.TetrisSettings;
 
 public class DesktopPlatformSupport extends PlatformSupport {
 
@@ -21,16 +23,16 @@ public class DesktopPlatformSupport extends PlatformSupport {
     @Override
     public void updateDisplaySize() {
         // 读取和保存窗口分辨率配置
-        if (previousSizes == null){
+        if (previousSizes == null) {
             previousSizes = new Point[2];
-            previousSizes[1] = me.catand.cooptetris.util.TetrisSettings.windowResolution();
+            previousSizes[1] = TetrisSettings.windowResolution();
         } else {
             previousSizes[1] = previousSizes[0];
         }
-        previousSizes[0] = new Point(me.catand.cooptetris.Main.width, me.catand.cooptetris.Main.height);
+        previousSizes[0] = new Point(Main.width, Main.height);
         // 只在非全屏模式下保存窗口分辨率
-        if (!me.catand.cooptetris.util.TetrisSettings.fullscreen()) {
-            me.catand.cooptetris.util.TetrisSettings.windowResolution(previousSizes[0].x, previousSizes[0].y);
+        if (!TetrisSettings.fullscreen()) {
+            TetrisSettings.windowResolution(previousSizes[0]);
         }
     }
 
@@ -42,26 +44,26 @@ public class DesktopPlatformSupport extends PlatformSupport {
             @Override
             public void run() {
                 // 读取全屏配置
-                boolean isFullscreen = me.catand.cooptetris.util.TetrisSettings.fullscreen();
-                if (isFullscreen){
+                boolean isFullscreen = TetrisSettings.fullscreen();
+                if (isFullscreen) {
                     int monitorNum = 0;
-                    if (!first){
+                    if (!first) {
                         com.badlogic.gdx.Graphics.Monitor[] monitors = Gdx.graphics.getMonitors();
-                        for (int i = 0; i < monitors.length; i++){
-                            if (((com.badlogic.gdx.backends.lwjgl3.Lwjgl3Graphics.Lwjgl3Monitor)Gdx.graphics.getMonitor()).getMonitorHandle()
-                                    == ((com.badlogic.gdx.backends.lwjgl3.Lwjgl3Graphics.Lwjgl3Monitor)monitors[i]).getMonitorHandle()) {
+                        for (int i = 0; i < monitors.length; i++) {
+                            if (((com.badlogic.gdx.backends.lwjgl3.Lwjgl3Graphics.Lwjgl3Monitor) Gdx.graphics.getMonitor()).getMonitorHandle()
+                                == ((com.badlogic.gdx.backends.lwjgl3.Lwjgl3Graphics.Lwjgl3Monitor) monitors[i]).getMonitorHandle()) {
                                 monitorNum = i;
                             }
                         }
                     }
-                    
+
                     com.badlogic.gdx.Graphics.Monitor[] monitors = Gdx.graphics.getMonitors();
                     if (monitors.length <= monitorNum) {
                         monitorNum = 0;
                     }
                     Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode(monitors[monitorNum]));
                 } else {
-                    me.catand.cooptetris.util.Point p = me.catand.cooptetris.util.TetrisSettings.windowResolution();
+                    me.catand.cooptetris.util.Point p = TetrisSettings.windowResolution();
                     Gdx.graphics.setWindowedMode(p.x, p.y);
                 }
                 first = false;

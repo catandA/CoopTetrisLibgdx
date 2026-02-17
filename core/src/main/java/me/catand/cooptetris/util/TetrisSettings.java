@@ -170,15 +170,25 @@ public class TetrisSettings extends GameSettings {
     public static final String KEY_WINDOW_WIDTH = "window_width";
     public static final String KEY_WINDOW_HEIGHT = "window_height";
 
-    public static void windowResolution(int width, int height) {
-        put(KEY_WINDOW_WIDTH, width);
-        put(KEY_WINDOW_HEIGHT, height);
+    public static final String KEY_WINDOW_MAXIMIZED = "window_maximized";
+
+    public static void windowResolution(Point p) {
+        put(KEY_WINDOW_WIDTH, p.x);
+        put(KEY_WINDOW_HEIGHT, p.y);
     }
 
-    public static me.catand.cooptetris.util.Point windowResolution() {
+    public static Point windowResolution() {
         int width = getInt(KEY_WINDOW_WIDTH, 800, 640, 3840);
         int height = getInt(KEY_WINDOW_HEIGHT, 600, 480, 2160);
-        return new me.catand.cooptetris.util.Point(width, height);
+        return new Point(width, height);
+    }
+
+    public static void windowMaximized(boolean value) {
+        put(KEY_WINDOW_MAXIMIZED, value);
+    }
+
+    public static boolean windowMaximized() {
+        return getBoolean(KEY_WINDOW_MAXIMIZED, false);
     }
 
     // 重置所有设置为默认值
@@ -199,6 +209,7 @@ public class TetrisSettings extends GameSettings {
         language("en");
         playerName("Player" + (int) (Math.random() * 1000));
         fullscreen(false);
-        windowResolution(800, 600);
+        windowResolution(new Point(800, 600));
+        windowMaximized(false);
     }
 }

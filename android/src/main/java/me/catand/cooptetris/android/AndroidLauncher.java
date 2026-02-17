@@ -8,6 +8,7 @@ import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 
 import me.catand.cooptetris.Main;
+import me.catand.cooptetris.util.TetrisSettings;
 
 /**
  * Launches the Android application.
@@ -40,6 +41,11 @@ public class AndroidLauncher extends AndroidApplication {
 
             Gdx.app = this;
 
+            // grab preferences directly using our instance first
+            // so that we don't need to rely on Gdx.app, which isn't initialized yet.
+            // Note that we use a different prefs name on android for legacy purposes,
+            // this is the default prefs filename given to an android app (.xml is automatically added to it)
+            TetrisSettings.set(instance.getPreferences("coop_tetris_settings"));
         } else {
             instance = this;
         }
