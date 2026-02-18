@@ -190,18 +190,9 @@ public class ServerManager {
 
             System.out.println("ServerManager: 玩家 " + playerName + " 连接成功，客户端ID: " + client.getClientId() + ", 语言: " + client.getLanguage());
 
-            // 在内置服务器模式下，自动将客户端加入默认房间
-            if (serverType == ServerType.LOCAL_SERVER && defaultRoom != null) {
-                defaultRoom.addPlayer(client);
-                // 发送加入房间的响应
-                RoomMessage roomResponse = new RoomMessage(RoomMessage.RoomAction.JOIN);
-                roomResponse.setSuccess(true);
-                roomResponse.setRoomId(defaultRoom.getId());
-                roomResponse.setMessage("Joined default room automatically");
-                client.sendMessage(roomResponse);
-
-                System.out.println("ServerManager: 玩家 " + playerName + " 自动加入默认房间: " + defaultRoom.getName());
-            }
+            // 注意：新流程中不再自动加入默认房间
+            // 本地服务器创建者会在客户端主动创建房间，并成为房主
+            // 这样可以确保创建者有完整的房主权限
         } else {
             ConnectMessage response = new ConnectMessage();
             response.setSuccess(false);

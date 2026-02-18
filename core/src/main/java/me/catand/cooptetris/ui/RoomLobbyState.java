@@ -50,8 +50,13 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private TextButton sendChatButton;
     private NotificationDialog currentNotificationDialog;
     private GameMode currentGameMode;
+    private final NetworkManager.ConnectionType connectionType;
 
     public RoomLobbyState(UIManager uiManager, NetworkManager networkManager) {
+        this(uiManager, networkManager, false);
+    }
+
+    public RoomLobbyState(UIManager uiManager, NetworkManager networkManager, boolean isLocalServerMode) {
         super(uiManager);
         this.networkManager = networkManager;
         this.playerNames = new ArrayList<>();
@@ -62,6 +67,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         this.countdownTimer = 0;
         this.isCountingDown = false;
         this.currentGameMode = GameMode.COOP;
+        // 使用传入的 isLocalServerMode 而不是从 NetworkManager 获取
+        this.connectionType = isLocalServerMode ? NetworkManager.ConnectionType.LOCAL_SERVER : NetworkManager.ConnectionType.EXTERNAL_SERVER;
     }
 
     // 辅助方法，获取LanguageManager实例
@@ -394,6 +401,16 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private void leaveRoom() {
         if (networkManager != null && networkManager.isConnected()) {
             networkManager.leaveRoom();
+
+            // 根据连接类型决定返回的界面
+            if (connectionType == NetworkManager.ConnectionType.LOCAL_SERVER) {
+                // 本地服务器：断开连接并返回主菜单
+                networkManager.disconnect();
+                // 返回到 ServerConnectionState，然后自动返回到主菜单
+                // 因为 ServerConnectionState 会在断开连接时处理
+            }
+            // 远程服务器：返回到房间列表
+            // 本地服务器：也返回到 ServerConnectionState（但已断开）
             uiManager.popState();
         }
     }
@@ -577,13 +594,11 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
 
         switch (message.getNotificationType()) {
             case KICKED:
-                // 被踢出房间，显示弹窗并在关闭后返回上一级菜单
+                // 被踢出房间，显示弹窗并在关闭后返回房间列表
+                // 注意：被踢出后服务器已经自动将玩家移出房间，不需要再调用 leaveRoom()
                 currentNotificationDialog.setOnCloseAction(() -> {
                     currentNotificationDialog = null;
-                    // 弹窗关闭后离开房间
-                    if (networkManager != null && networkManager.isConnected()) {
-                        networkManager.leaveRoom();
-                    }
+                    // 返回到房间列表（RoomListState 会自动刷新房间列表）
                     uiManager.popState();
                 });
                 break;

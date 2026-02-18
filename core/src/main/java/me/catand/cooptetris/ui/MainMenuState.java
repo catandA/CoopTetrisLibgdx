@@ -68,8 +68,8 @@ public class MainMenuState extends BaseUIState {
 
         onlineButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                // 进入联机模式界面
-                uiManager.pushState(new OnlineMenuState(uiManager));
+                // 进入联机模式界面 - 新的两阶段流程
+                uiManager.pushState(new ServerConnectionState(uiManager));
             }
             return true;
         });
