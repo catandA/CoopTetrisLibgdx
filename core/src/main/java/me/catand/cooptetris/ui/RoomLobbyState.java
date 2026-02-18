@@ -15,6 +15,7 @@ import java.util.List;
 
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.NetworkManager;
+import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.util.LanguageManager;
 
@@ -42,6 +43,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private ScrollPane chatScrollPane;
     private TextField chatInputField;
     private TextButton sendChatButton;
+    private NotificationDialog currentNotificationDialog;
 
     public RoomLobbyState(UIManager uiManager, NetworkManager networkManager) {
         super(uiManager);
@@ -484,5 +486,68 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     public void onDisconnected() {
         // 处理断开连接
         uiManager.popState();
+    }
+
+    @Override
+    public void onNotification(NotificationMessage message) {
+        // 处理通知消息，显示弹窗
+        // 先关闭之前的弹窗（如果有）
+        if (currentNotificationDialog != null) {
+            currentNotificationDialog.hide();
+        }
+
+        // 创建新弹窗并保存引用
+        currentNotificationDialog = new NotificationDialog(skin);
+        currentNotificationDialog.setNotification(message);
+
+        switch (message.getNotificationType()) {
+            case KICKED:
+                // 被踢出房间，显示弹窗并在关闭后返回上一级菜单
+                currentNotificationDialog.setOnCloseAction(() -> {
+                    currentNotificationDialog = null;
+                    // 弹窗关闭后离开房间
+                    if (networkManager != null && networkManager.isConnected()) {
+                        networkManager.leaveRoom();
+                    }
+                    uiManager.popState();
+                });
+                break;
+            case DISCONNECTED:
+                // 连接断开
+                currentNotificationDialog.setOnCloseAction(() -> {
+                    currentNotificationDialog = null;
+                    uiManager.popState();
+                });
+                break;
+            case BANNED:
+                // 被禁止连接
+                currentNotificationDialog.setOnCloseAction(() -> {
+                    currentNotificationDialog = null;
+                    if (networkManager != null) {
+                        networkManager.disconnect();
+                    }
+                    uiManager.popState();
+                });
+                break;
+            default:
+                // 其他类型
+                currentNotificationDialog.setOnCloseAction(() -> {
+                    currentNotificationDialog = null;
+                });
+                break;
+        }
+
+        currentNotificationDialog.show(stage);
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        // 调用父类的resize处理
+        super.resize(width, height);
+
+        // 更新弹窗位置和大小（如果存在）
+        if (currentNotificationDialog != null) {
+            currentNotificationDialog.onResize();
+        }
     }
 }

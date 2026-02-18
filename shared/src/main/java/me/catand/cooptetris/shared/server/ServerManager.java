@@ -14,6 +14,7 @@ import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NetworkMessage;
+import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 
 public class ServerManager {
@@ -135,6 +136,8 @@ public class ServerManager {
         kryo.register(GameStateMessage.class);
         kryo.register(MoveMessage.class);
         kryo.register(MoveMessage.MoveType.class);
+        kryo.register(NotificationMessage.class);
+        kryo.register(NotificationMessage.NotificationType.class);
     }
 
 
@@ -167,17 +170,22 @@ public class ServerManager {
 
     private void handleConnectMessage(ClientConnection client, ConnectMessage message) {
         String playerName = message.getPlayerName();
-        System.out.println("ServerManager: 收到连接请求，玩家名称: " + playerName);
+        String language = message.getLanguage();
+        System.out.println("ServerManager: 收到连接请求，玩家名称: " + playerName + ", 语言: " + language);
 
         if (playerName != null && !playerName.isEmpty()) {
             client.setPlayerName(playerName);
+            // 保存客户端语言设置
+            if (language != null && !language.isEmpty()) {
+                client.setLanguage(language);
+            }
             ConnectMessage response = new ConnectMessage();
             response.setSuccess(true);
             response.setClientId(client.getClientId());
             response.setMessage("Connected successfully");
             client.sendMessage(response);
 
-            System.out.println("ServerManager: 玩家 " + playerName + " 连接成功，客户端ID: " + client.getClientId());
+            System.out.println("ServerManager: 玩家 " + playerName + " 连接成功，客户端ID: " + client.getClientId() + ", 语言: " + client.getLanguage());
 
             // 在内置服务器模式下，自动将客户端加入默认房间
             if (serverType == ServerType.LOCAL_SERVER && defaultRoom != null) {

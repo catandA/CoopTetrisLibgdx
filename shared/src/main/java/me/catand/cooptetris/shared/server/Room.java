@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import lombok.Data;
 import me.catand.cooptetris.shared.message.GameStateMessage;
+import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.shared.tetris.GameLogic;
 
@@ -173,6 +174,18 @@ public class Room {
         if (requester == host) {
             for (ClientConnection player : players) {
                 if (player.getPlayerName().equals(playerName)) {
+                    // 根据客户端语言发送本地化的踢出通知
+                    String language = player.getLanguage();
+                    NotificationMessage kickNotification = createLocalizedKickNotification(language);
+                    player.sendMessage(kickNotification);
+
+                    // 短暂延迟后移除玩家，确保通知先到达
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+
                     player.sendMessage(new RoomMessage(RoomMessage.RoomAction.KICK));
                     removePlayer(player);
                     return true;
@@ -180,6 +193,28 @@ public class Room {
             }
         }
         return false;
+    }
+
+    /**
+     * 创建本地化的踢出通知消息
+     */
+    private NotificationMessage createLocalizedKickNotification(String language) {
+        NotificationMessage notification = new NotificationMessage();
+        notification.setNotificationType(NotificationMessage.NotificationType.KICKED);
+
+        // 根据语言设置本地化文本
+        if ("zh".equals(language)) {
+            notification.setTitle("被踢出房间");
+            notification.setMessage("你已被房主踢出房间。");
+            notification.setReason("房主决定");
+        } else {
+            // 默认英文
+            notification.setTitle("Kicked from Room");
+            notification.setMessage("You have been kicked from the room by the host.");
+            notification.setReason("Host decision");
+        }
+
+        return notification;
     }
 
     public void broadcastChatMessage(String sender, String message) {

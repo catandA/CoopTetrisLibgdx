@@ -9,19 +9,26 @@ import com.esotericsoftware.kryonet.Listener;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.Getter;
 import me.catand.cooptetris.shared.message.ConnectMessage;
 import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NetworkMessage;
+import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
+import me.catand.cooptetris.util.LanguageManager;
 
 public class NetworkManager {
     private Client client;
+    @Getter
     private String clientId;
+    @Getter
     private String playerName;
+    @Getter
     private boolean connected;
     private final List<NetworkListener> listeners;
+    @Getter
     private ConnectionType currentConnectionType;
 
     public enum ConnectionType {
@@ -48,16 +55,16 @@ public class NetworkManager {
         try {
             // 创建kryonet客户端
             client = new Client();
-            
+
             // 注册消息类
             registerMessages();
-            
+
             // 启动客户端
             client.start();
-            
+
             // 连接到服务器
             client.connect(5000, host, port);
-            
+
             this.playerName = playerName;
             connected = true;
 
@@ -86,6 +93,7 @@ public class NetworkManager {
             // 发送连接消息
             ConnectMessage connectMessage = new ConnectMessage();
             connectMessage.setPlayerName(playerName);
+            connectMessage.setLanguage(LanguageManager.getInstance().getCurrentLanguageCode());
             sendMessage(connectMessage);
 
             return true;
@@ -119,20 +127,8 @@ public class NetworkManager {
         kryo.register(GameStateMessage.class);
         kryo.register(MoveMessage.class);
         kryo.register(MoveMessage.MoveType.class);
-    }
-
-    /**
-     * 连接到本地服务器
-     */
-    public boolean connectToLocalServer(int port, String playerName) {
-        return connect("localhost", port, playerName);
-    }
-
-    /**
-     * 连接到外部服务器
-     */
-    public boolean connectToExternalServer(String host, int port, String playerName) {
-        return connect(host, port, playerName);
+        kryo.register(NotificationMessage.class);
+        kryo.register(NotificationMessage.NotificationType.class);
     }
 
     private void handleMessage(NetworkMessage message) {
@@ -148,6 +144,9 @@ public class NetworkManager {
                 break;
             case "gameState":
                 handleGameStateMessage((GameStateMessage) message);
+                break;
+            case "notification":
+                handleNotificationMessage((NotificationMessage) message);
                 break;
         }
     }
@@ -173,15 +172,6 @@ public class NetworkManager {
                 listener.onConnectResponse(finalMessage.isSuccess(), finalMessage.getMessage(), finalMessage.getClientId());
             }
         });
-    }
-
-    /**
-     * 加入默认房间
-     */
-    private void joinDefaultRoom() {
-        // 发送请求获取房间列表
-        RoomMessage roomMessage = new RoomMessage(RoomMessage.RoomAction.LIST);
-        sendMessage(roomMessage);
     }
 
     private void handleRoomMessage(RoomMessage message) {
@@ -213,6 +203,17 @@ public class NetworkManager {
             // 使用监听器列表的副本进行遍历，避免ConcurrentModificationException
             for (NetworkListener listener : new ArrayList<>(listeners)) {
                 listener.onGameStateUpdate(finalMessage);
+            }
+        });
+    }
+
+    private void handleNotificationMessage(NotificationMessage message) {
+        // 确保在主线程中调用监听器方法
+        final NotificationMessage finalMessage = message;
+        Gdx.app.postRunnable(() -> {
+            // 使用监听器列表的副本进行遍历，避免ConcurrentModificationException
+            for (NetworkListener listener : new ArrayList<>(listeners)) {
+                listener.onNotification(finalMessage);
             }
         });
     }
@@ -317,22 +318,6 @@ public class NetworkManager {
         listeners.remove(listener);
     }
 
-    public boolean isConnected() {
-        return connected;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getPlayerName() {
-        return playerName;
-    }
-
-    public ConnectionType getCurrentConnectionType() {
-        return currentConnectionType;
-    }
-
     public interface NetworkListener {
         void onConnectResponse(boolean success, String message, String clientId);
 
@@ -343,5 +328,9 @@ public class NetworkManager {
         void onGameStateUpdate(GameStateMessage message);
 
         void onDisconnected();
+
+        default void onNotification(NotificationMessage message) {
+            // 默认空实现，让实现类可以选择性覆盖
+        }
     }
 }

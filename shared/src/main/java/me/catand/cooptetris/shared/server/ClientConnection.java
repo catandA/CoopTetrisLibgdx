@@ -12,6 +12,7 @@ public class ClientConnection {
     private final Connection connection;
     private final String clientId;
     private String playerName;
+    private String language; // 客户端语言设置
     private Room currentRoom;
     private final ServerManager serverManager;
     private boolean connected;
@@ -20,6 +21,7 @@ public class ClientConnection {
         this.connection = connection;
         this.serverManager = serverManager;
         this.clientId = UUID.randomUUID().toString();
+        this.language = "en"; // 默认语言为英文
         this.connected = true;
     }
 

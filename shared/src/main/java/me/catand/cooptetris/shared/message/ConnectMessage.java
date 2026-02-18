@@ -10,6 +10,7 @@ public class ConnectMessage extends NetworkMessage {
     private boolean success;
     private String message;
     private String clientId;
+    private String language; // 客户端语言设置
 
     public ConnectMessage() {
         super("connect");
