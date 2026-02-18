@@ -105,15 +105,6 @@ public class Main extends ApplicationAdapter {
                 TetrisSettings.playerName(value);
                 System.out.println("Main: 设置玩家名称: " + value);
                 break;
-            case "difficulty":
-                try {
-                    int difficulty = Integer.parseInt(value);
-                    TetrisSettings.difficulty(difficulty);
-                    System.out.println("Main: 设置难度: " + difficulty);
-                } catch (NumberFormatException e) {
-                    System.err.println("Main: 无效的难度值: " + value);
-                }
-                break;
             case "language":
                 TetrisSettings.language(value);
                 System.out.println("Main: 设置语言: " + value);

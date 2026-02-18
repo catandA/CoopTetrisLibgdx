@@ -1,28 +1,48 @@
 package me.catand.cooptetris.ui;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.utils.Align;
 
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
 
 /**
- * 设置界面状态 - 使用新的简化缩放接口
+ * 设置界面状态 - 现代化卡片式设计
+ * <p>
+ * 设计原则：
+ * 1. 使用卡片式布局，每个设置类别一个卡片
+ * 2. 易于扩展，添加新设置只需新增卡片
+ * 3. 语言切换即时生效，自动保存
+ * 4. 键位设置独立页面
+ * <p>
+ * 布局规范：
+ * - 每个卡片使用统一的两列布局
+ * - 左侧列宽 150f 放置标签
+ * - 右侧列放置操作控件
+ * - 确保所有操作按钮/控件在同一垂直线上
  */
 public class SettingsState extends BaseUIState {
-    private Table table;
-    private TextField difficultyField;
-    private TextField defaultHostField;
-    private TextField defaultPortField;
-    private com.badlogic.gdx.scenes.scene2d.ui.SelectBox<String> languageBox;
+
+    private Table rootTable;
     private BitmapFont titleFont;
-    private BitmapFont sectionFont;
+    private BitmapFont cardTitleFont;
+
+    // 语言选择框
+    private com.badlogic.gdx.scenes.scene2d.ui.SelectBox<String> languageBox;
+
+    // 统一的标签列宽度
+    private static final float LABEL_WIDTH = 150f;
+    // 统一的操作控件宽度
+    private static final float CONTROL_WIDTH = 180f;
+    // 统一的行高
+    private static final float ROW_HEIGHT = 45f;
 
     public SettingsState(UIManager uiManager) {
         super(uiManager);
@@ -30,93 +50,219 @@ public class SettingsState extends BaseUIState {
 
     @Override
     protected void createUI() {
-        table = new Table();
-        table.setPosition(offsetX(), offsetY());
-        table.setSize(displayWidth(), displayHeight());
-        table.center();
-
         LanguageManager lang = LanguageManager.getInstance();
 
-        // 生成标题字体和section字体，考虑缩放比例
-        titleFont = Main.platform.getFont(fontSize(24), lang.get("settings.title"), false, false);
-        sectionFont = Main.platform.getFont(fontSize(19), "Section Title", false, false);
+        // 生成字体
+        titleFont = Main.platform.getFont(fontSize(32), lang.get("settings.title"), false, false);
+        cardTitleFont = Main.platform.getFont(fontSize(18), "Card Title", false, false);
+
+        // 创建根表格
+        rootTable = new Table();
+        rootTable.setFillParent(true);
+        rootTable.align(Align.top);
+        rootTable.padTop(h(40f));
 
         // 创建标题
-        Label title;
-        if (titleFont != null) {
-            Label.LabelStyle labelStyle = new Label.LabelStyle(titleFont, skin.getColor("font"));
-            title = new Label(lang.get("settings.title"), labelStyle);
-        } else {
-            title = new Label(lang.get("settings.title"), skin);
-        }
+        Label titleLabel = createTitleLabel(lang.get("settings.title"));
 
-        // 难度设置
-        Label difficultyLabel = new Label(lang.get("difficulty"), skin);
-        difficultyField = new TextField(String.valueOf(TetrisSettings.difficulty()), skin);
+        // 创建设置卡片容器
+        Table cardsTable = new Table();
+        cardsTable.defaults().padBottom(h(20f));
 
-        // 网络设置
-        Label networkLabel;
-        if (sectionFont != null) {
-            Label.LabelStyle labelStyle = new Label.LabelStyle(sectionFont, skin.getColor("font"));
-            networkLabel = new Label(lang.get("network"), labelStyle);
-        } else {
-            networkLabel = new Label(lang.get("network"), skin);
-        }
+        // 添加各个设置卡片
+        cardsTable.add(createDisplayCard()).row();
+        cardsTable.add(createLanguageCard()).row();
+        cardsTable.add(createControlsCard()).row();
 
-        Label defaultHostLabel = new Label(lang.get("default.host"), skin);
-        defaultHostField = new TextField(TetrisSettings.defaultHost(), skin);
+        // 创建底部按钮区域
+        Table buttonTable = createBottomButtons();
 
-        Label defaultPortLabel = new Label(lang.get("default.port"), skin);
-        defaultPortField = new TextField(String.valueOf(TetrisSettings.defaultPort()), skin);
+        // 组装主界面
+        rootTable.add(titleLabel).padBottom(h(30f)).row();
+        rootTable.add(cardsTable).expandX().padBottom(h(30f)).row();
+        rootTable.add(buttonTable);
 
-        // 语言设置
-        Label languageLabel = new Label(lang.get("language"), skin);
-        languageBox = new com.badlogic.gdx.scenes.scene2d.ui.SelectBox<>(skin);
-        String[] languages = {lang.get("en"), lang.get("zh")};
-        languageBox.setItems(languages);
-        // 设置当前选中的语言
-        if (lang.getCurrentLanguageCode().equals("zh")) {
-            languageBox.setSelectedIndex(1);
-        } else {
-            languageBox.setSelectedIndex(0);
-        }
-        // 添加语言切换监听器
-        languageBox.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
-                int selectedIndex = languageBox.getSelectedIndex();
-                if (selectedIndex == 0) {
-                    lang.setLanguage("en");
-                } else if (selectedIndex == 1) {
-                    lang.setLanguage("zh");
+        stage.addActor(rootTable);
+    }
+
+    /**
+     * 创建显示设置卡片
+     */
+    private Table createDisplayCard() {
+        LanguageManager lang = LanguageManager.getInstance();
+
+        Table card = createCardBase();
+
+        // 卡片标题
+        Label cardTitle = createCardTitle(lang.get("settings.display.title"));
+
+        // 全屏设置行 - 使用 TextButton 作为开关，使用统一的 createSettingRow 方法
+        Table rowTable = createSettingRow(
+            lang.get("settings.fullscreen"),
+            () -> {
+                // 使用 TextButton 模拟开关，可以完全控制缩放
+                boolean isFullscreen = TetrisSettings.fullscreen();
+                TextButton toggleButton = new TextButton(
+                    isFullscreen ? lang.get("settings.on") : lang.get("settings.off"),
+                    skin
+                );
+                toggleButton.addListener(new ChangeListener() {
+                    @Override
+                    public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
+                        boolean newFullscreenState = !TetrisSettings.fullscreen();
+                        TetrisSettings.fullscreen(newFullscreenState);
+                        toggleButton.setText(newFullscreenState ? lang.get("settings.on") : lang.get("settings.off"));
+                        Main.platform.updateSystemUI();
+                    }
+                });
+                return toggleButton;
+            }
+        );
+
+        card.add(cardTitle).left().padBottom(h(15f)).row();
+        card.add(rowTable).left().row();
+
+        return card;
+    }
+
+    /**
+     * 创建语言设置卡片
+     */
+    private Table createLanguageCard() {
+        LanguageManager lang = LanguageManager.getInstance();
+
+        Table card = createCardBase();
+
+        // 卡片标题
+        Label cardTitle = createCardTitle(lang.get("settings.language.title"));
+
+        // 语言设置行 - 使用统一的两列布局
+        Table rowTable = createSettingRow(
+            lang.get("language"),
+            () -> {
+                languageBox = new com.badlogic.gdx.scenes.scene2d.ui.SelectBox<>(skin);
+                String[] languages = {lang.get("en"), lang.get("zh")};
+                languageBox.setItems(languages);
+
+                if (lang.getCurrentLanguageCode().equals("zh")) {
+                    languageBox.setSelectedIndex(1);
+                } else {
+                    languageBox.setSelectedIndex(0);
                 }
 
-                // 立即保存语言设置，确保持久化
-                saveLanguageSetting();
-
-                // 重新加载当前界面以更新语言
-                recreateUI();
+                languageBox.addListener(new ChangeListener() {
+                    @Override
+                    public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
+                        int selectedIndex = languageBox.getSelectedIndex();
+                        String newLang = (selectedIndex == 0) ? "en" : "zh";
+                        lang.setLanguage(newLang);
+                        TetrisSettings.language(newLang);
+                        recreateUI();
+                    }
+                });
+                return languageBox;
             }
-        });
+        );
 
-        TextButton controlsButton = new TextButton(lang.get("controls"), skin);
-        controlsButton.addListener(event -> {
-            if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                // 打开控制设置界面
-                uiManager.pushState(new ControlsSettingsState(uiManager));
+        card.add(cardTitle).left().padBottom(h(15f)).row();
+        card.add(rowTable).left().row();
+
+        return card;
+    }
+
+    /**
+     * 创建键位设置卡片
+     */
+    private Table createControlsCard() {
+        LanguageManager lang = LanguageManager.getInstance();
+
+        Table card = createCardBase();
+
+        // 卡片标题
+        Label cardTitle = createCardTitle(lang.get("settings.controls.title"));
+
+        // 键位设置行 - 使用统一的两列布局
+        // 描述文本放在按钮的悬停提示上
+        Table rowTable = createSettingRow(
+            lang.get("settings.controls"),
+            () -> {
+                TextButton controlsButton = new TextButton(lang.get("settings.controls.configure"), skin);
+                // 添加悬停提示
+                controlsButton.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+                    @Override
+                    public void enter(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
+                        // 可以在这里显示工具提示
+                        controlsButton.setColor(Color.CYAN);
+                    }
+
+                    @Override
+                    public void exit(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
+                        controlsButton.setColor(Color.WHITE);
+                    }
+                });
+                controlsButton.addListener(event -> {
+                    if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
+                        uiManager.pushState(new ControlsSettingsState(uiManager));
+                    }
+                    return true;
+                });
+                return controlsButton;
             }
-            return true;
-        });
+        );
 
-        TextButton saveButton = new TextButton(lang.get("save"), skin);
-        saveButton.addListener(event -> {
-            if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                // 保存设置
-                saveSettings();
-            }
-            return true;
-        });
+        card.add(cardTitle).left().padBottom(h(15f)).row();
+        card.add(rowTable).left().row();
 
+        return card;
+    }
+
+    /**
+     * 创建统一的设置行布局
+     * 左侧标签列，右侧操作控件列
+     *
+     * @param labelText 标签文本
+     * @param controlSupplier 操作控件提供者
+     * @return 设置行表格
+     */
+    private Table createSettingRow(String labelText, java.util.function.Supplier<com.badlogic.gdx.scenes.scene2d.Actor> controlSupplier) {
+        Table rowTable = new Table();
+
+        // 左侧标签
+        if (!labelText.isEmpty()) {
+            Label label = new Label(labelText, skin);
+            label.setColor(Color.LIGHT_GRAY);
+            rowTable.add(label).left().width(w(LABEL_WIDTH)).padRight(w(15f));
+        } else {
+            // 空标签占位，保持对齐
+            rowTable.add().left().width(w(LABEL_WIDTH)).padRight(w(15f));
+        }
+
+        // 右侧操作控件 - 所有控件统一使用 w() 和 h() 进行缩放
+        com.badlogic.gdx.scenes.scene2d.Actor control = controlSupplier.get();
+        rowTable.add(control).left().width(w(CONTROL_WIDTH)).height(h(ROW_HEIGHT));
+
+        return rowTable;
+    }
+
+    /**
+     * 创建卡片基础样式
+     */
+    private Table createCardBase() {
+        Table card = new Table();
+        card.setBackground(skin.newDrawable("white", new Color(0.18f, 0.18f, 0.22f, 0.9f)));
+        card.pad(w(25f), h(20f), w(25f), h(20f));
+        return card;
+    }
+
+    /**
+     * 创建底部按钮区域
+     */
+    private Table createBottomButtons() {
+        LanguageManager lang = LanguageManager.getInstance();
+
+        Table buttonTable = new Table();
+
+        // 返回按钮
         TextButton backButton = new TextButton(lang.get("back"), skin);
         backButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -125,58 +271,41 @@ public class SettingsState extends BaseUIState {
             return true;
         });
 
-        // 使用新的简化方法进行缩放
-        table.add(title).padBottom(h(30f)).row();
+        buttonTable.add(backButton).width(w(150f)).height(h(50f));
 
-        // 难度设置
-        table.add(difficultyLabel).right().padRight(w(10f));
-        table.add(difficultyField).width(w(100f)).height(h(40f)).padBottom(h(20f)).row();
+        return buttonTable;
+    }
 
-        // 网络设置
-        table.add(networkLabel).colspan(2).padBottom(h(10f)).row();
-        table.add(defaultHostLabel).right().padRight(w(10f));
-        table.add(defaultHostField).width(w(200f)).height(h(40f)).padBottom(h(10f)).row();
-        table.add(defaultPortLabel).right().padRight(w(10f));
-        table.add(defaultPortField).width(w(100f)).height(h(40f)).padBottom(h(20f)).row();
+    /**
+     * 创建标题标签
+     */
+    private Label createTitleLabel(String text) {
+        if (titleFont != null) {
+            Label.LabelStyle style = new Label.LabelStyle(titleFont, Color.WHITE);
+            return new Label(text, style);
+        }
+        return new Label(text, skin);
+    }
 
-        // 语言设置
-        table.add(languageLabel).right().padRight(w(10f));
-        table.add(languageBox).width(w(150f)).height(h(40f)).padBottom(h(20f)).row();
-
-        // 按钮
-        table.add(controlsButton).width(w(150f)).height(h(50f)).padBottom(h(10f)).row();
-        table.add(saveButton).width(w(150f)).height(h(50f)).padBottom(h(10f)).row();
-        table.add(backButton).width(w(150f)).height(h(50f)).row();
-
-        stage.addActor(table);
+    /**
+     * 创建卡片标题标签
+     */
+    private Label createCardTitle(String text) {
+        if (cardTitleFont != null) {
+            Label.LabelStyle style = new Label.LabelStyle(cardTitleFont, new Color(0.6f, 0.8f, 1f, 1f));
+            return new Label(text, style);
+        }
+        Label label = new Label(text, skin);
+        label.setColor(new Color(0.6f, 0.8f, 1f, 1f));
+        return label;
     }
 
     @Override
     protected void clearUI() {
-        if (table != null) {
-            table.remove();
-            table = null;
+        if (rootTable != null) {
+            rootTable.remove();
+            rootTable = null;
         }
-    }
-
-    private void saveSettings() {
-        // 保存设置到配置文件
-        TetrisSettings.difficulty(Integer.parseInt(difficultyField.getText()));
-        TetrisSettings.defaultHost(defaultHostField.getText());
-        TetrisSettings.defaultPort(Integer.parseInt(defaultPortField.getText()));
-
-        // 获取当前选择的语言
-        LanguageManager lang = LanguageManager.getInstance();
-        TetrisSettings.language(lang.getCurrentLanguageCode());
-    }
-
-    /**
-     * 立即保存语言设置
-     */
-    private void saveLanguageSetting() {
-        // 获取当前选择的语言
-        LanguageManager lang = LanguageManager.getInstance();
-        TetrisSettings.language(lang.getCurrentLanguageCode());
     }
 
     @Override
@@ -186,14 +315,13 @@ public class SettingsState extends BaseUIState {
 
     @Override
     public void dispose() {
-        // 释放生成的字体
         if (titleFont != null) {
             titleFont.dispose();
             titleFont = null;
         }
-        if (sectionFont != null) {
-            sectionFont.dispose();
-            sectionFont = null;
+        if (cardTitleFont != null) {
+            cardTitleFont.dispose();
+            cardTitleFont = null;
         }
     }
 }

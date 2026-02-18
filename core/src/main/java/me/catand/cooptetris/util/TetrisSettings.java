@@ -2,12 +2,15 @@ package me.catand.cooptetris.util;
 
 import me.catand.cooptetris.input.InputBinding;
 
+/**
+ * 游戏设置管理类
+ * <p>
+ * 集中管理所有游戏配置的持久化存储
+ * 包括：键位设置、网络设置、语言设置、玩家信息、窗口设置
+ */
 public class TetrisSettings extends GameSettings {
 
-    // 游戏难度
-    public static final String KEY_DIFFICULTY = "difficulty";
-
-    // 控制键位 - 存储为枚举名称
+    // ==================== 控制键位 - 存储为枚举名称 ====================
     public static final String KEY_LEFT_KEY = "left_key";
     public static final String KEY_RIGHT_KEY = "right_key";
     public static final String KEY_DOWN_KEY = "down_key";
@@ -21,33 +24,21 @@ public class TetrisSettings extends GameSettings {
     public static final String KEY_ROTATE_KEY2 = "rotate_key2";
     public static final String KEY_DROP_KEY2 = "drop_key2";
 
-    // 网络设置
+    // ==================== 网络设置 ====================
     public static final String KEY_DEFAULT_HOST = "default_host";
     public static final String KEY_DEFAULT_PORT = "default_port";
 
-    // 语言设置
+    // ==================== 语言设置 ====================
     public static final String KEY_LANGUAGE = "language";
 
-    // 玩家名称
+    // ==================== 玩家信息 ====================
     public static final String KEY_PLAYER_NAME = "player_name";
 
-    // 全屏设置
+    // ==================== 窗口设置 ====================
     public static final String KEY_FULLSCREEN = "fullscreen";
-
-    // 窗口分辨率设置
     public static final String KEY_WINDOW_WIDTH = "window_width";
     public static final String KEY_WINDOW_HEIGHT = "window_height";
     public static final String KEY_WINDOW_MAXIMIZED = "window_maximized";
-
-    // ==================== 游戏难度设置 ====================
-
-    public static void difficulty(int value) {
-        put(KEY_DIFFICULTY, value);
-    }
-
-    public static int difficulty() {
-        return getInt(KEY_DIFFICULTY, 1, 1, 3);
-    }
 
     // ==================== 第一套控制键位设置 ====================
 
@@ -215,7 +206,6 @@ public class TetrisSettings extends GameSettings {
     // ==================== 重置所有设置 ====================
 
     public static void resetToDefaults() {
-        difficulty(1);
         leftKey(InputBinding.LEFT);
         rightKey(InputBinding.RIGHT);
         downKey(InputBinding.DOWN);
