@@ -84,7 +84,13 @@ public class UIManager {
                 skin.get(Label.LabelStyle.class).font = font;
                 skin.get(TextButton.TextButtonStyle.class).font = font;
                 skin.get(TextField.TextFieldStyle.class).font = font;
-                skin.get(SelectBox.SelectBoxStyle.class).font = font;
+
+                // 更新SelectBox样式及其内嵌的listStyle
+                SelectBox.SelectBoxStyle selectBoxStyle = skin.get(SelectBox.SelectBoxStyle.class);
+                selectBoxStyle.font = font;
+                if (selectBoxStyle.listStyle != null) {
+                    selectBoxStyle.listStyle.font = font;
+                }
             }
         } catch (Exception e) {
             // 字体加载失败，使用默认字体
