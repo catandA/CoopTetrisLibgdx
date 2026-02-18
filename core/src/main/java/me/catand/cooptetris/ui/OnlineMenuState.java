@@ -179,6 +179,33 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
         }
 
         stage.addActor(mainTable);
+
+        // 根据当前状态更新UI显示（在窗口大小改变时保持正确的UI状态）
+        updateUIForState(currentState);
+
+        // 根据当前连接状态更新状态标签文本
+        if (networkManager != null && networkManager.isConnected()) {
+            switch (currentState) {
+                case CONNECTED_TO_SERVER:
+                    statusLabel.setText(lang().get("connected.to.server.simple"));
+                    statusLabel.setColor(Color.GREEN);
+                    break;
+                case CONNECTED_TO_ROOM:
+                    statusLabel.setText(lang().get("connected.to.room"));
+                    statusLabel.setColor(Color.BLUE);
+                    break;
+                case ERROR:
+                    // 保持错误状态文本
+                    break;
+                default:
+                    statusLabel.setText(lang().get("connection.status") + ": " + lang().get("disconnected"));
+                    statusLabel.setColor(Color.RED);
+                    break;
+            }
+        } else {
+            statusLabel.setText(lang().get("connection.status") + ": " + lang().get("disconnected"));
+            statusLabel.setColor(Color.RED);
+        }
     }
 
     @Override
@@ -380,6 +407,9 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
                 statusLabel.setColor(Color.RED);
                 break;
         }
+
+        // 根据状态更新UI显示
+        updateUIForState(state);
     }
 
     /**
@@ -556,6 +586,8 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
             case LEAVE:
                 if (message.isSuccess()) {
                     setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("left.room").replace("%s", message.getMessage()));
+                    // 自动刷新房间列表
+                    refreshRoomList();
                 } else {
                     setStatus(ConnectionState.ERROR, lang().get("failed.to.leave.room").replace("%s", message.getMessage()));
                 }

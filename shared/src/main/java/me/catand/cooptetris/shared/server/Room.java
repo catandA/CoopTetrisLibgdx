@@ -53,6 +53,12 @@ public class Room {
             }
 
             broadcastRoomStatus();
+
+            // 广播房间列表更新给所有不在房间中的客户端
+            if (serverManager != null) {
+                serverManager.broadcastRoomListUpdate();
+            }
+
             return true;
         }
         return false;
@@ -84,6 +90,11 @@ public class Room {
                 }
             } else {
                 broadcastRoomStatus();
+
+                // 广播房间列表更新给所有不在房间中的客户端
+                if (serverManager != null) {
+                    serverManager.broadcastRoomListUpdate();
+                }
             }
         }
     }

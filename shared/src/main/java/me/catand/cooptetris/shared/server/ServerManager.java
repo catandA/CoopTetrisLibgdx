@@ -264,6 +264,9 @@ public class ServerManager {
 
             System.out.println("ServerManager: 房间创建成功: " + roomName + " (ID: " + room.getId() + ")");
             System.out.println("ServerManager: 房主: " + client.getPlayerName());
+
+            // 广播房间列表更新给所有不在房间中的客户端
+            broadcastRoomListUpdate();
         } else {
             RoomMessage response = new RoomMessage(RoomMessage.RoomAction.CREATE);
             response.setSuccess(false);
@@ -439,6 +442,44 @@ public class ServerManager {
         if (serverType == ServerType.LOCAL_SERVER && room == defaultRoom) {
             System.out.println("ServerManager: 本地服务器模式: 默认房间被移除，停止服务器");
             stop();
+        }
+
+        // 广播房间列表更新给所有不在房间中的客户端
+        broadcastRoomListUpdate();
+    }
+
+    /**
+     * 广播房间列表更新给所有不在房间中的客户端
+     */
+    public void broadcastRoomListUpdate() {
+        List<RoomMessage.RoomInfo> roomInfos = new ArrayList<>();
+        for (Room r : rooms) {
+            if (!r.isStarted()) {
+                roomInfos.add(new RoomMessage.RoomInfo(
+                    r.getId(),
+                    r.getName(),
+                    r.getPlayers().size(),
+                    r.getMaxPlayers(),
+                    r.isStarted()
+                ));
+            }
+        }
+
+        RoomMessage listMessage = new RoomMessage(RoomMessage.RoomAction.LIST);
+        listMessage.setSuccess(true);
+        listMessage.setRooms(roomInfos);
+
+        // 发送给所有不在房间中的客户端
+        int recipientCount = 0;
+        for (ClientConnection client : clients) {
+            if (client.getCurrentRoom() == null) {
+                client.sendMessage(listMessage);
+                recipientCount++;
+            }
+        }
+
+        if (recipientCount > 0) {
+            System.out.println("ServerManager: 广播房间列表更新给 " + recipientCount + " 个客户端，共 " + roomInfos.size() + " 个房间");
         }
     }
 
