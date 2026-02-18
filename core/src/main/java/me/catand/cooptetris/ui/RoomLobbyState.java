@@ -5,10 +5,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Array;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
+import me.catand.cooptetris.shared.tetris.GameMode;
 import me.catand.cooptetris.util.LanguageManager;
 
 /**
@@ -29,6 +32,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private Label statusLabel;
     private Label roomNameLabel;
     private Label playerCountLabel;
+    private Label gameModeLabel;
+    private SelectBox<String> gameModeSelectBox;
     private TextButton startGameButton;
     private TextButton leaveRoomButton;
     private BitmapFont titleFont;
@@ -44,6 +49,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private TextField chatInputField;
     private TextButton sendChatButton;
     private NotificationDialog currentNotificationDialog;
+    private GameMode currentGameMode;
 
     public RoomLobbyState(UIManager uiManager, NetworkManager networkManager) {
         super(uiManager);
@@ -55,6 +61,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         this.isHost = false;
         this.countdownTimer = 0;
         this.isCountingDown = false;
+        this.currentGameMode = GameMode.COOP;
     }
 
     // 辅助方法，获取LanguageManager实例
@@ -121,6 +128,30 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         // 房间信息
         roomNameLabel = new Label(lang.get("room.label") + " " + roomName, skin);
         playerCountLabel = new Label(lang.get("players.label") + " 0/" + maxPlayers, skin);
+
+        // 游戏模式选择（仅房主可见）
+        gameModeLabel = new Label(lang.get("game.mode.label") + ":", skin);
+        gameModeSelectBox = new SelectBox<>(skin);
+        Array<String> gameModeItems = new Array<>();
+        gameModeItems.add(lang.get("game.mode.coop"));
+        gameModeItems.add(lang.get("game.mode.pvp"));
+        gameModeSelectBox.setItems(gameModeItems);
+        gameModeSelectBox.setSelected(lang.get("game.mode.coop"));
+        gameModeSelectBox.addListener(event -> {
+            if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
+                return true;
+            }
+            if (isHost && !isCountingDown) {
+                String selected = gameModeSelectBox.getSelected();
+                GameMode newMode = selected.equals(lang.get("game.mode.coop")) ? GameMode.COOP : GameMode.PVP;
+                if (newMode != currentGameMode) {
+                    setGameMode(newMode);
+                }
+            }
+            return true;
+        });
+        gameModeSelectBox.setVisible(isHost);
+        gameModeLabel.setVisible(isHost);
 
         // 玩家列表
         playerListTable = new Table();
@@ -214,11 +245,18 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         buttonTable.add(startGameButton).row();
         buttonTable.add(leaveRoomButton).row();
 
+        // 游戏模式选择表格
+        Table gameModeTable = new Table();
+        gameModeTable.defaults().padRight(w(10f));
+        gameModeTable.add(gameModeLabel).right();
+        gameModeTable.add(gameModeSelectBox).width(w(150f)).left();
+
         // 组装主表格
         mainTable.add(title).colspan(2).padBottom(h(20f)).row();
         mainTable.add(statusLabel).colspan(2).padBottom(h(10f)).row();
         mainTable.add(roomNameLabel).colspan(2).padBottom(h(5f)).row();
-        mainTable.add(playerCountLabel).colspan(2).padBottom(h(20f)).row();
+        mainTable.add(playerCountLabel).colspan(2).padBottom(h(5f)).row();
+        mainTable.add(gameModeTable).colspan(2).padBottom(h(20f)).row();
         mainTable.add(playerListTable).width(w(200f)).padRight(w(20f)).left();
         mainTable.add(chatContainer).fillX().expandX().right();
         mainTable.row();
@@ -440,8 +478,35 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         if (startGameButton != null) {
             startGameButton.setVisible(isHost);
         }
+        if (gameModeSelectBox != null) {
+            gameModeSelectBox.setVisible(isHost);
+        }
+        if (gameModeLabel != null) {
+            gameModeLabel.setVisible(isHost);
+        }
         if (playerListTable != null) {
             updatePlayerListUI();
+        }
+    }
+
+    /**
+     * 设置游戏模式
+     */
+    public void setGameMode(GameMode mode) {
+        this.currentGameMode = mode;
+        if (networkManager != null && networkManager.isConnected()) {
+            networkManager.setGameMode(mode);
+        }
+    }
+
+    /**
+     * 更新游戏模式显示
+     */
+    public void updateGameMode(GameMode mode) {
+        this.currentGameMode = mode;
+        if (gameModeSelectBox != null) {
+            String modeText = mode == GameMode.COOP ? lang().get("game.mode.coop") : lang().get("game.mode.pvp");
+            gameModeSelectBox.setSelected(modeText);
         }
     }
 
@@ -461,6 +526,19 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             // 处理房间状态更新
             if (message.getPlayers() != null) {
                 updatePlayerList(message.getPlayers());
+            }
+            // 更新房主状态
+            if (message.isHost() != this.isHost) {
+                setHost(message.isHost());
+            }
+            // 更新游戏模式
+            if (message.getGameMode() != null) {
+                updateGameMode(message.getGameMode());
+            }
+        } else if (message.getAction() == RoomMessage.RoomAction.SET_GAME_MODE) {
+            // 处理游戏模式设置响应
+            if (message.getGameMode() != null && message.isSuccess()) {
+                updateGameMode(message.getGameMode());
             }
         }
     }

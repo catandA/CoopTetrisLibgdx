@@ -1,9 +1,8 @@
 package me.catand.cooptetris.shared.tetris;
 
-import java.util.Random;
-
 import lombok.Data;
 import me.catand.cooptetris.shared.model.Tetromino;
+import me.catand.cooptetris.shared.util.Random;
 
 @Data
 public class GameLogic {
@@ -19,13 +18,29 @@ public class GameLogic {
     private int score;
     private int level;
     private int lines;
-    private final Random random;
     private boolean gameOver;
+    private long randomSeed; // 随机数种子，用于同步
 
     public GameLogic() {
         board = new int[BOARD_HEIGHT][BOARD_WIDTH];
-        random = new Random();
+        randomSeed = 0;
         reset();
+    }
+
+    /**
+     * 使用指定种子重置游戏，确保所有客户端生成相同的方块序列
+     * @param seed 随机数种子
+     */
+    public void reset(long seed) {
+        this.randomSeed = seed;
+        // 推入新的随机数生成器，使用指定种子
+        Random.pushGenerator(seed);
+        try {
+            reset();
+        } finally {
+            // 重置完成后弹出随机数生成器
+            Random.popGenerator();
+        }
     }
 
     public void reset() {
@@ -34,8 +49,8 @@ public class GameLogic {
                 board[i][j] = 0;
             }
         }
-        currentPiece = random.nextInt(7);
-        nextPiece = random.nextInt(7);
+        currentPiece = Random.Int(7);
+        nextPiece = Random.Int(7);
         currentPieceX = BOARD_WIDTH / 2 - 2;
         currentPieceY = 0;
         currentPieceRotation = 0;
@@ -219,11 +234,11 @@ public class GameLogic {
 
     private void spawnNewPiece() {
         currentPiece = nextPiece;
-        nextPiece = random.nextInt(7);
+        nextPiece = Random.Int(7);
         currentPieceX = BOARD_WIDTH / 2 - 2;
         currentPieceY = 0;
         // 随机生成旋转状态，使方块朝向不固定
-        currentPieceRotation = random.nextInt(4);
+        currentPieceRotation = Random.Int(4);
 
         if (!canMove(currentPieceX, currentPieceY, currentPieceRotation)) {
             gameOver = true;

@@ -23,6 +23,10 @@ public class GameStateManager {
     }
 
     public void startMultiplayer(int playerCount, int playerIndex) {
+        startMultiplayer(playerCount, playerIndex, 0);
+    }
+
+    public void startMultiplayer(int playerCount, int playerIndex, long seed) {
         isMultiplayer = true;
         this.playerCount = playerCount;
         this.playerIndex = playerIndex;
@@ -30,7 +34,8 @@ public class GameStateManager {
         for (int i = 0; i < playerCount; i++) {
             remoteGameLogics[i] = new GameLogic();
         }
-        localGameLogic.reset();
+        // 使用种子初始化游戏逻辑，确保所有客户端生成相同的方块序列
+        localGameLogic.reset(seed);
     }
 
     public void update(float delta) {

@@ -17,6 +17,7 @@ import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NetworkMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
+import me.catand.cooptetris.shared.tetris.GameMode;
 import me.catand.cooptetris.util.LanguageManager;
 
 public class NetworkManager {
@@ -129,6 +130,8 @@ public class NetworkManager {
         kryo.register(MoveMessage.MoveType.class);
         kryo.register(NotificationMessage.class);
         kryo.register(NotificationMessage.NotificationType.class);
+        kryo.register(GameMode.class);
+        kryo.register(long.class);
     }
 
     private void handleMessage(NetworkMessage message) {
@@ -285,6 +288,12 @@ public class NetworkManager {
         RoomMessage chatMessage = new RoomMessage(RoomMessage.RoomAction.CHAT);
         chatMessage.setChatMessage(message);
         sendMessage(chatMessage);
+    }
+
+    public void setGameMode(GameMode gameMode) {
+        RoomMessage message = new RoomMessage(RoomMessage.RoomAction.SET_GAME_MODE);
+        message.setGameMode(gameMode);
+        sendMessage(message);
     }
 
     public void disconnect() {

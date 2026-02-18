@@ -16,6 +16,7 @@ public class ClientConnection {
     private Room currentRoom;
     private final ServerManager serverManager;
     private boolean connected;
+    private int gameLogicIndex; // 玩家对应的游戏逻辑索引（用于区分COOP/PVP模式）
 
     public ClientConnection(Connection connection, ServerManager serverManager) {
         this.connection = connection;
@@ -23,6 +24,7 @@ public class ClientConnection {
         this.clientId = UUID.randomUUID().toString();
         this.language = "en"; // 默认语言为英文
         this.connected = true;
+        this.gameLogicIndex = -1;
     }
 
     public void sendMessage(NetworkMessage message) {

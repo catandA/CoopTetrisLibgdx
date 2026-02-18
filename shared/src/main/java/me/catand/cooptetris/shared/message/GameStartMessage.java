@@ -9,6 +9,7 @@ public class GameStartMessage extends NetworkMessage {
     private String roomId;
     private int playerCount;
     private int yourIndex;
+    private long seed; // 游戏随机数种子，用于同步方块生成
 
     public GameStartMessage() {
         super("gameStart");

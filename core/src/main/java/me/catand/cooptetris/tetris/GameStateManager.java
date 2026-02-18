@@ -51,6 +51,10 @@ public class GameStateManager implements NetworkManager.NetworkListener {
         sharedManager.startMultiplayer(playerCount, playerIndex);
     }
 
+    public void startMultiplayer(int playerCount, int playerIndex, long seed) {
+        sharedManager.startMultiplayer(playerCount, playerIndex, seed);
+    }
+
     public void update(float delta) {
         sharedManager.update(delta);
     }
@@ -90,7 +94,8 @@ public class GameStateManager implements NetworkManager.NetworkListener {
 
     @Override
     public void onGameStart(me.catand.cooptetris.shared.message.GameStartMessage message) {
-        startMultiplayer(message.getPlayerCount(), message.getYourIndex());
+        // 使用服务器发送的种子启动多人游戏，确保方块生成同步
+        startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
     }
 
     @Override

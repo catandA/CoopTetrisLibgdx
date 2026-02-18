@@ -1,4 +1,4 @@
-package me.catand.cooptetris.util;
+package me.catand.cooptetris.shared.util;
 
 import java.util.ArrayDeque;
 import java.util.Collection;

@@ -3,6 +3,7 @@ package me.catand.cooptetris.shared.message;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import me.catand.cooptetris.shared.tetris.GameMode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -15,7 +16,8 @@ public class RoomMessage extends NetworkMessage {
         START,
         STATUS,
         KICK,
-        CHAT
+        CHAT,
+        SET_GAME_MODE
     }
 
     private RoomAction action;
@@ -29,6 +31,7 @@ public class RoomMessage extends NetworkMessage {
     private String targetPlayer;
     private String chatMessage;
     private boolean isHost;
+    private GameMode gameMode;
 
     public RoomMessage() {
         super("room");

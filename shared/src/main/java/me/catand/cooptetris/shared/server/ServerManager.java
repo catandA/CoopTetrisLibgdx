@@ -16,6 +16,7 @@ import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NetworkMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
+import me.catand.cooptetris.shared.tetris.GameMode;
 
 public class ServerManager {
     public enum ServerType {
@@ -138,6 +139,8 @@ public class ServerManager {
         kryo.register(MoveMessage.MoveType.class);
         kryo.register(NotificationMessage.class);
         kryo.register(NotificationMessage.NotificationType.class);
+        kryo.register(GameMode.class);
+        kryo.register(long.class);
     }
 
 
@@ -235,6 +238,9 @@ public class ServerManager {
                 break;
             case STATUS:
                 handleStatusRequest(client);
+                break;
+            case SET_GAME_MODE:
+                handleSetGameMode(client, message);
                 break;
         }
     }
@@ -423,11 +429,38 @@ public class ServerManager {
         }
     }
 
-    public void sendGameStartMessage(ClientConnection client, Room room, int playerIndex) {
+    private void handleSetGameMode(ClientConnection client, RoomMessage message) {
+        Room room = client.getCurrentRoom();
+        if (room != null && room.getHost() == client && !room.isStarted()) {
+            GameMode newMode = message.getGameMode();
+            if (newMode != null) {
+                room.setGameMode(newMode);
+                System.out.println("ServerManager: 房主 " + client.getPlayerName() + " 将房间 " + room.getName() + " 的游戏模式设置为 " + newMode);
+
+                // 广播房间状态更新
+                room.broadcastRoomStatus();
+
+                // 发送成功响应
+                RoomMessage response = new RoomMessage(RoomMessage.RoomAction.SET_GAME_MODE);
+                response.setSuccess(true);
+                response.setGameMode(newMode);
+                client.sendMessage(response);
+            }
+        } else {
+            // 发送失败响应
+            RoomMessage response = new RoomMessage(RoomMessage.RoomAction.SET_GAME_MODE);
+            response.setSuccess(false);
+            response.setMessage("Only host can change game mode before game starts");
+            client.sendMessage(response);
+        }
+    }
+
+    public void sendGameStartMessage(ClientConnection client, Room room, int playerIndex, long seed) {
         GameStartMessage message = new GameStartMessage();
         message.setRoomId(room.getId());
         message.setPlayerCount(room.getPlayers().size());
         message.setYourIndex(playerIndex);
+        message.setSeed(seed);
         client.sendMessage(message);
     }
 

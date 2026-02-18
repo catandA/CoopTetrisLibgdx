@@ -2,6 +2,8 @@ package me.catand.cooptetris.util;
 
 import java.util.ArrayList;
 
+import me.catand.cooptetris.shared.util.Random;
+
 public class Rect {
 
     public int left;
