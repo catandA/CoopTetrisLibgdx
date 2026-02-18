@@ -129,7 +129,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         roomNameLabel = new Label(lang.get("room.label") + " " + roomName, skin);
         playerCountLabel = new Label(lang.get("players.label") + " 0/" + maxPlayers, skin);
 
-        // 游戏模式选择（仅房主可见）
+        // 游戏模式选择（房主可编辑，其他玩家只读）
         gameModeLabel = new Label(lang.get("game.mode.label") + ":", skin);
         gameModeSelectBox = new SelectBox<>(skin);
         Array<String> gameModeItems = new Array<>();
@@ -150,8 +150,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             }
             return true;
         });
-        gameModeSelectBox.setVisible(isHost);
-        gameModeLabel.setVisible(isHost);
+        // 非房主禁用下拉框（只读）
+        gameModeSelectBox.setDisabled(!isHost);
 
         // 玩家列表
         playerListTable = new Table();
@@ -479,10 +479,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             startGameButton.setVisible(isHost);
         }
         if (gameModeSelectBox != null) {
-            gameModeSelectBox.setVisible(isHost);
-        }
-        if (gameModeLabel != null) {
-            gameModeLabel.setVisible(isHost);
+            gameModeSelectBox.setDisabled(!isHost);
         }
         if (playerListTable != null) {
             updatePlayerListUI();
