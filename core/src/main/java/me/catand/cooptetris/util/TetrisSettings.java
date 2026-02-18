@@ -1,11 +1,13 @@
 package me.catand.cooptetris.util;
 
+import me.catand.cooptetris.input.InputBinding;
+
 public class TetrisSettings extends GameSettings {
 
     // 游戏难度
     public static final String KEY_DIFFICULTY = "difficulty";
 
-    // 控制键位
+    // 控制键位 - 存储为枚举名称
     public static final String KEY_LEFT_KEY = "left_key";
     public static final String KEY_RIGHT_KEY = "right_key";
     public static final String KEY_DOWN_KEY = "down_key";
@@ -29,7 +31,16 @@ public class TetrisSettings extends GameSettings {
     // 玩家名称
     public static final String KEY_PLAYER_NAME = "player_name";
 
-    // 游戏难度设置
+    // 全屏设置
+    public static final String KEY_FULLSCREEN = "fullscreen";
+
+    // 窗口分辨率设置
+    public static final String KEY_WINDOW_WIDTH = "window_width";
+    public static final String KEY_WINDOW_HEIGHT = "window_height";
+    public static final String KEY_WINDOW_MAXIMIZED = "window_maximized";
+
+    // ==================== 游戏难度设置 ====================
+
     public static void difficulty(int value) {
         put(KEY_DIFFICULTY, value);
     }
@@ -38,89 +49,104 @@ public class TetrisSettings extends GameSettings {
         return getInt(KEY_DIFFICULTY, 1, 1, 3);
     }
 
-    // 第一套控制键位设置
-    public static void leftKey(String value) {
-        put(KEY_LEFT_KEY, value);
+    // ==================== 第一套控制键位设置 ====================
+
+    public static void leftKey(InputBinding key) {
+        put(KEY_LEFT_KEY, key != null ? key.name() : InputBinding.LEFT.name());
     }
 
-    public static String leftKey() {
-        return getString(KEY_LEFT_KEY, "LEFT");
+    public static InputBinding leftKey() {
+        return getInputBinding(KEY_LEFT_KEY, InputBinding.LEFT);
     }
 
-    public static void rightKey(String value) {
-        put(KEY_RIGHT_KEY, value);
+    public static void rightKey(InputBinding key) {
+        put(KEY_RIGHT_KEY, key != null ? key.name() : InputBinding.RIGHT.name());
     }
 
-    public static String rightKey() {
-        return getString(KEY_RIGHT_KEY, "RIGHT");
+    public static InputBinding rightKey() {
+        return getInputBinding(KEY_RIGHT_KEY, InputBinding.RIGHT);
     }
 
-    public static void downKey(String value) {
-        put(KEY_DOWN_KEY, value);
+    public static void downKey(InputBinding key) {
+        put(KEY_DOWN_KEY, key != null ? key.name() : InputBinding.DOWN.name());
     }
 
-    public static String downKey() {
-        return getString(KEY_DOWN_KEY, "DOWN");
+    public static InputBinding downKey() {
+        return getInputBinding(KEY_DOWN_KEY, InputBinding.DOWN);
     }
 
-    public static void rotateKey(String value) {
-        put(KEY_ROTATE_KEY, value);
+    public static void rotateKey(InputBinding key) {
+        put(KEY_ROTATE_KEY, key != null ? key.name() : InputBinding.UP.name());
     }
 
-    public static String rotateKey() {
-        return getString(KEY_ROTATE_KEY, "UP");
+    public static InputBinding rotateKey() {
+        return getInputBinding(KEY_ROTATE_KEY, InputBinding.UP);
     }
 
-    public static void dropKey(String value) {
-        put(KEY_DROP_KEY, value);
+    public static void dropKey(InputBinding key) {
+        put(KEY_DROP_KEY, key != null ? key.name() : InputBinding.SPACE.name());
     }
 
-    public static String dropKey() {
-        return getString(KEY_DROP_KEY, "SPACE");
+    public static InputBinding dropKey() {
+        return getInputBinding(KEY_DROP_KEY, InputBinding.SPACE);
     }
 
-    // 第二套控制键位设置
-    public static void leftKey2(String value) {
-        put(KEY_LEFT_KEY2, value);
+    // ==================== 第二套控制键位设置 ====================
+
+    public static void leftKey2(InputBinding key) {
+        put(KEY_LEFT_KEY2, key != null ? key.name() : InputBinding.A.name());
     }
 
-    public static String leftKey2() {
-        return getString(KEY_LEFT_KEY2, "A");
+    public static InputBinding leftKey2() {
+        return getInputBinding(KEY_LEFT_KEY2, InputBinding.A);
     }
 
-    public static void rightKey2(String value) {
-        put(KEY_RIGHT_KEY2, value);
+    public static void rightKey2(InputBinding key) {
+        put(KEY_RIGHT_KEY2, key != null ? key.name() : InputBinding.D.name());
     }
 
-    public static String rightKey2() {
-        return getString(KEY_RIGHT_KEY2, "D");
+    public static InputBinding rightKey2() {
+        return getInputBinding(KEY_RIGHT_KEY2, InputBinding.D);
     }
 
-    public static void downKey2(String value) {
-        put(KEY_DOWN_KEY2, value);
+    public static void downKey2(InputBinding key) {
+        put(KEY_DOWN_KEY2, key != null ? key.name() : InputBinding.S.name());
     }
 
-    public static String downKey2() {
-        return getString(KEY_DOWN_KEY2, "S");
+    public static InputBinding downKey2() {
+        return getInputBinding(KEY_DOWN_KEY2, InputBinding.S);
     }
 
-    public static void rotateKey2(String value) {
-        put(KEY_ROTATE_KEY2, value);
+    public static void rotateKey2(InputBinding key) {
+        put(KEY_ROTATE_KEY2, key != null ? key.name() : InputBinding.W.name());
     }
 
-    public static String rotateKey2() {
-        return getString(KEY_ROTATE_KEY2, "W");
+    public static InputBinding rotateKey2() {
+        return getInputBinding(KEY_ROTATE_KEY2, InputBinding.W);
     }
 
-    public static void dropKey2(String value) {
-        put(KEY_DROP_KEY2, value);
+    public static void dropKey2(InputBinding key) {
+        put(KEY_DROP_KEY2, key != null ? key.name() : InputBinding.SPACE.name());
     }
 
-    public static String dropKey2() {
-        return getString(KEY_DROP_KEY2, "SPACE");
+    public static InputBinding dropKey2() {
+        return getInputBinding(KEY_DROP_KEY2, InputBinding.SPACE);
     }
 
-    // 网络设置
+    // ==================== 辅助方法 ====================
+
+    private static InputBinding getInputBinding(String key, InputBinding defaultValue) {
+        String value = getString(key, defaultValue.name());
+        try {
+            return InputBinding.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            // 如果存储的值无效，返回默认值
+            return defaultValue;
+        }
+    }
+
+    // ==================== 网络设置 ====================
+
     public static void defaultHost(String value) {
         put(KEY_DEFAULT_HOST, value);
     }
@@ -137,7 +163,8 @@ public class TetrisSettings extends GameSettings {
         return getInt(KEY_DEFAULT_PORT, 8080, 1, 65535);
     }
 
-    // 语言设置
+    // ==================== 语言设置 ====================
+
     public static void language(String value) {
         put(KEY_LANGUAGE, value);
     }
@@ -146,7 +173,8 @@ public class TetrisSettings extends GameSettings {
         return getString(KEY_LANGUAGE, "en");
     }
 
-    // 玩家名称设置
+    // ==================== 玩家名称设置 ====================
+
     public static void playerName(String value) {
         put(KEY_PLAYER_NAME, value);
     }
@@ -155,8 +183,7 @@ public class TetrisSettings extends GameSettings {
         return getString(KEY_PLAYER_NAME, "Player" + (int) (Math.random() * 1000), 20);
     }
 
-    // 全屏设置
-    public static final String KEY_FULLSCREEN = "fullscreen";
+    // ==================== 窗口设置 ====================
 
     public static void fullscreen(boolean value) {
         put(KEY_FULLSCREEN, value);
@@ -165,12 +192,6 @@ public class TetrisSettings extends GameSettings {
     public static boolean fullscreen() {
         return getBoolean(KEY_FULLSCREEN, false);
     }
-
-    // 窗口分辨率设置
-    public static final String KEY_WINDOW_WIDTH = "window_width";
-    public static final String KEY_WINDOW_HEIGHT = "window_height";
-
-    public static final String KEY_WINDOW_MAXIMIZED = "window_maximized";
 
     public static void windowResolution(Point p) {
         put(KEY_WINDOW_WIDTH, p.x);
@@ -191,19 +212,20 @@ public class TetrisSettings extends GameSettings {
         return getBoolean(KEY_WINDOW_MAXIMIZED, false);
     }
 
-    // 重置所有设置为默认值
+    // ==================== 重置所有设置 ====================
+
     public static void resetToDefaults() {
         difficulty(1);
-        leftKey("LEFT");
-        rightKey("RIGHT");
-        downKey("DOWN");
-        rotateKey("UP");
-        dropKey("SPACE");
-        leftKey2("A");
-        rightKey2("D");
-        downKey2("S");
-        rotateKey2("W");
-        dropKey2("SPACE");
+        leftKey(InputBinding.LEFT);
+        rightKey(InputBinding.RIGHT);
+        downKey(InputBinding.DOWN);
+        rotateKey(InputBinding.UP);
+        dropKey(InputBinding.SPACE);
+        leftKey2(InputBinding.A);
+        rightKey2(InputBinding.D);
+        downKey2(InputBinding.S);
+        rotateKey2(InputBinding.W);
+        dropKey2(InputBinding.SPACE);
         defaultHost("localhost");
         defaultPort(8080);
         language("en");

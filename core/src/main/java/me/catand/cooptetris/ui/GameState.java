@@ -1,7 +1,5 @@
 package me.catand.cooptetris.ui;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -9,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 
+import me.catand.cooptetris.input.InputBinding;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.model.Tetromino;
 import me.catand.cooptetris.shared.tetris.GameLogic;
@@ -129,22 +128,20 @@ public class GameState extends BaseUIState {
         updateUI();
     }
 
-    private final boolean isProcessingSoftDrop = false;
-
     private void handleInput() {
         // 检查第一套和第二套控制键位
-        if (isKeyPressed("LEFT", "LEFT_KEY") || isKeyPressed("A", "LEFT_KEY2")) {
+        if (isInputJustPressed(TetrisSettings.leftKey(), TetrisSettings.leftKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.LEFT);
-        } else if (isKeyPressed("RIGHT", "RIGHT_KEY") || isKeyPressed("D", "RIGHT_KEY2")) {
+        } else if (isInputJustPressed(TetrisSettings.rightKey(), TetrisSettings.rightKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.RIGHT);
-        } else if (isKeyPressed("UP", "ROTATE_KEY") || isKeyPressed("W", "ROTATE_KEY2")) {
+        } else if (isInputJustPressed(TetrisSettings.rotateKey(), TetrisSettings.rotateKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.ROTATE_CLOCKWISE);
-        } else if (isKeyPressed("SPACE", "DROP_KEY") || isKeyPressed("SPACE", "DROP_KEY2")) {
+        } else if (isInputJustPressed(TetrisSettings.dropKey(), TetrisSettings.dropKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.DROP);
         }
 
-        // 单独处理下方向键
-        if (isKeyPressed("DOWN", "DOWN_KEY", true) || isKeyPressed("S", "DOWN_KEY2", true)) {
+        // 单独处理下方向键（软降）
+        if (isInputPressed(TetrisSettings.downKey(), TetrisSettings.downKey2())) {
             if (!isDownKeyPressed) {
                 // 第一次按下，发送下落请求
                 gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
@@ -153,10 +150,10 @@ public class GameState extends BaseUIState {
                 lastSoftDropTime = 0;
             } else {
                 // 持续按住
-                downKeyPressTime += Gdx.graphics.getDeltaTime();
+                downKeyPressTime += com.badlogic.gdx.Gdx.graphics.getDeltaTime();
                 if (downKeyPressTime >= initialDelay) {
                     // 超过初始延迟，开始发送连续下落请求
-                    lastSoftDropTime += Gdx.graphics.getDeltaTime();
+                    lastSoftDropTime += com.badlogic.gdx.Gdx.graphics.getDeltaTime();
                     if (lastSoftDropTime >= softDropInterval) {
                         gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
                         lastSoftDropTime = 0;
@@ -170,89 +167,17 @@ public class GameState extends BaseUIState {
     }
 
     /**
-     * 检查按键是否按下
-     *
-     * @param defaultKey 默认键位
-     * @param configKey  配置键名
-     * @return 是否按下
+     * 检查两个输入绑定中是否有任意一个被按下（单次触发）
      */
-    private boolean isKeyPressed(String defaultKey, String configKey) {
-        return isKeyPressed(defaultKey, configKey, false);
+    private boolean isInputJustPressed(InputBinding input1, InputBinding input2) {
+        return (input1 != null && input1.isJustPressed()) || (input2 != null && input2.isJustPressed());
     }
 
     /**
-     * 检查按键是否按下
-     *
-     * @param defaultKey   默认键位
-     * @param configKey    配置键名
-     * @param isContinuous 是否检查持续按住
-     * @return 是否按下
+     * 检查两个输入绑定中是否有任意一个被按住（持续触发）
      */
-    private boolean isKeyPressed(String defaultKey, String configKey, boolean isContinuous) {
-        String keyName = defaultKey;
-
-        switch (configKey) {
-            case "LEFT_KEY":
-                keyName = TetrisSettings.leftKey();
-                break;
-            case "RIGHT_KEY":
-                keyName = TetrisSettings.rightKey();
-                break;
-            case "DOWN_KEY":
-                keyName = TetrisSettings.downKey();
-                break;
-            case "ROTATE_KEY":
-                keyName = TetrisSettings.rotateKey();
-                break;
-            case "DROP_KEY":
-                keyName = TetrisSettings.dropKey();
-                break;
-            case "LEFT_KEY2":
-                keyName = TetrisSettings.leftKey2();
-                break;
-            case "RIGHT_KEY2":
-                keyName = TetrisSettings.rightKey2();
-                break;
-            case "DOWN_KEY2":
-                keyName = TetrisSettings.downKey2();
-                break;
-            case "ROTATE_KEY2":
-                keyName = TetrisSettings.rotateKey2();
-                break;
-            case "DROP_KEY2":
-                keyName = TetrisSettings.dropKey2();
-                break;
-        }
-
-        // 转换键名到Input.Keys枚举值
-        int keyCode = getKeyCode(keyName);
-        if (keyCode != -1) {
-            if (isContinuous) {
-                return Gdx.input.isKeyPressed(keyCode);
-            } else {
-                return Gdx.input.isKeyJustPressed(keyCode);
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 将键名字符串转换为Input.Keys枚举值
-     *
-     * @param keyName 键名字符串
-     * @return 对应的Input.Keys枚举值，-1表示未找到
-     */
-    private int getKeyCode(String keyName) {
-        try {
-            // 尝试直接通过枚举名获取
-            return Input.Keys.class.getField(keyName.toUpperCase()).getInt(null);
-        } catch (Exception e) {
-            // 如果是单个字符，返回对应的ASCII码
-            if (keyName.length() == 1) {
-                return keyName.toUpperCase().charAt(0);
-            }
-            return -1;
-        }
+    private boolean isInputPressed(InputBinding input1, InputBinding input2) {
+        return (input1 != null && input1.isPressed()) || (input2 != null && input2.isPressed());
     }
 
     private void updateUI() {
