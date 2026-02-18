@@ -28,6 +28,7 @@ public class RoomMessage extends NetworkMessage {
     private boolean started;
     private String targetPlayer;
     private String chatMessage;
+    private boolean isHost;
 
     public RoomMessage() {
         super("room");

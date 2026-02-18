@@ -526,14 +526,13 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
             case CREATE:
                 if (message.isSuccess()) {
                     setStatus(ConnectionState.CONNECTED_TO_SERVER, lang().get("room.created").replace("%s", message.getMessage()));
-                    // 加入创建的房间
-                    if (message.getRoomId() != null) {
-                        NetworkManager networkManager = uiManager.getNetworkManager();
-                        if (networkManager != null && networkManager.isConnected()) {
-                            networkManager.joinRoom(message.getRoomId());
-                        } else {
-                            System.err.println("NetworkManager is null or not connected when trying to join room");
-                        }
+                    // 创建房间后，服务器已经自动将创建者加入房间
+                    // 直接进入房间大厅，不需要再次调用 joinRoom
+                    NetworkManager networkManager = uiManager.getNetworkManager();
+                    if (networkManager != null) {
+                        RoomLobbyState roomLobbyState = new RoomLobbyState(uiManager, networkManager);
+                        roomLobbyState.setRoomInfo(message.getRoomName() != null ? message.getRoomName() : lang().get("default.room.name"), 4, true); // 创建房间的人是房主
+                        uiManager.pushState(roomLobbyState);
                     }
                 } else {
                     setStatus(ConnectionState.ERROR, lang().get("failed.to.create.room").replace("%s", message.getMessage()));
@@ -546,7 +545,8 @@ public class OnlineMenuState extends BaseUIState implements NetworkManager.Netwo
                     NetworkManager networkManager = uiManager.getNetworkManager();
                     if (networkManager != null) {
                         RoomLobbyState roomLobbyState = new RoomLobbyState(uiManager, networkManager);
-                        roomLobbyState.setRoomInfo(message.getRoomName() != null ? message.getRoomName() : lang().get("default.room.name"), 4, true); // 创建房间的人是房主
+                        // 使用服务器返回的是否房主信息
+                        roomLobbyState.setRoomInfo(message.getRoomName() != null ? message.getRoomName() : lang().get("default.room.name"), 4, message.isHost());
                         uiManager.pushState(roomLobbyState);
                     }
                 } else {

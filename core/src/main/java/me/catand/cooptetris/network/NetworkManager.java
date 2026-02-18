@@ -1,6 +1,7 @@
 package me.catand.cooptetris.network;
 
 import com.badlogic.gdx.Gdx;
+import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
@@ -99,17 +100,25 @@ public class NetworkManager {
      * 注册消息类
      */
     private void registerMessages() {
-        client.getKryo().register(ConnectMessage.class);
-        client.getKryo().register(RoomMessage.class);
-        client.getKryo().register(RoomMessage.RoomAction.class);
-        client.getKryo().register(RoomMessage.RoomInfo.class);
-        client.getKryo().register(GameStartMessage.class);
-        client.getKryo().register(GameStateMessage.class);
-        client.getKryo().register(MoveMessage.class);
-        client.getKryo().register(MoveMessage.MoveType.class);
-        client.getKryo().register(java.util.ArrayList.class);
-        client.getKryo().register(int[].class);
-        client.getKryo().register(int[][].class);
+        Kryo kryo = client.getKryo();
+
+        // 注册基本类型
+        kryo.register(boolean.class);
+        kryo.register(int.class);
+        kryo.register(String.class);
+        kryo.register(java.util.ArrayList.class);
+        kryo.register(int[].class);
+        kryo.register(int[][].class);
+
+        // 注册消息类
+        kryo.register(ConnectMessage.class);
+        kryo.register(RoomMessage.class);
+        kryo.register(RoomMessage.RoomAction.class);
+        kryo.register(RoomMessage.RoomInfo.class);
+        kryo.register(GameStartMessage.class);
+        kryo.register(GameStateMessage.class);
+        kryo.register(MoveMessage.class);
+        kryo.register(MoveMessage.MoveType.class);
     }
 
     /**

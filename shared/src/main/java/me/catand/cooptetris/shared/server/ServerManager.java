@@ -1,5 +1,6 @@
 package me.catand.cooptetris.shared.server;
 
+import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
@@ -115,17 +116,25 @@ public class ServerManager {
      * 注册消息类
      */
     private void registerMessages() {
-        server.getKryo().register(ConnectMessage.class);
-        server.getKryo().register(RoomMessage.class);
-        server.getKryo().register(RoomMessage.RoomAction.class);
-        server.getKryo().register(RoomMessage.RoomInfo.class);
-        server.getKryo().register(GameStartMessage.class);
-        server.getKryo().register(GameStateMessage.class);
-        server.getKryo().register(MoveMessage.class);
-        server.getKryo().register(MoveMessage.MoveType.class);
-        server.getKryo().register(java.util.ArrayList.class);
-        server.getKryo().register(int[].class);
-        server.getKryo().register(int[][].class);
+        Kryo kryo = server.getKryo();
+
+        // 注册基本类型
+        kryo.register(boolean.class);
+        kryo.register(int.class);
+        kryo.register(String.class);
+        kryo.register(java.util.ArrayList.class);
+        kryo.register(int[].class);
+        kryo.register(int[][].class);
+
+        // 注册消息类
+        kryo.register(ConnectMessage.class);
+        kryo.register(RoomMessage.class);
+        kryo.register(RoomMessage.RoomAction.class);
+        kryo.register(RoomMessage.RoomInfo.class);
+        kryo.register(GameStartMessage.class);
+        kryo.register(GameStateMessage.class);
+        kryo.register(MoveMessage.class);
+        kryo.register(MoveMessage.MoveType.class);
     }
 
 
@@ -268,7 +277,10 @@ public class ServerManager {
                 RoomMessage response = new RoomMessage(RoomMessage.RoomAction.JOIN);
                 response.setSuccess(true);
                 response.setRoomId(room.getId());
+                response.setRoomName(room.getName());
                 response.setMessage("Joined room successfully");
+                // 告诉客户端他们是否是房主
+                response.setHost(room.getHost() == client);
                 client.sendMessage(response);
 
                 System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 成功加入房间: " + room.getName());
