@@ -636,13 +636,20 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         countdownTimer = 0;
 
         if (uiManager != null && uiManager.gameStateManager != null) {
-            uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
-
-            // 根据游戏模式启动不同的游戏界面
-            if (currentGameMode == GameMode.PVP) {
+            // 根据游戏模式启动不同的游戏
+            if (message.getGameMode() == GameMode.COOP) {
+                // 合作模式
+                uiManager.gameStateManager.startCoopMode(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
+                CoopGameState coopGameState = new CoopGameState(uiManager, uiManager.gameStateManager);
+                uiManager.setScreen(coopGameState);
+            } else if (message.getGameMode() == GameMode.PVP) {
+                // PVP模式
+                uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
                 PVPGameState pvpGameState = new PVPGameState(uiManager, uiManager.gameStateManager);
                 uiManager.setScreen(pvpGameState);
             } else {
+                // 单人模式（兼容旧版本）
+                uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
                 GameState gameState = new GameState(uiManager, uiManager.gameStateManager);
                 uiManager.setScreen(gameState);
             }

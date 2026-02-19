@@ -3,6 +3,7 @@ package me.catand.cooptetris.tetris;
 import lombok.Setter;
 import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
+import me.catand.cooptetris.shared.message.CoopGameStateMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.PlayerScoresMessage;
@@ -62,6 +63,10 @@ public class GameStateManager implements NetworkManager.NetworkListener {
         sharedManager.startMultiplayer(playerCount, playerIndex, seed);
     }
 
+    public void startCoopMode(int playerCount, int playerIndex, long seed) {
+        sharedManager.startCoopMode(playerCount, playerIndex, seed);
+    }
+
     public void update(float delta) {
         sharedManager.update(delta);
     }
@@ -101,8 +106,14 @@ public class GameStateManager implements NetworkManager.NetworkListener {
 
     @Override
     public void onGameStart(me.catand.cooptetris.shared.message.GameStartMessage message) {
-        // 使用服务器发送的种子启动多人游戏，确保方块生成同步
-        startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
+        // 根据游戏模式启动不同的游戏
+        if (message.getGameMode() == me.catand.cooptetris.shared.tetris.GameMode.COOP) {
+            // 合作模式
+            startCoopMode(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
+        } else {
+            // PVP模式
+            startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
+        }
     }
 
     @Override
@@ -123,6 +134,12 @@ public class GameStateManager implements NetworkManager.NetworkListener {
         if (playerScoresListener != null) {
             playerScoresListener.onPlayerScoresUpdated(playerScores, message.getYourIndex());
         }
+    }
+
+    @Override
+    public void onCoopGameStateUpdate(CoopGameStateMessage message) {
+        // 合作模式游戏状态更新
+        sharedManager.updateCoopGameLogic(message);
     }
 
     public List<PlayerScoresMessage.PlayerScore> getPlayerScores() {

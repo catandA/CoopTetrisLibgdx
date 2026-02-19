@@ -12,6 +12,7 @@ import java.util.List;
 import lombok.Getter;
 import me.catand.cooptetris.shared.message.ConnectMessage;
 import me.catand.cooptetris.shared.message.CountdownMessage;
+import me.catand.cooptetris.shared.message.CoopGameStateMessage;
 import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
@@ -135,6 +136,9 @@ public class NetworkManager {
         kryo.register(PlayerScoresMessage.class);
         kryo.register(PlayerScoresMessage.PlayerScore.class);
         kryo.register(CountdownMessage.class);
+        kryo.register(CoopGameStateMessage.class);
+        kryo.register(CoopGameStateMessage.PlayerPieceState.class);
+        kryo.register(CoopGameStateMessage.PlayerPieceState[].class);
         kryo.register(GameMode.class);
         kryo.register(long.class);
     }
@@ -161,6 +165,9 @@ public class NetworkManager {
                 break;
             case "countdown":
                 handleCountdownMessage((CountdownMessage) message);
+                break;
+            case "coopGameState":
+                handleCoopGameStateMessage((CoopGameStateMessage) message);
                 break;
         }
     }
@@ -250,6 +257,17 @@ public class NetworkManager {
             // 使用监听器列表的副本进行遍历，避免ConcurrentModificationException
             for (NetworkListener listener : new ArrayList<>(listeners)) {
                 listener.onCountdownUpdate(finalMessage);
+            }
+        });
+    }
+
+    private void handleCoopGameStateMessage(CoopGameStateMessage message) {
+        // 确保在主线程中调用监听器方法
+        final CoopGameStateMessage finalMessage = message;
+        Gdx.app.postRunnable(() -> {
+            // 使用监听器列表的副本进行遍历，避免ConcurrentModificationException
+            for (NetworkListener listener : new ArrayList<>(listeners)) {
+                listener.onCoopGameStateUpdate(finalMessage);
             }
         });
     }
@@ -381,6 +399,10 @@ public class NetworkManager {
 
         default void onCountdownUpdate(CountdownMessage message) {
             // 默认空实现，用于游戏开始倒计时
+        }
+
+        default void onCoopGameStateUpdate(CoopGameStateMessage message) {
+            // 默认空实现，用于合作模式游戏状态同步
         }
     }
 }

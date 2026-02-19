@@ -11,6 +11,7 @@ import java.util.List;
 
 import me.catand.cooptetris.shared.message.ConnectMessage;
 import me.catand.cooptetris.shared.message.CountdownMessage;
+import me.catand.cooptetris.shared.message.CoopGameStateMessage;
 import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
@@ -144,6 +145,9 @@ public class ServerManager {
         kryo.register(PlayerScoresMessage.class);
         kryo.register(PlayerScoresMessage.PlayerScore.class);
         kryo.register(CountdownMessage.class);
+        kryo.register(CoopGameStateMessage.class);
+        kryo.register(CoopGameStateMessage.PlayerPieceState.class);
+        kryo.register(CoopGameStateMessage.PlayerPieceState[].class);
         kryo.register(GameMode.class);
         kryo.register(long.class);
     }
@@ -457,6 +461,7 @@ public class ServerManager {
         message.setPlayerCount(room.getPlayers().size());
         message.setYourIndex(playerIndex);
         message.setSeed(seed);
+        message.setGameMode(room.getGameMode());
         client.sendMessage(message);
     }
 

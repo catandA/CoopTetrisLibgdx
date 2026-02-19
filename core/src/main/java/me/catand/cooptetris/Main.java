@@ -9,6 +9,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.tetris.GameStateManager;
+import me.catand.cooptetris.ui.CoopGameState;
 import me.catand.cooptetris.ui.GameState;
 import me.catand.cooptetris.ui.MainMenuState;
 import me.catand.cooptetris.ui.PVPGameState;
@@ -146,6 +147,9 @@ public class Main extends ApplicationAdapter {
         } else if (currentState instanceof PVPGameState) {
             PVPGameState pvpGameState = (PVPGameState) currentState;
             pvpGameState.renderGame(shapeRenderer);
+        } else if (currentState instanceof CoopGameState) {
+            CoopGameState coopGameState = (CoopGameState) currentState;
+            coopGameState.renderGame(shapeRenderer);
         }
     }
 

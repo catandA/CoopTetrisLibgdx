@@ -1,5 +1,6 @@
 package me.catand.cooptetris.shared.tetris;
 
+import me.catand.cooptetris.shared.message.CoopGameStateMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 
@@ -12,6 +13,10 @@ public class GameStateManager {
     private float dropTimer;
     private static final float DROP_INTERVAL = 1.0f; // 默认下落间隔为1秒
 
+    // 合作模式相关
+    private boolean isCoopMode;
+    private CoopGameLogic coopGameLogic;
+
     public GameStateManager() {
         localGameLogic = new GameLogic();
         isMultiplayer = false;
@@ -19,7 +24,17 @@ public class GameStateManager {
 
     public void startSinglePlayer() {
         isMultiplayer = false;
+        isCoopMode = false;
         localGameLogic.reset();
+    }
+
+    public void startCoopMode(int playerCount, int playerIndex, long seed) {
+        isMultiplayer = true;
+        isCoopMode = true;
+        this.playerCount = playerCount;
+        this.playerIndex = playerIndex;
+        coopGameLogic = new CoopGameLogic();
+        coopGameLogic.reset(seed);
     }
 
     public void startMultiplayer(int playerCount, int playerIndex) {
@@ -72,7 +87,7 @@ public class GameStateManager {
     }
 
     public void updateGameLogic(GameStateMessage message) {
-        if (isMultiplayer && remoteGameLogics != null) {
+        if (isMultiplayer && !isCoopMode && remoteGameLogics != null) {
             // 更新本地游戏状态
             updateGameLogic(localGameLogic, message);
         }
@@ -82,7 +97,7 @@ public class GameStateManager {
      * 更新指定远程玩家的游戏逻辑（用于PVP模式显示对手游戏板）
      */
     public void updateRemoteGameLogic(int playerIndex, GameStateMessage message) {
-        if (isMultiplayer && remoteGameLogics != null && playerIndex >= 0 && playerIndex < remoteGameLogics.length) {
+        if (isMultiplayer && !isCoopMode && remoteGameLogics != null && playerIndex >= 0 && playerIndex < remoteGameLogics.length) {
             updateGameLogic(remoteGameLogics[playerIndex], message);
         }
     }
@@ -99,6 +114,41 @@ public class GameStateManager {
             message.getLevel(),
             message.getLines()
         );
+    }
+
+    /**
+     * 更新合作模式游戏逻辑
+     */
+    public void updateCoopGameLogic(CoopGameStateMessage message) {
+        if (!isCoopMode || coopGameLogic == null) return;
+
+        // 更新游戏板
+        int[][] board = message.getBoard();
+        int[][] boardColor = message.getBoardColor();
+        for (int y = 0; y < CoopGameLogic.BOARD_HEIGHT; y++) {
+            System.arraycopy(board[y], 0, coopGameLogic.getBoard()[y], 0, CoopGameLogic.BOARD_WIDTH);
+            System.arraycopy(boardColor[y], 0, coopGameLogic.getBoardColor()[y], 0, CoopGameLogic.BOARD_WIDTH);
+        }
+
+        // 更新游戏状态
+        coopGameLogic.setScore(message.getScore());
+        coopGameLogic.setLevel(message.getLevel());
+        coopGameLogic.setLines(message.getLines());
+        coopGameLogic.setGameOver(message.isGameOver());
+
+        // 更新每个玩家的物块
+        CoopGameStateMessage.PlayerPieceState[] playerPieces = message.getPlayerPieces();
+        if (playerPieces != null) {
+            for (int i = 0; i < playerPieces.length && i < CoopGameLogic.MAX_PLAYERS; i++) {
+                CoopGameStateMessage.PlayerPieceState pieceState = playerPieces[i];
+                CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(i);
+                piece.setPieceType(pieceState.getPieceType());
+                piece.setX(pieceState.getX());
+                piece.setY(pieceState.getY());
+                piece.setRotation(pieceState.getRotation());
+                piece.setActive(pieceState.isActive());
+            }
+        }
     }
 
     public GameLogic getLocalGameLogic() {
@@ -119,5 +169,13 @@ public class GameStateManager {
 
     public int getPlayerCount() {
         return playerCount;
+    }
+
+    public boolean isCoopMode() {
+        return isCoopMode;
+    }
+
+    public CoopGameLogic getCoopGameLogic() {
+        return coopGameLogic;
     }
 }

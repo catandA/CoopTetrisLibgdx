@@ -6,11 +6,13 @@ import java.util.UUID;
 
 import lombok.Data;
 import me.catand.cooptetris.shared.message.CountdownMessage;
+import me.catand.cooptetris.shared.message.CoopGameStateMessage;
 import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.PlayerScoresMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
+import me.catand.cooptetris.shared.tetris.CoopGameLogic;
 import me.catand.cooptetris.shared.tetris.GameLogic;
 import me.catand.cooptetris.shared.tetris.GameMode;
 import me.catand.cooptetris.shared.util.Random;
@@ -23,6 +25,7 @@ public class Room {
     private final int maxPlayers;
     private boolean started;
     private final List<GameLogic> gameLogics;
+    private CoopGameLogic coopGameLogic; // 合作模式游戏逻辑
     private final ServerManager serverManager;
     private ClientConnection host;
     private final boolean isDefaultLobby;
@@ -61,8 +64,16 @@ public class Room {
                 if (gameLogics.isEmpty()) {
                     gameLogics.add(new GameLogic());
                 }
-                // 合作模式下所有玩家使用索引0的游戏逻辑
-                client.setGameLogicIndex(0);
+                // 合作模式下，根据玩家加入顺序分配玩家索引（从中心向两边）
+                // 分配顺序：2(红), 3(绿), 1(蓝), 4(黄) 对应索引 1, 2, 0, 3
+                int playerIndex = players.size() - 1; // 0-based index in players list
+                if (playerIndex < CoopGameLogic.MAX_PLAYERS) {
+                    // 使用 PLAYER_ASSIGNMENT_ORDER 映射到实际的玩家索引
+                    int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[playerIndex];
+                    client.setGameLogicIndex(assignedPlayerIndex);
+                } else {
+                    client.setGameLogicIndex(0);
+                }
             } else {
                 // PVP模式：每个玩家独立的游戏逻辑
                 gameLogics.add(new GameLogic());
@@ -102,9 +113,16 @@ public class Room {
                 for (int i = 0; i < players.size(); i++) {
                     players.get(i).setGameLogicIndex(i);
                 }
-            } else if (gameMode == GameMode.COOP && players.isEmpty()) {
-                // 合作模式下所有玩家离开后才清除游戏逻辑
-                gameLogics.clear();
+            } else if (gameMode == GameMode.COOP) {
+                // 合作模式下重新分配玩家索引（从中心向两边）
+                for (int i = 0; i < players.size() && i < CoopGameLogic.MAX_PLAYERS; i++) {
+                    int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
+                    players.get(i).setGameLogicIndex(assignedPlayerIndex);
+                }
+                // 所有玩家离开后才清除游戏逻辑
+                if (players.isEmpty()) {
+                    gameLogics.clear();
+                }
             }
             client.setGameLogicIndex(-1);
 
@@ -196,11 +214,14 @@ public class Room {
 
         // 清除旧的游戏逻辑
         gameLogics.clear();
+        coopGameLogic = null;
 
         if (gameMode == GameMode.COOP) {
-            // 合作模式：所有玩家共享一个游戏逻辑
+            // 合作模式：使用新的 CoopGameLogic
+            coopGameLogic = new CoopGameLogic();
+            coopGameLogic.reset(gameSeed);
+            // 只添加一个GameLogic作为占位，保持兼容性
             gameLogics.add(new GameLogic());
-            gameLogics.get(0).reset(gameSeed);
         } else {
             // PVP模式：每个玩家有自己的游戏逻辑
             for (int i = 0; i < players.size(); i++) {
@@ -214,7 +235,9 @@ public class Room {
 
         for (int i = 0; i < players.size(); i++) {
             ClientConnection client = players.get(i);
-            serverManager.sendGameStartMessage(client, this, i, gameSeed);
+            // 使用玩家分配的游戏逻辑索引（在合作模式下这是玩家索引）
+            int playerIndex = client.getGameLogicIndex();
+            serverManager.sendGameStartMessage(client, this, playerIndex, gameSeed);
         }
 
         // 启动游戏循环线程
@@ -229,48 +252,74 @@ public class Room {
     public void handleMove(ClientConnection client, int moveType) {
         if (!started) return;
 
-        int gameLogicIndex = client.getGameLogicIndex();
-        if (gameLogicIndex >= 0 && gameLogicIndex < gameLogics.size()) {
-            GameLogic gameLogic = gameLogics.get(gameLogicIndex);
+        if (gameMode == GameMode.COOP && coopGameLogic != null) {
+            // 合作模式：根据玩家分配的玩家索引移动对应的物块
+            int playerIndex = client.getGameLogicIndex();
+            if (playerIndex < 0 || playerIndex >= CoopGameLogic.MAX_PLAYERS) return;
 
             switch (moveType) {
                 case 0: // LEFT
-                    gameLogic.moveLeft();
+                    coopGameLogic.moveLeft(playerIndex);
                     break;
                 case 1: // RIGHT
-                    gameLogic.moveRight();
+                    coopGameLogic.moveRight(playerIndex);
                     break;
                 case 2: // DOWN
-                    gameLogic.moveDown();
+                    coopGameLogic.moveDown(playerIndex);
                     break;
                 case 3: // DROP
-                    gameLogic.dropPiece();
+                    coopGameLogic.dropPiece(playerIndex);
                     break;
                 case 4: // ROTATE_CLOCKWISE
-                    gameLogic.rotateClockwise();
+                    coopGameLogic.rotateClockwise(playerIndex);
                     break;
             }
 
             broadcastGameState();
+        } else {
+            // PVP模式：原有逻辑
+            int gameLogicIndex = client.getGameLogicIndex();
+            if (gameLogicIndex >= 0 && gameLogicIndex < gameLogics.size()) {
+                GameLogic gameLogic = gameLogics.get(gameLogicIndex);
+
+                switch (moveType) {
+                    case 0: // LEFT
+                        gameLogic.moveLeft();
+                        break;
+                    case 1: // RIGHT
+                        gameLogic.moveRight();
+                        break;
+                    case 2: // DOWN
+                        gameLogic.moveDown();
+                        break;
+                    case 3: // DROP
+                        gameLogic.dropPiece();
+                        break;
+                    case 4: // ROTATE_CLOCKWISE
+                        gameLogic.rotateClockwise();
+                        break;
+                }
+
+                broadcastGameState();
+            }
         }
     }
 
     public void broadcastGameState() {
-        if (gameMode == GameMode.COOP) {
-            // 合作模式：所有玩家共享同一个游戏状态
-            if (!gameLogics.isEmpty()) {
-                GameLogic gameLogic = gameLogics.get(0);
-                GameStateMessage message = createGameStateMessage(gameLogic);
+        // 使用副本进行迭代，避免ConcurrentModificationException
+        List<ClientConnection> playersCopy = new ArrayList<>(players);
 
-                for (ClientConnection client : players) {
-                    client.sendMessage(message);
-                }
+        if (gameMode == GameMode.COOP && coopGameLogic != null) {
+            // 合作模式：广播 CoopGameStateMessage
+            CoopGameStateMessage message = createCoopGameStateMessage();
+            for (ClientConnection client : playersCopy) {
+                client.sendMessage(message);
             }
         } else {
             // PVP模式：广播所有玩家的游戏状态给所有人
             // 发送给每个玩家：包含所有玩家的游戏状态
-            for (int i = 0; i < players.size(); i++) {
-                ClientConnection client = players.get(i);
+            for (int i = 0; i < playersCopy.size(); i++) {
+                ClientConnection client = playersCopy.get(i);
                 int playerGameLogicIndex = client.getGameLogicIndex();
 
                 // 发送自己的游戏状态（设置playerIndex为自己的索引）
@@ -339,6 +388,35 @@ public class Room {
         message.setScore(gameLogic.getScore());
         message.setLevel(gameLogic.getLevel());
         message.setLines(gameLogic.getLines());
+        return message;
+    }
+
+    private CoopGameStateMessage createCoopGameStateMessage() {
+        CoopGameStateMessage message = new CoopGameStateMessage();
+        message.setBoard(coopGameLogic.getBoard());
+        message.setBoardColor(coopGameLogic.getBoardColor());
+        message.setScore(coopGameLogic.getScore());
+        message.setLevel(coopGameLogic.getLevel());
+        message.setLines(coopGameLogic.getLines());
+        message.setGameOver(coopGameLogic.isGameOver());
+        message.setPlayerCount(players.size());
+
+        // 设置每个玩家的物块状态
+        // 使用 MAX_PLAYERS 大小数组，确保所有4个可能的玩家位置都被包含
+        CoopGameStateMessage.PlayerPieceState[] playerPieceStates = new CoopGameStateMessage.PlayerPieceState[CoopGameLogic.MAX_PLAYERS];
+        for (int i = 0; i < CoopGameLogic.MAX_PLAYERS; i++) {
+            CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(i);
+            playerPieceStates[i] = new CoopGameStateMessage.PlayerPieceState(
+                i,
+                piece.getPieceType(),
+                piece.getX(),
+                piece.getY(),
+                piece.getRotation(),
+                piece.isActive()
+            );
+        }
+        message.setPlayerPieces(playerPieceStates);
+
         return message;
     }
 
@@ -464,11 +542,22 @@ public class Room {
      * 更新游戏状态，处理方块自动下落
      */
     public void updateGameState() {
-        // 遍历所有玩家的游戏逻辑
-        for (int i = 0; i < gameLogics.size(); i++) {
-            GameLogic gameLogic = gameLogics.get(i);
-            // 执行方块自动下落
-            gameLogic.moveDown();
+        if (gameMode == GameMode.COOP && coopGameLogic != null) {
+            // 合作模式：让所有活跃的物块自动下落
+            // 遍历所有4个可能的玩家位置
+            for (int i = 0; i < CoopGameLogic.MAX_PLAYERS; i++) {
+                CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(i);
+                if (piece.isActive()) {
+                    coopGameLogic.moveDown(i);
+                }
+            }
+        } else {
+            // PVP模式：遍历所有玩家的游戏逻辑
+            for (int i = 0; i < gameLogics.size(); i++) {
+                GameLogic gameLogic = gameLogics.get(i);
+                // 执行方块自动下落
+                gameLogic.moveDown();
+            }
         }
         // 广播游戏状态更新，确保所有客户端同步
         broadcastGameState();
