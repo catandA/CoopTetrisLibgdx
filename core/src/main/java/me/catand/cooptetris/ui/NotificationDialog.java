@@ -1,300 +1,202 @@
 package me.catand.cooptetris.ui;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.util.LanguageManager;
-import me.catand.cooptetris.util.UIScaler;
 
 /**
- * 通知弹窗 - 用于显示服务器发送的通知、错误、警告等信息
- * <p>
- * 适配UIScaler缩放系统，以1280x720为设计基准
- * 使用Main.platform.getFont生成清晰字体
+ * 通知弹窗 - 现代化暗色游戏UI风格
  */
-public class NotificationDialog extends Dialog {
+public class NotificationDialog {
 
-    // 设计基准尺寸（与UIScaler保持一致）
-    private static final float DESIGN_WIDTH = 1280f;
-    private static final float DESIGN_HEIGHT = 720f;
-
-    // 弹窗设计尺寸
-    private static final float DIALOG_DESIGN_WIDTH = 400f;
-    private static final float DIALOG_DESIGN_HEIGHT = 250f;
-
-    // 字体设计大小
-    private static final int TITLE_FONT_SIZE = 24;
-    private static final int MESSAGE_FONT_SIZE = 18;
-    private static final int REASON_FONT_SIZE = 16;
-    private static final int BUTTON_FONT_SIZE = 18;
-
+    private Table dialogTable;
     private Label titleLabel;
     private Label messageLabel;
     private Label reasonLabel;
-    private final TextButton okButton;
+    private TextButton okButton;
     private Runnable onCloseAction;
-    private final UIScaler scaler;
 
-    // 字体缓存
     private BitmapFont titleFont;
     private BitmapFont messageFont;
-    private BitmapFont reasonFont;
-    private BitmapFont buttonFont;
 
-    // 当前消息
     private NotificationMessage currentMessage;
+    private boolean isVisible = false;
 
-    // 保存skin引用（父类的skin是private）
-    private final Skin dialogSkin;
+    // UI颜色配置
+    private static final Color COLOR_PANEL = new Color(0.12f, 0.14f, 0.17f, 0.98f);
+    private static final Color COLOR_PANEL_BORDER = new Color(0.25f, 0.28f, 0.35f, 1f);
+    private static final Color COLOR_PRIMARY = new Color(0.2f, 0.8f, 1f, 1f);
+    private static final Color COLOR_SECONDARY = new Color(0.8f, 0.3f, 0.9f, 1f);
+    private static final Color COLOR_SUCCESS = new Color(0.3f, 0.9f, 0.4f, 1f);
+    private static final Color COLOR_WARNING = new Color(1f, 0.7f, 0.2f, 1f);
+    private static final Color COLOR_DANGER = new Color(1f, 0.3f, 0.3f, 1f);
+    private static final Color COLOR_TEXT = new Color(0.9f, 0.9f, 0.9f, 1f);
+    private static final Color COLOR_TEXT_MUTED = new Color(0.5f, 0.52f, 0.55f, 1f);
 
-    public NotificationDialog(Skin skin) {
-        super("", skin);
-        this.dialogSkin = skin;
-        this.scaler = UIScaler.getInstance();
+    // 设计尺寸
+    private static final float DIALOG_WIDTH = 400f;
+    private static final float DIALOG_PADDING = 30f;
 
-        // 设置对话框样式
-        setModal(true);
-        setMovable(false);
-        setResizable(false);
+    public NotificationDialog(com.badlogic.gdx.scenes.scene2d.ui.Skin skin) {
+        createDialog(skin);
+    }
 
-        // 创建确定按钮
-        okButton = new TextButton("OK", skin);
-        // 添加青色悬停效果
-        okButton.addListener(new ClickListener() {
-            @Override
-            public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
-                okButton.setColor(Color.CYAN);
-            }
+    private void createDialog(com.badlogic.gdx.scenes.scene2d.ui.Skin skin) {
+        LanguageManager lang = LanguageManager.getInstance();
 
-            @Override
-            public void exit(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
-                okButton.setColor(Color.WHITE);
-            }
+        // 创建字体
+        titleFont = Main.platform.getFont((int)fontSize(24), "Notification", false, false);
+        messageFont = Main.platform.getFont((int)fontSize(16), "Message", false, false);
 
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
+        // 创建对话框表格
+        dialogTable = new Table();
+        dialogTable.setBackground(createPanelBackground(COLOR_PANEL));
+        dialogTable.pad(w(DIALOG_PADDING));
+        dialogTable.setSize(w(DIALOG_WIDTH), h(200f));
+
+        // 标题标签
+        Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, COLOR_TEXT);
+        titleLabel = new Label("", titleStyle);
+        titleLabel.setAlignment(Align.center);
+
+        // 消息标签
+        Label.LabelStyle messageStyle = new Label.LabelStyle(messageFont, COLOR_TEXT);
+        messageLabel = new Label("", messageStyle);
+        messageLabel.setAlignment(Align.center);
+        messageLabel.setWrap(true);
+
+        // 原因标签
+        Label.LabelStyle reasonStyle = new Label.LabelStyle(messageFont, COLOR_TEXT_MUTED);
+        reasonLabel = new Label("", reasonStyle);
+        reasonLabel.setAlignment(Align.center);
+        reasonLabel.setWrap(true);
+
+        // 确定按钮
+        okButton = new TextButton(lang.get("notification.button.ok"), skin);
+        okButton.setColor(COLOR_PRIMARY);
+        okButton.addListener(event -> {
+            if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 hide();
                 if (onCloseAction != null) {
                     onCloseAction.run();
                 }
             }
+            return true;
         });
+
+        // 组装对话框
+        dialogTable.add(titleLabel).fillX().padBottom(h(20f)).row();
+        dialogTable.add(messageLabel).width(w(DIALOG_WIDTH - DIALOG_PADDING * 2)).padBottom(h(10f)).row();
+        dialogTable.add(reasonLabel).width(w(DIALOG_WIDTH - DIALOG_PADDING * 2)).padBottom(h(25f)).row();
+        dialogTable.add(okButton).width(w(120f)).height(h(45f));
+
+        // 默认隐藏
+        dialogTable.setVisible(false);
     }
 
-    /**
-     * 创建或更新字体
-     */
-    private void updateFonts() {
-        float scale = scaler.getScale();
-
-        // 计算实际字体大小
-        int actualTitleSize = Math.round(TITLE_FONT_SIZE * scale);
-        int actualMessageSize = Math.round(MESSAGE_FONT_SIZE * scale);
-        int actualReasonSize = Math.round(REASON_FONT_SIZE * scale);
-        int actualButtonSize = Math.round(BUTTON_FONT_SIZE * scale);
-
-        // 使用Main.platform.getFont生成清晰字体
-        titleFont = Main.platform.getFont(actualTitleSize, "NotificationTitle", false, false);
-        messageFont = Main.platform.getFont(actualMessageSize, "NotificationMessage", false, false);
-        reasonFont = Main.platform.getFont(actualReasonSize, "NotificationReason", false, false);
-        buttonFont = Main.platform.getFont(actualButtonSize, "OK", false, false);
-
-        // 创建或更新标签样式
-        if (titleLabel == null) {
-            Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont != null ? titleFont : dialogSkin.getFont("default"), Color.WHITE);
-            titleLabel = new Label("", titleStyle);
-            titleLabel.setAlignment(Align.center);
-        } else {
-            titleLabel.setStyle(new Label.LabelStyle(titleFont != null ? titleFont : dialogSkin.getFont("default"), titleLabel.getColor()));
-        }
-
-        if (messageLabel == null) {
-            Label.LabelStyle messageStyle = new Label.LabelStyle(messageFont != null ? messageFont : dialogSkin.getFont("default"), Color.WHITE);
-            messageLabel = new Label("", messageStyle);
-            messageLabel.setWrap(true);
-            messageLabel.setAlignment(Align.center);
-        } else {
-            messageLabel.setStyle(new Label.LabelStyle(messageFont != null ? messageFont : dialogSkin.getFont("default"), Color.WHITE));
-        }
-
-        if (reasonLabel == null) {
-            Label.LabelStyle reasonStyle = new Label.LabelStyle(reasonFont != null ? reasonFont : dialogSkin.getFont("default"), Color.GRAY);
-            reasonLabel = new Label("", reasonStyle);
-            reasonLabel.setWrap(true);
-            reasonLabel.setAlignment(Align.center);
-        } else {
-            reasonLabel.setStyle(new Label.LabelStyle(reasonFont != null ? reasonFont : dialogSkin.getFont("default"), Color.GRAY));
-        }
-
-        // 更新按钮字体样式
-        updateButtonStyle();
+    public void setNotification(NotificationMessage message) {
+        this.currentMessage = message;
+        updateContent();
     }
 
-    /**
-     * 更新按钮样式以应用字体缩放
-     */
-    private void updateButtonStyle() {
-        if (buttonFont != null) {
-            // 创建新的按钮样式，使用缩放后的字体
-            TextButton.TextButtonStyle newStyle = new TextButton.TextButtonStyle(
-                okButton.getStyle().up,
-                okButton.getStyle().down,
-                okButton.getStyle().checked,
-                buttonFont
-            );
-            newStyle.over = okButton.getStyle().over;
-            newStyle.disabled = okButton.getStyle().disabled;
-            newStyle.fontColor = okButton.getStyle().fontColor;
-            newStyle.downFontColor = okButton.getStyle().downFontColor;
-            newStyle.overFontColor = okButton.getStyle().overFontColor;
-            newStyle.disabledFontColor = okButton.getStyle().disabledFontColor;
-            okButton.setStyle(newStyle);
-        }
-    }
+    private void updateContent() {
+        if (currentMessage == null) return;
 
-    /**
-     * 应用缩放设置
-     */
-    private void applyScale() {
-        float scale = scaler.getScale();
-
-        // 更新字体
-        updateFonts();
-
-        // 清空并重新组装对话框内容
-        getContentTable().clear();
-        getButtonTable().clear();
-
-        // 重新组装对话框内容
-        // 使用设计时的固定宽度比例，确保文字换行行为一致
-        float labelWidth = 360 * scale;
-        getContentTable().add(titleLabel).pad(10 * scale).row();
-        getContentTable().add(messageLabel).width(labelWidth).pad(10 * scale).row();
-        getContentTable().add(reasonLabel).width(labelWidth).pad(5 * scale).row();
-        getButtonTable().add(okButton).width(100 * scale).height(40 * scale).pad(10 * scale);
-
-        // 设置弹窗大小（基于设计尺寸缩放）
-        float dialogWidth = DIALOG_DESIGN_WIDTH * scale;
-        float dialogHeight = DIALOG_DESIGN_HEIGHT * scale;
-        setSize(dialogWidth, dialogHeight);
-
-        // 更新内容
-        if (currentMessage != null) {
-            updateContent(currentMessage);
-        }
-
-        // 关键：布局完成后，根据实际内容调整弹窗高度
-        // 这样可以防止文字被挤出弹窗
-        getContentTable().layout();
-        float contentHeight = getContentTable().getPrefHeight();
-        float buttonHeight = getButtonTable().getPrefHeight();
-        float newHeight = Math.max(dialogHeight, contentHeight + buttonHeight + 40 * scale);
-        setHeight(newHeight);
-    }
-
-    /**
-     * 更新内容显示
-     */
-    private void updateContent(NotificationMessage message) {
         LanguageManager lang = LanguageManager.getInstance();
 
         // 设置标题
-        String title = message.getTitle();
+        String title = currentMessage.getTitle();
         if (title == null || title.isEmpty()) {
-            title = getDefaultTitle(message.getNotificationType());
+            title = getDefaultTitle(currentMessage.getNotificationType());
         }
         titleLabel.setText(title);
 
         // 根据类型设置标题颜色
-        titleLabel.setColor(getColorForType(message.getNotificationType()));
+        titleLabel.setColor(getColorForType(currentMessage.getNotificationType()));
 
         // 设置消息内容
-        messageLabel.setText(message.getMessage() != null ? message.getMessage() : "");
+        messageLabel.setText(currentMessage.getMessage() != null ? currentMessage.getMessage() : "");
 
         // 设置原因（如果有）
-        if (message.getReason() != null && !message.getReason().isEmpty()) {
-            String reasonLabelText = lang.get("notification.reason.label") + " " + message.getReason();
-            reasonLabel.setText(reasonLabelText);
+        if (currentMessage.getReason() != null && !currentMessage.getReason().isEmpty()) {
+            String reasonText = lang.get("notification.reason.label") + " " + currentMessage.getReason();
+            reasonLabel.setText(reasonText);
             reasonLabel.setVisible(true);
         } else {
             reasonLabel.setVisible(false);
         }
 
         // 根据类型设置按钮文字
-        okButton.setText(getButtonTextForType(message.getNotificationType()));
-    }
+        okButton.setText(getButtonTextForType(currentMessage.getNotificationType()));
 
-    @Override
-    public Dialog show(Stage stage) {
-        // 先应用缩放
-        applyScale();
-
-        // 调用父类show方法
-        super.show(stage);
-
-        // 居中显示（考虑偏移量）
-        updatePosition();
-
-        return this;
-    }
-
-    /**
-     * 更新弹窗位置（用于窗口大小变化时）
-     */
-    public void updatePosition() {
-        float offsetX = scaler.getOffsetX();
-        float offsetY = scaler.getOffsetY();
-        float displayWidth = scaler.getDisplayWidth();
-        float displayHeight = scaler.getDisplayHeight();
-
-        setPosition(
-            offsetX + (displayWidth - getWidth()) / 2,
-            offsetY + (displayHeight - getHeight()) / 2
-        );
-    }
-
-    /**
-     * 窗口大小变化时更新弹窗
-     */
-    public void onResize() {
-        if (isVisible()) {
-            applyScale();
-            updatePosition();
+        // 调整对话框高度以适应内容
+        dialogTable.pack();
+        float minHeight = h(200f);
+        if (dialogTable.getHeight() < minHeight) {
+            dialogTable.setHeight(minHeight);
         }
     }
 
-    /**
-     * 显示通知弹窗
-     */
-    public static void show(Stage stage, Skin skin, NotificationMessage message) {
+    public void show(Stage stage) {
+        if (!isVisible) {
+            stage.addActor(dialogTable);
+            isVisible = true;
+        }
+        dialogTable.setVisible(true);
+        updatePosition(stage);
+    }
+
+    public void hide() {
+        dialogTable.setVisible(false);
+        isVisible = false;
+    }
+
+    private void updatePosition(Stage stage) {
+        // 居中显示
+        float x = (stage.getWidth() - dialogTable.getWidth()) / 2;
+        float y = (stage.getHeight() - dialogTable.getHeight()) / 2;
+        dialogTable.setPosition(x, y);
+    }
+
+    public void onResize(Stage stage) {
+        if (isVisible) {
+            updatePosition(stage);
+        }
+    }
+
+    public boolean isVisible() {
+        return isVisible;
+    }
+
+    public void setOnCloseAction(Runnable action) {
+        this.onCloseAction = action;
+    }
+
+    // ==================== 静态方法 ====================
+
+    public static void show(Stage stage, com.badlogic.gdx.scenes.scene2d.ui.Skin skin, NotificationMessage message) {
         show(stage, skin, message, null);
     }
 
-    /**
-     * 显示通知弹窗，带关闭回调
-     */
-    public static void show(Stage stage, Skin skin, NotificationMessage message, Runnable onClose) {
+    public static void show(Stage stage, com.badlogic.gdx.scenes.scene2d.ui.Skin skin, NotificationMessage message, Runnable onClose) {
         NotificationDialog dialog = new NotificationDialog(skin);
-        dialog.currentMessage = message;
         dialog.setNotification(message);
         dialog.setOnCloseAction(onClose);
         dialog.show(stage);
     }
 
-    /**
-     * 显示简单的错误弹窗
-     */
-    public static void showError(Stage stage, Skin skin, String title, String message) {
+    public static void showError(Stage stage, com.badlogic.gdx.scenes.scene2d.ui.Skin skin, String title, String message) {
         NotificationMessage msg = new NotificationMessage();
         msg.setNotificationType(NotificationMessage.NotificationType.ERROR);
         msg.setTitle(title);
@@ -302,10 +204,7 @@ public class NotificationDialog extends Dialog {
         show(stage, skin, msg);
     }
 
-    /**
-     * 显示简单的信息弹窗
-     */
-    public static void showInfo(Stage stage, Skin skin, String title, String message) {
+    public static void showInfo(Stage stage, com.badlogic.gdx.scenes.scene2d.ui.Skin skin, String title, String message) {
         NotificationMessage msg = new NotificationMessage();
         msg.setNotificationType(NotificationMessage.NotificationType.INFO);
         msg.setTitle(title);
@@ -313,29 +212,8 @@ public class NotificationDialog extends Dialog {
         show(stage, skin, msg);
     }
 
-    /**
-     * 设置通知内容
-     */
-    public void setNotification(NotificationMessage message) {
-        this.currentMessage = message;
-        // 确保标签已初始化
-        if (titleLabel == null) {
-            applyScale();
-        } else {
-            updateContent(message);
-        }
-    }
+    // ==================== 辅助方法 ====================
 
-    /**
-     * 设置关闭回调
-     */
-    public void setOnCloseAction(Runnable action) {
-        this.onCloseAction = action;
-    }
-
-    /**
-     * 获取默认标题
-     */
     private String getDefaultTitle(NotificationMessage.NotificationType type) {
         LanguageManager lang = LanguageManager.getInstance();
         switch (type) {
@@ -356,31 +234,25 @@ public class NotificationDialog extends Dialog {
         }
     }
 
-    /**
-     * 获取类型对应的颜色
-     */
     private Color getColorForType(NotificationMessage.NotificationType type) {
         switch (type) {
             case INFO:
-                return Color.WHITE;
+                return COLOR_PRIMARY;
             case WARNING:
-                return Color.YELLOW;
+                return COLOR_WARNING;
             case ERROR:
-                return Color.RED;
+                return COLOR_DANGER;
             case KICKED:
-                return Color.ORANGE;
+                return COLOR_WARNING;
             case DISCONNECTED:
-                return Color.GRAY;
+                return COLOR_TEXT_MUTED;
             case BANNED:
-                return Color.RED;
+                return COLOR_DANGER;
             default:
-                return Color.WHITE;
+                return COLOR_TEXT;
         }
     }
 
-    /**
-     * 获取按钮文字
-     */
     private String getButtonTextForType(NotificationMessage.NotificationType type) {
         LanguageManager lang = LanguageManager.getInstance();
         switch (type) {
@@ -389,9 +261,40 @@ public class NotificationDialog extends Dialog {
             case BANNED:
                 return lang.get("notification.button.leave");
             case ERROR:
-                return lang.get("notification.button.ok");
             default:
                 return lang.get("notification.button.ok");
         }
+    }
+
+    private com.badlogic.gdx.scenes.scene2d.utils.Drawable createPanelBackground(Color color) {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(color);
+        pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(texture);
+    }
+
+    private float fontSize(int baseSize) {
+        return baseSize * getUIScale();
+    }
+
+    private float w(float designWidth) {
+        return designWidth * getUIScale();
+    }
+
+    private float h(float designHeight) {
+        return designHeight * getUIScale();
+    }
+
+    private float getUIScale() {
+        // 使用与BaseUIState相同的缩放逻辑
+        float designWidth = 1280f;
+        float designHeight = 720f;
+        float screenWidth = com.badlogic.gdx.Gdx.graphics.getWidth();
+        float screenHeight = com.badlogic.gdx.Gdx.graphics.getHeight();
+        float scaleX = screenWidth / designWidth;
+        float scaleY = screenHeight / designHeight;
+        return Math.min(scaleX, scaleY);
     }
 }

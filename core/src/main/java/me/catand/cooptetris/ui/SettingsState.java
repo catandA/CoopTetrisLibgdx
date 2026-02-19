@@ -1,6 +1,8 @@
 package me.catand.cooptetris.ui;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -14,34 +16,29 @@ import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
 
 /**
- * 设置界面状态 - 现代化卡片式设计
- * <p>
- * 设计原则：
- * 1. 使用卡片式布局，每个设置类别一个卡片
- * 2. 易于扩展，添加新设置只需新增卡片
- * 3. 语言切换即时生效，自动保存
- * 4. 键位设置独立页面
- * <p>
- * 布局规范：
- * - 每个卡片使用统一的两列布局
- * - 左侧列宽 150f 放置标签
- * - 右侧列放置操作控件
- * - 确保所有操作按钮/控件在同一垂直线上
+ * 设置界面状态 - 现代化暗色游戏UI风格
  */
 public class SettingsState extends BaseUIState {
 
-    private Table rootTable;
+    private Table mainTable;
     private BitmapFont titleFont;
     private BitmapFont cardTitleFont;
 
-    // 语言选择框
     private com.badlogic.gdx.scenes.scene2d.ui.SelectBox<String> languageBox;
 
-    // 统一的标签列宽度
+    // UI颜色配置
+    private static final Color COLOR_BG = new Color(0.08f, 0.09f, 0.11f, 1f);
+    private static final Color COLOR_PANEL = new Color(0.12f, 0.14f, 0.17f, 0.95f);
+    private static final Color COLOR_PANEL_HIGHLIGHT = new Color(0.15f, 0.17f, 0.21f, 0.95f);
+    private static final Color COLOR_PRIMARY = new Color(0.2f, 0.8f, 1f, 1f);
+    private static final Color COLOR_SECONDARY = new Color(0.8f, 0.3f, 0.9f, 1f);
+    private static final Color COLOR_SUCCESS = new Color(0.3f, 0.9f, 0.4f, 1f);
+    private static final Color COLOR_TEXT = new Color(0.9f, 0.9f, 0.9f, 1f);
+    private static final Color COLOR_TEXT_MUTED = new Color(0.5f, 0.52f, 0.55f, 1f);
+
+    // 统一的尺寸
     private static final float LABEL_WIDTH = 150f;
-    // 统一的操作控件宽度
     private static final float CONTROL_WIDTH = 180f;
-    // 统一的行高
     private static final float ROW_HEIGHT = 45f;
 
     public SettingsState(UIManager uiManager) {
@@ -52,18 +49,32 @@ public class SettingsState extends BaseUIState {
     protected void createUI() {
         LanguageManager lang = LanguageManager.getInstance();
 
-        // 生成字体
         titleFont = Main.platform.getFont(fontSize(32), lang.get("settings.title"), false, false);
         cardTitleFont = Main.platform.getFont(fontSize(18), "Card Title", false, false);
 
-        // 创建根表格
-        rootTable = new Table();
-        rootTable.setFillParent(true);
-        rootTable.align(Align.top);
-        rootTable.padTop(h(40f));
+        mainTable = new Table();
+        mainTable.setFillParent(true);
+        mainTable.center();
+        mainTable.pad(h(40f));
 
-        // 创建标题
-        Label titleLabel = createTitleLabel(lang.get("settings.title"));
+        // 创建主面板
+        Table contentPanel = createMainPanel();
+        mainTable.add(contentPanel).expand().center();
+
+        stage.addActor(mainTable);
+    }
+
+    private Table createMainPanel() {
+        LanguageManager lang = LanguageManager.getInstance();
+
+        Table panel = new Table();
+        panel.setBackground(createPanelBackground(COLOR_PANEL));
+        panel.pad(w(40f));
+
+        // 标题
+        Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, COLOR_PRIMARY);
+        Label titleLabel = new Label(lang.get("settings.title"), titleStyle);
+        titleLabel.setAlignment(Align.center);
 
         // 创建设置卡片容器
         Table cardsTable = new Table();
@@ -78,41 +89,39 @@ public class SettingsState extends BaseUIState {
         Table buttonTable = createBottomButtons();
 
         // 组装主界面
-        rootTable.add(titleLabel).padBottom(h(30f)).row();
-        rootTable.add(cardsTable).expandX().padBottom(h(30f)).row();
-        rootTable.add(buttonTable);
+        panel.add(titleLabel).padBottom(h(30f)).row();
+        panel.add(cardsTable).expandX().padBottom(h(30f)).row();
+        panel.add(buttonTable);
 
-        stage.addActor(rootTable);
+        return panel;
     }
 
-    /**
-     * 创建显示设置卡片
-     */
     private Table createDisplayCard() {
         LanguageManager lang = LanguageManager.getInstance();
 
         Table card = createCardBase();
 
         // 卡片标题
-        Label cardTitle = createCardTitle(lang.get("settings.display.title"));
+        Label.LabelStyle cardTitleStyle = new Label.LabelStyle(cardTitleFont, COLOR_SECONDARY);
+        Label cardTitle = new Label(lang.get("settings.display.title"), cardTitleStyle);
 
-        // 全屏设置行 - 使用 TextButton 作为开关，使用统一的 createSettingRow 方法
+        // 全屏设置行
         Table rowTable = createSettingRow(
             lang.get("settings.fullscreen"),
             () -> {
-                // 使用 TextButton 模拟开关，可以完全控制缩放
                 boolean isFullscreen = TetrisSettings.fullscreen();
                 TextButton toggleButton = new TextButton(
                     isFullscreen ? lang.get("settings.on") : lang.get("settings.off"),
                     skin
                 );
-                addCyanHoverEffect(toggleButton);
+                toggleButton.setColor(isFullscreen ? COLOR_SUCCESS : COLOR_TEXT_MUTED);
                 toggleButton.addListener(new ChangeListener() {
                     @Override
                     public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
                         boolean newFullscreenState = !TetrisSettings.fullscreen();
                         TetrisSettings.fullscreen(newFullscreenState);
                         toggleButton.setText(newFullscreenState ? lang.get("settings.on") : lang.get("settings.off"));
+                        toggleButton.setColor(newFullscreenState ? COLOR_SUCCESS : COLOR_TEXT_MUTED);
                         Main.platform.updateSystemUI();
                     }
                 });
@@ -126,18 +135,16 @@ public class SettingsState extends BaseUIState {
         return card;
     }
 
-    /**
-     * 创建语言设置卡片
-     */
     private Table createLanguageCard() {
         LanguageManager lang = LanguageManager.getInstance();
 
         Table card = createCardBase();
 
         // 卡片标题
-        Label cardTitle = createCardTitle(lang.get("settings.language.title"));
+        Label.LabelStyle cardTitleStyle = new Label.LabelStyle(cardTitleFont, COLOR_SECONDARY);
+        Label cardTitle = new Label(lang.get("settings.language.title"), cardTitleStyle);
 
-        // 语言设置行 - 使用统一的两列布局
+        // 语言设置行
         Table rowTable = createSettingRow(
             lang.get("language"),
             () -> {
@@ -171,24 +178,21 @@ public class SettingsState extends BaseUIState {
         return card;
     }
 
-    /**
-     * 创建键位设置卡片
-     */
     private Table createControlsCard() {
         LanguageManager lang = LanguageManager.getInstance();
 
         Table card = createCardBase();
 
         // 卡片标题
-        Label cardTitle = createCardTitle(lang.get("settings.controls.title"));
+        Label.LabelStyle cardTitleStyle = new Label.LabelStyle(cardTitleFont, COLOR_SECONDARY);
+        Label cardTitle = new Label(lang.get("settings.controls.title"), cardTitleStyle);
 
-        // 键位设置行 - 使用统一的两列布局
-        // 描述文本放在按钮的悬停提示上
+        // 键位设置行
         Table rowTable = createSettingRow(
             lang.get("settings.controls"),
             () -> {
                 TextButton controlsButton = new TextButton(lang.get("settings.controls.configure"), skin);
-                addCyanHoverEffect(controlsButton);
+                controlsButton.setColor(COLOR_PRIMARY);
                 controlsButton.addListener(event -> {
                     if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                         uiManager.pushState(new ControlsSettingsState(uiManager));
@@ -205,47 +209,32 @@ public class SettingsState extends BaseUIState {
         return card;
     }
 
-    /**
-     * 创建统一的设置行布局
-     * 左侧标签列，右侧操作控件列
-     *
-     * @param labelText 标签文本
-     * @param controlSupplier 操作控件提供者
-     * @return 设置行表格
-     */
     private Table createSettingRow(String labelText, java.util.function.Supplier<com.badlogic.gdx.scenes.scene2d.Actor> controlSupplier) {
         Table rowTable = new Table();
 
         // 左侧标签
         if (!labelText.isEmpty()) {
             Label label = new Label(labelText, skin);
-            label.setColor(Color.LIGHT_GRAY);
+            label.setColor(COLOR_TEXT_MUTED);
             rowTable.add(label).left().width(w(LABEL_WIDTH)).padRight(w(15f));
         } else {
-            // 空标签占位，保持对齐
             rowTable.add().left().width(w(LABEL_WIDTH)).padRight(w(15f));
         }
 
-        // 右侧操作控件 - 所有控件统一使用 w() 和 h() 进行缩放
+        // 右侧操作控件
         com.badlogic.gdx.scenes.scene2d.Actor control = controlSupplier.get();
         rowTable.add(control).left().width(w(CONTROL_WIDTH)).height(h(ROW_HEIGHT));
 
         return rowTable;
     }
 
-    /**
-     * 创建卡片基础样式
-     */
     private Table createCardBase() {
         Table card = new Table();
-        card.setBackground(skin.newDrawable("white", new Color(0.18f, 0.18f, 0.22f, 0.9f)));
+        card.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
         card.pad(w(25f), h(20f), w(25f), h(20f));
         return card;
     }
 
-    /**
-     * 创建底部按钮区域
-     */
     private Table createBottomButtons() {
         LanguageManager lang = LanguageManager.getInstance();
 
@@ -253,7 +242,7 @@ public class SettingsState extends BaseUIState {
 
         // 返回按钮
         TextButton backButton = new TextButton(lang.get("back"), skin);
-        addCyanHoverEffect(backButton);
+        backButton.setColor(COLOR_PRIMARY);
         backButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 uiManager.popState();
@@ -266,35 +255,20 @@ public class SettingsState extends BaseUIState {
         return buttonTable;
     }
 
-    /**
-     * 创建标题标签
-     */
-    private Label createTitleLabel(String text) {
-        if (titleFont != null) {
-            Label.LabelStyle style = new Label.LabelStyle(titleFont, Color.WHITE);
-            return new Label(text, style);
-        }
-        return new Label(text, skin);
-    }
-
-    /**
-     * 创建卡片标题标签
-     */
-    private Label createCardTitle(String text) {
-        if (cardTitleFont != null) {
-            Label.LabelStyle style = new Label.LabelStyle(cardTitleFont, new Color(0.6f, 0.8f, 1f, 1f));
-            return new Label(text, style);
-        }
-        Label label = new Label(text, skin);
-        label.setColor(new Color(0.6f, 0.8f, 1f, 1f));
-        return label;
+    private com.badlogic.gdx.scenes.scene2d.utils.Drawable createPanelBackground(Color color) {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(color);
+        pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(texture);
     }
 
     @Override
     protected void clearUI() {
-        if (rootTable != null) {
-            rootTable.remove();
-            rootTable = null;
+        if (mainTable != null) {
+            mainTable.remove();
+            mainTable = null;
         }
     }
 

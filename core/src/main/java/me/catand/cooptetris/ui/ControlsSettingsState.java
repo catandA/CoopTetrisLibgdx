@@ -1,14 +1,14 @@
 package me.catand.cooptetris.ui;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Align;
 
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.input.InputBinding;
@@ -16,22 +16,44 @@ import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
 
 /**
- * 控制设置界面状态 - 支持键盘和鼠标输入
+ * 键位设置界面 - 现代化暗色游戏UI风格
  */
 public class ControlsSettingsState extends BaseUIState {
-    private Table rootTable;
-    private InputBindingButton[] player1Buttons;
-    private InputBindingButton[] player2Buttons;
+
+    private Table mainTable;
     private BitmapFont titleFont;
     private BitmapFont sectionFont;
 
-    // 等待输入状态
-    private InputBindingButton waitingButton = null;
-    private Label waitingLabel;
-    private Label instructionLabel;
+    // 玩家1键位
+    private InputBindingButton player1LeftButton;
+    private InputBindingButton player1RightButton;
+    private InputBindingButton player1DownButton;
+    private InputBindingButton player1RotateButton;
+    private InputBindingButton player1DropButton;
 
-    // 按键标签
-    private static final String[] ACTION_LABELS = {"left", "right", "down", "rotate", "drop"};
+    // 玩家2键位
+    private InputBindingButton player2LeftButton;
+    private InputBindingButton player2RightButton;
+    private InputBindingButton player2DownButton;
+    private InputBindingButton player2RotateButton;
+    private InputBindingButton player2DropButton;
+
+    // UI颜色配置
+    private static final Color COLOR_BG = new Color(0.08f, 0.09f, 0.11f, 1f);
+    private static final Color COLOR_PANEL = new Color(0.12f, 0.14f, 0.17f, 0.95f);
+    private static final Color COLOR_PANEL_HIGHLIGHT = new Color(0.15f, 0.17f, 0.21f, 0.95f);
+    private static final Color COLOR_PRIMARY = new Color(0.2f, 0.8f, 1f, 1f);
+    private static final Color COLOR_SECONDARY = new Color(0.8f, 0.3f, 0.9f, 1f);
+    private static final Color COLOR_SUCCESS = new Color(0.3f, 0.9f, 0.4f, 1f);
+    private static final Color COLOR_WARNING = new Color(1f, 0.7f, 0.2f, 1f);
+    private static final Color COLOR_DANGER = new Color(1f, 0.3f, 0.3f, 1f);
+    private static final Color COLOR_TEXT = new Color(0.9f, 0.9f, 0.9f, 1f);
+    private static final Color COLOR_TEXT_MUTED = new Color(0.5f, 0.52f, 0.55f, 1f);
+
+    // 统一的尺寸
+    private static final float LABEL_WIDTH = 80f;
+    private static final float BUTTON_WIDTH = 100f;
+    private static final float ROW_HEIGHT = 40f;
 
     public ControlsSettingsState(UIManager uiManager) {
         super(uiManager);
@@ -41,82 +63,184 @@ public class ControlsSettingsState extends BaseUIState {
     protected void createUI() {
         LanguageManager lang = LanguageManager.getInstance();
 
-        // 生成字体
-        titleFont = Main.platform.getFont(fontSize(28), lang.get("controls.settings"), false, false);
-        sectionFont = Main.platform.getFont(fontSize(20), "Player", false, false);
+        titleFont = Main.platform.getFont(fontSize(32), lang.get("controls.settings.title"), false, false);
+        sectionFont = Main.platform.getFont(fontSize(18), "Section", false, false);
 
-        // 创建根表格
-        rootTable = new Table();
-        rootTable.setFillParent(true);
+        mainTable = new Table();
+        mainTable.setFillParent(true);
+        mainTable.center();
+        mainTable.pad(h(30f));
 
-        // 创建标题
-        Label titleLabel = createTitleLabel(lang.get("controls.settings"));
+        // 创建主面板
+        Table contentPanel = createMainPanel();
+        mainTable.add(contentPanel).expand().center();
 
-        // 创建提示标签
-        waitingLabel = new Label("", skin);
-        waitingLabel.setVisible(false);
-        waitingLabel.setColor(Color.YELLOW);
+        stage.addActor(mainTable);
+    }
 
-        instructionLabel = new Label(lang.get("controls.press_key"), skin);
-        instructionLabel.setVisible(false);
-        instructionLabel.setColor(Color.LIGHT_GRAY);
+    private Table createMainPanel() {
+        LanguageManager lang = LanguageManager.getInstance();
 
-        // 创建玩家控制区域
+        Table panel = new Table();
+        panel.setBackground(createPanelBackground(COLOR_PANEL));
+        panel.pad(w(30f));
+
+        // 标题
+        Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, COLOR_PRIMARY);
+        Label titleLabel = new Label(lang.get("controls.settings.title"), titleStyle);
+        titleLabel.setAlignment(Align.center);
+
+        // 玩家键位区域
         Table playersTable = new Table();
 
-        // 玩家1控制区域
-        Table player1Table = createPlayerControlTable(
-                lang.get("player1") + " " + lang.get("controls"),
-                new InputBinding[]{
-                        TetrisSettings.leftKey(),
-                        TetrisSettings.rightKey(),
-                        TetrisSettings.downKey(),
-                        TetrisSettings.rotateKey(),
-                        TetrisSettings.dropKey()
-                },
-                buttons -> player1Buttons = buttons
+        // 玩家1卡片
+        Table player1Card = createPlayerCard(1,
+            TetrisSettings.leftKey(),
+            TetrisSettings.rightKey(),
+            TetrisSettings.downKey(),
+            TetrisSettings.rotateKey(),
+            TetrisSettings.dropKey()
         );
 
-        // 玩家2控制区域
-        Table player2Table = createPlayerControlTable(
-                lang.get("player2") + " " + lang.get("controls"),
-                new InputBinding[]{
-                        TetrisSettings.leftKey2(),
-                        TetrisSettings.rightKey2(),
-                        TetrisSettings.downKey2(),
-                        TetrisSettings.rotateKey2(),
-                        TetrisSettings.dropKey2()
-                },
-                buttons -> player2Buttons = buttons
+        // 玩家2卡片
+        Table player2Card = createPlayerCard(2,
+            TetrisSettings.leftKey2(),
+            TetrisSettings.rightKey2(),
+            TetrisSettings.downKey2(),
+            TetrisSettings.rotateKey2(),
+            TetrisSettings.dropKey2()
         );
 
-        // 添加玩家控制区域到主表格
-        playersTable.add(player1Table).padRight(w(30f));
-        playersTable.add(player2Table);
+        playersTable.add(player1Card).width(w(280f)).padRight(w(20f));
+        playersTable.add(player2Card).width(w(280f));
 
-        // 创建按钮区域
+        // 底部按钮
+        Table buttonTable = createBottomButtons();
+
+        // 组装主界面
+        panel.add(titleLabel).padBottom(h(25f)).row();
+        panel.add(playersTable).expandX().padBottom(h(25f)).row();
+        panel.add(buttonTable);
+
+        return panel;
+    }
+
+    private Table createPlayerCard(int playerNum,
+                                   InputBinding left, InputBinding right,
+                                   InputBinding down, InputBinding rotate, InputBinding drop) {
+        LanguageManager lang = LanguageManager.getInstance();
+
+        Table card = new Table();
+        card.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
+        card.pad(w(20f));
+
+        // 卡片标题
+        Label.LabelStyle sectionStyle = new Label.LabelStyle(sectionFont,
+            playerNum == 1 ? COLOR_PRIMARY : COLOR_SECONDARY);
+        Label cardTitle = new Label(lang.get("player") + " " + playerNum, sectionStyle);
+
+        // 创建键位行
+        Table controlsTable = new Table();
+        controlsTable.defaults().padBottom(h(10f));
+
+        // 左移
+        controlsTable.add(createControlRow(lang.get("control.left"), left, binding -> {
+            if (playerNum == 1) {
+                player1LeftButton = binding;
+            } else {
+                player2LeftButton = binding;
+            }
+        })).row();
+
+        // 右移
+        controlsTable.add(createControlRow(lang.get("control.right"), right, binding -> {
+            if (playerNum == 1) {
+                player1RightButton = binding;
+            } else {
+                player2RightButton = binding;
+            }
+        })).row();
+
+        // 下移
+        controlsTable.add(createControlRow(lang.get("control.down"), down, binding -> {
+            if (playerNum == 1) {
+                player1DownButton = binding;
+            } else {
+                player2DownButton = binding;
+            }
+        })).row();
+
+        // 旋转
+        controlsTable.add(createControlRow(lang.get("control.rotate"), rotate, binding -> {
+            if (playerNum == 1) {
+                player1RotateButton = binding;
+            } else {
+                player2RotateButton = binding;
+            }
+        })).row();
+
+        // 硬降
+        controlsTable.add(createControlRow(lang.get("control.drop"), drop, binding -> {
+            if (playerNum == 1) {
+                player1DropButton = binding;
+            } else {
+                player2DropButton = binding;
+            }
+        }));
+
+        card.add(cardTitle).left().padBottom(h(15f)).row();
+        card.add(controlsTable).fillX();
+
+        return card;
+    }
+
+    private Table createControlRow(String labelText, InputBinding binding,
+                                   java.util.function.Consumer<InputBindingButton> buttonConsumer) {
+        Table rowTable = new Table();
+
+        // 左侧标签
+        Label label = new Label(labelText, skin);
+        label.setColor(COLOR_TEXT_MUTED);
+        rowTable.add(label).left().width(w(LABEL_WIDTH)).padRight(w(10f));
+
+        // 右侧绑定按钮
+        InputBindingButton bindingButton = new InputBindingButton(binding);
+        rowTable.add(bindingButton).left().width(w(BUTTON_WIDTH)).height(h(ROW_HEIGHT));
+
+        buttonConsumer.accept(bindingButton);
+
+        return rowTable;
+    }
+
+    private Table createBottomButtons() {
+        LanguageManager lang = LanguageManager.getInstance();
+
         Table buttonTable = new Table();
 
+        // 保存按钮
         TextButton saveButton = new TextButton(lang.get("save"), skin);
-        addCyanHoverEffect(saveButton);
+        saveButton.setColor(COLOR_SUCCESS);
         saveButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                saveSettings();
+                saveControls();
+                uiManager.popState();
             }
             return true;
         });
 
-        TextButton resetButton = new TextButton(lang.get("reset_default"), skin);
-        addCyanHoverEffect(resetButton);
+        // 重置按钮
+        TextButton resetButton = new TextButton(lang.get("reset"), skin);
+        resetButton.setColor(COLOR_WARNING);
         resetButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                resetToDefaults();
+                resetControls();
             }
             return true;
         });
 
+        // 返回按钮
         TextButton backButton = new TextButton(lang.get("back"), skin);
-        addCyanHoverEffect(backButton);
+        backButton.setColor(COLOR_TEXT_MUTED);
         backButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 uiManager.popState();
@@ -128,228 +252,74 @@ public class ControlsSettingsState extends BaseUIState {
         buttonTable.add(resetButton).width(w(120f)).height(h(45f)).padRight(w(10f));
         buttonTable.add(backButton).width(w(120f)).height(h(45f));
 
-        // 组装主表格
-        rootTable.add(titleLabel).padBottom(h(20f)).row();
-        rootTable.add(waitingLabel).padBottom(h(5f)).row();
-        rootTable.add(instructionLabel).padBottom(h(15f)).row();
-        rootTable.add(playersTable).padBottom(h(30f)).row();
-        rootTable.add(buttonTable);
-
-        stage.addActor(rootTable);
+        return buttonTable;
     }
 
-    private Label createTitleLabel(String text) {
-        if (titleFont != null) {
-            Label.LabelStyle style = new Label.LabelStyle(titleFont, Color.WHITE);
-            return new Label(text, style);
-        }
-        return new Label(text, skin);
+    private void saveControls() {
+        // 玩家1
+        if (player1LeftButton != null) TetrisSettings.leftKey(player1LeftButton.getBinding());
+        if (player1RightButton != null) TetrisSettings.rightKey(player1RightButton.getBinding());
+        if (player1DownButton != null) TetrisSettings.downKey(player1DownButton.getBinding());
+        if (player1RotateButton != null) TetrisSettings.rotateKey(player1RotateButton.getBinding());
+        if (player1DropButton != null) TetrisSettings.dropKey(player1DropButton.getBinding());
+
+        // 玩家2
+        if (player2LeftButton != null) TetrisSettings.leftKey2(player2LeftButton.getBinding());
+        if (player2RightButton != null) TetrisSettings.rightKey2(player2RightButton.getBinding());
+        if (player2DownButton != null) TetrisSettings.downKey2(player2DownButton.getBinding());
+        if (player2RotateButton != null) TetrisSettings.rotateKey2(player2RotateButton.getBinding());
+        if (player2DropButton != null) TetrisSettings.dropKey2(player2DropButton.getBinding());
     }
 
-    private Label createSectionLabel(String text) {
-        if (sectionFont != null) {
-            Label.LabelStyle style = new Label.LabelStyle(sectionFont, Color.WHITE);
-            return new Label(text, style);
-        }
-        return new Label(text, skin);
+    private void resetControls() {
+        // 重置为默认值
+        TetrisSettings.leftKey(InputBinding.LEFT);
+        TetrisSettings.rightKey(InputBinding.RIGHT);
+        TetrisSettings.downKey(InputBinding.DOWN);
+        TetrisSettings.rotateKey(InputBinding.UP);
+        TetrisSettings.dropKey(InputBinding.SPACE);
+
+        TetrisSettings.leftKey2(InputBinding.A);
+        TetrisSettings.rightKey2(InputBinding.D);
+        TetrisSettings.downKey2(InputBinding.S);
+        TetrisSettings.rotateKey2(InputBinding.W);
+        TetrisSettings.dropKey2(InputBinding.Q);
+
+        // 刷新UI
+        recreateUI();
     }
 
-    private Table createPlayerControlTable(String title, InputBinding[] initialBindings,
-                                           java.util.function.Consumer<InputBindingButton[]> callback) {
-        LanguageManager lang = LanguageManager.getInstance();
-        Table table = new Table();
-
-        // 添加标题背景
-        Table headerTable = new Table();
-        headerTable.setBackground(skin.newDrawable("white", new Color(0.2f, 0.2f, 0.3f, 0.8f)));
-
-        Label titleLabel = createSectionLabel(title);
-        headerTable.add(titleLabel).pad(w(10f));
-
-        table.add(headerTable).fillX().padBottom(h(15f)).row();
-
-        // 创建按键绑定按钮数组
-        InputBindingButton[] buttons = new InputBindingButton[5];
-
-        // 添加每个动作的按键绑定行
-        for (int i = 0; i < ACTION_LABELS.length; i++) {
-            Table rowTable = new Table();
-
-            // 动作标签
-            Label actionLabel = new Label(lang.get(ACTION_LABELS[i]), skin);
-            actionLabel.setColor(Color.LIGHT_GRAY);
-
-            // 按键绑定按钮
-            final int index = i;
-            InputBindingButton keyButton = new InputBindingButton(
-                    initialBindings[i],
-                    skin.get(TextButton.TextButtonStyle.class)
-            );
-            keyButton.onClick(() -> startWaitingForKey(keyButton, ACTION_LABELS[index]));
-            buttons[i] = keyButton;
-
-            rowTable.add(actionLabel).left().width(w(80f)).padRight(w(15f));
-            rowTable.add(keyButton).width(w(100f)).height(h(45f));
-
-            table.add(rowTable).fillX().padBottom(h(10f)).row();
-        }
-
-        callback.accept(buttons);
-        return table;
-    }
-
-    private void startWaitingForKey(InputBindingButton button, String actionName) {
-        LanguageManager lang = LanguageManager.getInstance();
-
-        // 如果已经在等待输入，先恢复之前的按钮
-        if (waitingButton != null) {
-            waitingButton.cancelWaiting();
-        }
-
-        waitingButton = button;
-        button.startWaiting();
-
-        // 更新提示文本
-        waitingLabel.setText(lang.get("waiting_for_key") + ": " + lang.get(actionName));
-        waitingLabel.setVisible(true);
-        instructionLabel.setVisible(true);
-    }
-
-    private void cancelWaiting() {
-        if (waitingButton != null) {
-            waitingButton.cancelWaiting();
-            waitingButton = null;
-            waitingLabel.setVisible(false);
-            instructionLabel.setVisible(false);
-        }
-    }
-
-    private void setInputBinding(InputBinding inputBinding) {
-        if (waitingButton == null || inputBinding == null) return;
-
-        waitingButton.setInputBinding(inputBinding);
-        waitingButton = null;
-        waitingLabel.setVisible(false);
-        instructionLabel.setVisible(false);
-    }
-
-    private void resetToDefaults() {
-        LanguageManager lang = LanguageManager.getInstance();
-
-        // 重置设置
-        TetrisSettings.resetToDefaults();
-
-        // 更新按钮显示
-        updateButtonDisplay();
-
-        // 显示提示
-        waitingLabel.setText(lang.get("settings_reset"));
-        waitingLabel.setColor(Color.GREEN);
-        waitingLabel.setVisible(true);
-
-        // 2秒后隐藏提示
-        Gdx.app.postRunnable(() -> {
-            try {
-                Thread.sleep(2000);
-                Gdx.app.postRunnable(() -> {
-                    waitingLabel.setVisible(false);
-                    waitingLabel.setColor(Color.YELLOW);
-                });
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    private void updateButtonDisplay() {
-        // 更新玩家1按钮
-        player1Buttons[0].setInputBinding(TetrisSettings.leftKey());
-        player1Buttons[1].setInputBinding(TetrisSettings.rightKey());
-        player1Buttons[2].setInputBinding(TetrisSettings.downKey());
-        player1Buttons[3].setInputBinding(TetrisSettings.rotateKey());
-        player1Buttons[4].setInputBinding(TetrisSettings.dropKey());
-
-        // 更新玩家2按钮
-        player2Buttons[0].setInputBinding(TetrisSettings.leftKey2());
-        player2Buttons[1].setInputBinding(TetrisSettings.rightKey2());
-        player2Buttons[2].setInputBinding(TetrisSettings.downKey2());
-        player2Buttons[3].setInputBinding(TetrisSettings.rotateKey2());
-        player2Buttons[4].setInputBinding(TetrisSettings.dropKey2());
+    private com.badlogic.gdx.scenes.scene2d.utils.Drawable createPanelBackground(Color color) {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(color);
+        pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(texture);
     }
 
     @Override
     protected void clearUI() {
-        if (rootTable != null) {
-            rootTable.remove();
-            rootTable = null;
+        if (mainTable != null) {
+            mainTable.remove();
+            mainTable = null;
         }
-    }
-
-    private void saveSettings() {
-        TetrisSettings.leftKey(player1Buttons[0].getInputBinding());
-        TetrisSettings.rightKey(player1Buttons[1].getInputBinding());
-        TetrisSettings.downKey(player1Buttons[2].getInputBinding());
-        TetrisSettings.rotateKey(player1Buttons[3].getInputBinding());
-        TetrisSettings.dropKey(player1Buttons[4].getInputBinding());
-
-        TetrisSettings.leftKey2(player2Buttons[0].getInputBinding());
-        TetrisSettings.rightKey2(player2Buttons[1].getInputBinding());
-        TetrisSettings.downKey2(player2Buttons[2].getInputBinding());
-        TetrisSettings.rotateKey2(player2Buttons[3].getInputBinding());
-        TetrisSettings.dropKey2(player2Buttons[4].getInputBinding());
-
-        // 显示保存成功提示
-        LanguageManager lang = LanguageManager.getInstance();
-        waitingLabel.setText(lang.get("settings_saved"));
-        waitingLabel.setColor(Color.GREEN);
-        waitingLabel.setVisible(true);
-
-        // 2秒后隐藏
-        Gdx.app.postRunnable(() -> {
-            try {
-                Thread.sleep(2000);
-                Gdx.app.postRunnable(() -> {
-                    waitingLabel.setVisible(false);
-                    waitingLabel.setColor(Color.YELLOW);
-                });
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
     }
 
     @Override
     public void update(float delta) {
-        // 检查是否有按键输入
-        if (waitingButton != null) {
-            // 检查ESC键取消
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-                cancelWaiting();
-                return;
-            }
+        // 更新所有绑定按钮
+        if (player1LeftButton != null) player1LeftButton.update();
+        if (player1RightButton != null) player1RightButton.update();
+        if (player1DownButton != null) player1DownButton.update();
+        if (player1RotateButton != null) player1RotateButton.update();
+        if (player1DropButton != null) player1DropButton.update();
 
-            // 检查键盘按键
-            for (int i = 0; i < 256; i++) {
-                if (Gdx.input.isKeyJustPressed(i)) {
-                    InputBinding inputBinding = InputBinding.fromKeyCode(i);
-                    if (inputBinding != null) {
-                        setInputBinding(inputBinding);
-                    }
-                    return;
-                }
-            }
-
-            // 检查鼠标按钮
-            for (int i = 0; i < 5; i++) {
-                if (Gdx.input.isButtonJustPressed(i)) {
-                    InputBinding inputBinding = InputBinding.fromMouseButton(i);
-                    if (inputBinding != null) {
-                        setInputBinding(inputBinding);
-                    }
-                    return;
-                }
-            }
-        }
+        if (player2LeftButton != null) player2LeftButton.update();
+        if (player2RightButton != null) player2RightButton.update();
+        if (player2DownButton != null) player2DownButton.update();
+        if (player2RotateButton != null) player2RotateButton.update();
+        if (player2DropButton != null) player2DropButton.update();
     }
 
     @Override
@@ -365,65 +335,91 @@ public class ControlsSettingsState extends BaseUIState {
     }
 
     /**
-     * 自定义输入绑定按钮类
+     * 键位绑定按钮组件
      */
     private class InputBindingButton extends TextButton {
-        private InputBinding inputBinding;
-        private Runnable onClickAction;
+        private InputBinding binding;
+        private boolean isWaitingForInput = false;
+        private float inputDelayTimer = 0;
+        private static final float INPUT_DELAY = 0.2f; // 200ms延迟，避免立即捕获点击按钮的鼠标事件
 
-        public InputBindingButton(InputBinding inputBinding, TextButtonStyle style) {
-            super(inputBinding.getShortName(), style);
-            this.inputBinding = inputBinding;
+        public InputBindingButton(InputBinding binding) {
+            super(binding != null ? binding.getDisplayName() : "?", skin);
+            this.binding = binding;
 
-            // 设置按钮样式
-            setColor(Color.WHITE);
-
-            addListener(new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    if (onClickAction != null) {
-                        onClickAction.run();
+            addListener(event -> {
+                if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
+                    if (!isWaitingForInput) {
+                        startBinding();
                     }
                 }
-
-                @Override
-                public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
-                    if (waitingButton == null) {
-                        setColor(Color.CYAN);
-                    }
-                }
-
-                @Override
-                public void exit(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
-                    if (waitingButton == null) {
-                        setColor(Color.WHITE);
-                    }
-                }
+                return true;
             });
         }
 
-        public void onClick(Runnable action) {
-            this.onClickAction = action;
+        private void startBinding() {
+            isWaitingForInput = true;
+            inputDelayTimer = 0;
+            setText("...");
+            setColor(COLOR_WARNING);
         }
 
-        public InputBinding getInputBinding() {
-            return inputBinding;
+        public void update() {
+            if (isWaitingForInput) {
+                // 延迟计时器，避免捕获点击按钮本身的鼠标事件
+                if (inputDelayTimer < INPUT_DELAY) {
+                    inputDelayTimer += com.badlogic.gdx.Gdx.graphics.getDeltaTime();
+                    return;
+                }
+
+                // 检测按键输入
+                for (int i = 0; i < 256; i++) {
+                    if (com.badlogic.gdx.Gdx.input.isKeyJustPressed(i)) {
+                        // 排除ESC键（用于取消）
+                        if (i == com.badlogic.gdx.Input.Keys.ESCAPE) {
+                            isWaitingForInput = false;
+                            updateDisplay();
+                            return;
+                        }
+
+                        binding = InputBinding.fromKeyCode(i);
+                        if (binding == null) {
+                            // 如果没有找到对应的绑定，使用一个默认值
+                            binding = InputBinding.SPACE;
+                        }
+                        isWaitingForInput = false;
+                        updateDisplay();
+                        return;
+                    }
+                }
+
+                // 检测鼠标输入
+                if (com.badlogic.gdx.Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+                    binding = InputBinding.MOUSE_LEFT;
+                    isWaitingForInput = false;
+                    updateDisplay();
+                    return;
+                }
+                if (com.badlogic.gdx.Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.RIGHT)) {
+                    binding = InputBinding.MOUSE_RIGHT;
+                    isWaitingForInput = false;
+                    updateDisplay();
+                    return;
+                }
+            }
         }
 
-        public void setInputBinding(InputBinding inputBinding) {
-            this.inputBinding = inputBinding;
-            setText(inputBinding.getShortName());
-            setColor(Color.WHITE);
+        private void updateDisplay() {
+            if (binding != null) {
+                setText(binding.getDisplayName());
+            } else {
+                setText("?");
+            }
+            setColor(COLOR_PRIMARY);
         }
 
-        public void startWaiting() {
-            setText("???");
-            setColor(Color.YELLOW);
-        }
-
-        public void cancelWaiting() {
-            setText(inputBinding.getShortName());
-            setColor(Color.WHITE);
+        public InputBinding getBinding() {
+            return binding;
         }
     }
 }

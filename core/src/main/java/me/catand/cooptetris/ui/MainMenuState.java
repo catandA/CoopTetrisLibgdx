@@ -1,6 +1,9 @@
 package me.catand.cooptetris.ui;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -13,12 +16,25 @@ import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.VersionManager;
 
 /**
- * 主菜单状态 - 使用新的简化缩放接口
+ * 主菜单状态 - 现代化暗色游戏UI风格
  */
 public class MainMenuState extends BaseUIState {
-    private Table table;
+    private Table mainTable;
     private BitmapFont titleFont;
+    private BitmapFont subtitleFont;
     private Label versionLabel;
+
+    // UI颜色配置
+    private static final Color COLOR_BG = new Color(0.06f, 0.07f, 0.09f, 1f);
+    private static final Color COLOR_PANEL = new Color(0.1f, 0.12f, 0.15f, 0.95f);
+    private static final Color COLOR_PANEL_HIGHLIGHT = new Color(0.15f, 0.17f, 0.21f, 0.95f);
+    private static final Color COLOR_PRIMARY = new Color(0.2f, 0.8f, 1f, 1f);
+    private static final Color COLOR_SECONDARY = new Color(0.8f, 0.3f, 0.9f, 1f);
+    private static final Color COLOR_SUCCESS = new Color(0.3f, 0.9f, 0.4f, 1f);
+    private static final Color COLOR_WARNING = new Color(1f, 0.7f, 0.2f, 1f);
+    private static final Color COLOR_DANGER = new Color(1f, 0.3f, 0.3f, 1f);
+    private static final Color COLOR_TEXT = new Color(0.9f, 0.9f, 0.9f, 1f);
+    private static final Color COLOR_TEXT_MUTED = new Color(0.5f, 0.52f, 0.55f, 1f);
 
     public MainMenuState(UIManager uiManager) {
         super(uiManager);
@@ -26,67 +42,77 @@ public class MainMenuState extends BaseUIState {
 
     @Override
     protected void createUI() {
-        table = new Table();
-        table.setPosition(offsetX(), offsetY());
-        table.setSize(displayWidth(), displayHeight());
-        table.center();
+        // 创建字体
+        titleFont = Main.platform.getFont(fontSize(48), lang().get("title"), false, false);
+        subtitleFont = Main.platform.getFont(fontSize(16), "Cooperative Edition", false, false);
 
-        LanguageManager lang = LanguageManager.getInstance();
+        mainTable = new Table();
+        mainTable.setFillParent(true);
+        mainTable.center();
 
-        // 为标题创建一个更大的字体，考虑缩放比例
-        titleFont = Main.platform.getFont(fontSize(32), lang.get("title"), false, false);
+        // 创建主面板
+        Table contentPanel = createContentPanel();
+        mainTable.add(contentPanel).center();
 
-        // 创建标题
-        Label title;
-        if (titleFont != null) {
-            Label.LabelStyle labelStyle = new Label.LabelStyle(titleFont, skin.getColor("font"));
-            title = new Label(lang.get("title"), labelStyle);
-        } else {
-            // 如果字体生成失败，使用默认字体
-            title = new Label(lang.get("title"), skin);
-        }
-        title.setAlignment(Align.center);
+        stage.addActor(mainTable);
 
-        // 直接使用skin中的按钮样式
-        TextButton startButton = new TextButton(lang.get("start.game"), skin);
-        TextButton onlineButton = new TextButton(lang.get("online.mode"), skin);
-        TextButton settingsButton = new TextButton(lang.get("settings"), skin);
-        TextButton exitButton = new TextButton(lang.get("exit"), skin);
+        // 添加版本信息
+        addVersionLabel();
+    }
 
-        // 添加青色悬停效果
-        addCyanHoverEffect(startButton);
-        addCyanHoverEffect(onlineButton);
-        addCyanHoverEffect(settingsButton);
-        addCyanHoverEffect(exitButton);
+    private Table createContentPanel() {
+        Table panel = new Table();
+        panel.setBackground(createPanelBackground(COLOR_PANEL));
+        panel.pad(w(50f));
+        panel.center();
 
+        // 游戏标题
+        Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, COLOR_PRIMARY);
+        Label titleLabel = new Label(lang().get("title"), titleStyle);
+        titleLabel.setAlignment(Align.center);
+
+        // 副标题
+        Label.LabelStyle subtitleStyle = new Label.LabelStyle(subtitleFont, COLOR_SECONDARY);
+        Label subtitleLabel = new Label("Cooperative Edition", subtitleStyle);
+        subtitleLabel.setAlignment(Align.center);
+
+        // 按钮区域
+        Table buttonTable = new Table();
+        buttonTable.center();
+
+        // 开始游戏按钮
+        TextButton startButton = createStyledButton(lang().get("start.game"), COLOR_SUCCESS);
         startButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                // 开始单机游戏，使用uiManager中已经初始化的gameStateManager
                 if (uiManager.gameStateManager != null) {
                     GameState gameState = new GameState(uiManager, uiManager.gameStateManager);
                     uiManager.setScreen(gameState);
-                    // 启动单人游戏模式，包括本地服务器
                     uiManager.gameStateManager.startSinglePlayer();
                 }
             }
             return true;
         });
 
+        // 联机模式按钮
+        TextButton onlineButton = createStyledButton(lang().get("online.mode"), COLOR_PRIMARY);
         onlineButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                // 进入联机模式界面 - 新的两阶段流程
                 uiManager.pushState(new ServerConnectionState(uiManager));
             }
             return true;
         });
 
+        // 设置按钮
+        TextButton settingsButton = createStyledButton(lang().get("settings"), COLOR_WARNING);
         settingsButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                // 进入设置界面
                 uiManager.pushState(new SettingsState(uiManager));
             }
             return true;
         });
+
+        // 退出按钮
+        TextButton exitButton = createStyledButton(lang().get("exit"), COLOR_DANGER);
         exitButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 Gdx.app.exit();
@@ -94,21 +120,36 @@ public class MainMenuState extends BaseUIState {
             return true;
         });
 
-        // 使用新的简化方法进行缩放
-        table.add(title).padBottom(h(50f)).row();
-        table.add(startButton).width(w(200f)).height(h(60f)).padBottom(h(20f)).row();
-        table.add(onlineButton).width(w(200f)).height(h(60f)).padBottom(h(20f)).row();
-        table.add(settingsButton).width(w(200f)).height(h(60f)).padBottom(h(20f)).row();
-        table.add(exitButton).width(w(200f)).height(h(60f)).row();
+        // 组装按钮
+        float buttonWidth = w(220f);
+        float buttonHeight = h(55f);
+        float buttonSpacing = h(15f);
 
-        stage.addActor(table);
+        buttonTable.add(startButton).width(buttonWidth).height(buttonHeight).padBottom(buttonSpacing).row();
+        buttonTable.add(onlineButton).width(buttonWidth).height(buttonHeight).padBottom(buttonSpacing).row();
+        buttonTable.add(settingsButton).width(buttonWidth).height(buttonHeight).padBottom(buttonSpacing).row();
+        buttonTable.add(exitButton).width(buttonWidth).height(buttonHeight);
 
-        // 添加版本信息标签，显示在右下角
+        // 组装主面板
+        panel.add(titleLabel).padBottom(h(5f)).row();
+        panel.add(subtitleLabel).padBottom(h(40f)).row();
+        panel.add(buttonTable).center();
+
+        return panel;
+    }
+
+    private TextButton createStyledButton(String text, Color color) {
+        TextButton button = new TextButton(text, skin);
+        button.setColor(color);
+        return button;
+    }
+
+    private void addVersionLabel() {
         VersionManager versionManager = VersionManager.getInstance();
         String versionInfo = versionManager.getVersionInfo();
         versionLabel = new Label(versionInfo, skin);
+        versionLabel.setColor(COLOR_TEXT_MUTED);
         versionLabel.setAlignment(Align.bottomRight);
-        // 使用displayWidth()和offsetX()来定位，确保在缩放时位置正确
         versionLabel.setPosition(
             offsetX() + displayWidth() - versionLabel.getWidth() - w(20f),
             offsetY() + h(20f)
@@ -116,11 +157,24 @@ public class MainMenuState extends BaseUIState {
         stage.addActor(versionLabel);
     }
 
+    private com.badlogic.gdx.scenes.scene2d.utils.Drawable createPanelBackground(Color color) {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(color);
+        pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(texture);
+    }
+
+    private LanguageManager lang() {
+        return LanguageManager.getInstance();
+    }
+
     @Override
     protected void clearUI() {
-        if (table != null) {
-            table.remove();
-            table = null;
+        if (mainTable != null) {
+            mainTable.remove();
+            mainTable = null;
         }
         if (versionLabel != null) {
             versionLabel.remove();
@@ -135,10 +189,13 @@ public class MainMenuState extends BaseUIState {
 
     @Override
     public void dispose() {
-        // 释放生成的标题字体
         if (titleFont != null) {
             titleFont.dispose();
             titleFont = null;
+        }
+        if (subtitleFont != null) {
+            subtitleFont.dispose();
+            subtitleFont = null;
         }
     }
 }
