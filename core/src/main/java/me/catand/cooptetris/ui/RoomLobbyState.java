@@ -212,6 +212,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         });
 
         sendChatButton = new TextButton(lang.get("send.button"), skin);
+        addCyanHoverEffect(sendChatButton);
         sendChatButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 sendChatMessage();
@@ -234,6 +235,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
 
         startGameButton = new TextButton(lang.get("start.game.button"), skin);
         startGameButton.setVisible(isHost); // 只有房主可以开始游戏
+        addCyanHoverEffect(startGameButton);
         startGameButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 startGame();
@@ -242,6 +244,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         });
 
         leaveRoomButton = new TextButton(lang.get("leave.room.button"), skin);
+        addCyanHoverEffect(leaveRoomButton);
         leaveRoomButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 leaveRoom();
@@ -364,6 +367,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
                     playerRow.add(playerLabel).left().expandX();
 
                     TextButton kickButton = new TextButton(lang().get("kick.button"), skin);
+                    addCyanHoverEffect(kickButton);
                     final String targetPlayerName = playerName;
                     kickButton.addListener(event -> {
                         if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {

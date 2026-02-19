@@ -106,6 +106,7 @@ public class SettingsState extends BaseUIState {
                     isFullscreen ? lang.get("settings.on") : lang.get("settings.off"),
                     skin
                 );
+                addCyanHoverEffect(toggleButton);
                 toggleButton.addListener(new ChangeListener() {
                     @Override
                     public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
@@ -187,19 +188,7 @@ public class SettingsState extends BaseUIState {
             lang.get("settings.controls"),
             () -> {
                 TextButton controlsButton = new TextButton(lang.get("settings.controls.configure"), skin);
-                // 添加悬停提示
-                controlsButton.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
-                    @Override
-                    public void enter(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
-                        // 可以在这里显示工具提示
-                        controlsButton.setColor(Color.CYAN);
-                    }
-
-                    @Override
-                    public void exit(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
-                        controlsButton.setColor(Color.WHITE);
-                    }
-                });
+                addCyanHoverEffect(controlsButton);
                 controlsButton.addListener(event -> {
                     if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                         uiManager.pushState(new ControlsSettingsState(uiManager));
@@ -264,6 +253,7 @@ public class SettingsState extends BaseUIState {
 
         // 返回按钮
         TextButton backButton = new TextButton(lang.get("back"), skin);
+        addCyanHoverEffect(backButton);
         backButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 uiManager.popState();

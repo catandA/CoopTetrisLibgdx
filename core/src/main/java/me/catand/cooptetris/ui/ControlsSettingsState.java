@@ -98,6 +98,7 @@ public class ControlsSettingsState extends BaseUIState {
         Table buttonTable = new Table();
 
         TextButton saveButton = new TextButton(lang.get("save"), skin);
+        addCyanHoverEffect(saveButton);
         saveButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 saveSettings();
@@ -106,6 +107,7 @@ public class ControlsSettingsState extends BaseUIState {
         });
 
         TextButton resetButton = new TextButton(lang.get("reset_default"), skin);
+        addCyanHoverEffect(resetButton);
         resetButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 resetToDefaults();
@@ -114,6 +116,7 @@ public class ControlsSettingsState extends BaseUIState {
         });
 
         TextButton backButton = new TextButton(lang.get("back"), skin);
+        addCyanHoverEffect(backButton);
         backButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 uiManager.popState();

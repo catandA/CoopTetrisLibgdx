@@ -69,6 +69,7 @@ public class GameState extends BaseUIState {
         linesLabel = new Label("0", skin);
 
         TextButton pauseButton = new TextButton(lang().get("pause"), skin);
+        addCyanHoverEffect(pauseButton);
         pauseButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 // 暂停游戏
@@ -77,6 +78,7 @@ public class GameState extends BaseUIState {
         });
 
         TextButton exitButton = new TextButton(lang().get("exit"), skin);
+        addCyanHoverEffect(exitButton);
         exitButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 // 断开与服务端的连接

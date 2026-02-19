@@ -69,7 +69,18 @@ public class NotificationDialog extends Dialog {
 
         // 创建确定按钮
         okButton = new TextButton("OK", skin);
+        // 添加青色悬停效果
         okButton.addListener(new ClickListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
+                okButton.setColor(Color.CYAN);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
+                okButton.setColor(Color.WHITE);
+            }
+
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 hide();

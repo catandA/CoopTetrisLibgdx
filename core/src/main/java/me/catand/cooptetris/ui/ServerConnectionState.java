@@ -105,6 +105,7 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
 
         // 创建本地服务器按钮
         localServerButton = new TextButton(lang.get("create.local.server"), skin);
+        addCyanHoverEffect(localServerButton);
         localServerButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 createLocalServerAndConnect();
@@ -114,6 +115,7 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
 
         // 连接到服务器按钮
         connectButton = new TextButton(lang.get("connect.to.server"), skin);
+        addCyanHoverEffect(connectButton);
         connectButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 connectToRemoteServer();
@@ -123,6 +125,7 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
 
         // 返回按钮
         backButton = new TextButton(lang.get("back"), skin);
+        addCyanHoverEffect(backButton);
         backButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 uiManager.popState();

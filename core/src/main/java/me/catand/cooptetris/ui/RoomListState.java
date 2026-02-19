@@ -114,6 +114,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         // 加入房间按钮
         joinButton = new TextButton(lang.get("join.room"), skin);
         joinButton.setDisabled(true); // 初始禁用，需要选择房间
+        addCyanHoverEffect(joinButton);
         joinButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 joinSelectedRoom();
@@ -123,6 +124,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
 
         // 创建房间按钮
         createButton = new TextButton(lang.get("create.room"), skin);
+        addCyanHoverEffect(createButton);
         createButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 createNewRoom();
@@ -132,6 +134,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
 
         // 刷新按钮
         refreshButton = new TextButton(lang.get("refresh"), skin);
+        addCyanHoverEffect(refreshButton);
         refreshButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 refreshRoomList();
@@ -141,6 +144,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
 
         // 断开连接按钮
         disconnectButton = new TextButton(lang.get("disconnect"), skin);
+        addCyanHoverEffect(disconnectButton);
         disconnectButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 disconnectFromServer();
@@ -328,6 +332,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
 
             TextButton roomButton = new TextButton(buttonText, skin);
             roomButton.setUserObject(room);
+            addCyanHoverEffect(roomButton);
 
             // 如果房间已满或游戏已开始，禁用按钮
             boolean isFull = room.getPlayerCount() >= room.getMaxPlayers();

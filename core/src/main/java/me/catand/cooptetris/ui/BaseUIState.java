@@ -1,7 +1,10 @@
 package me.catand.cooptetris.ui;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import me.catand.cooptetris.util.UIScaler;
 
@@ -161,5 +164,23 @@ public abstract class BaseUIState implements UIState {
      */
     protected float offsetY() {
         return scaler.getOffsetY();
+    }
+
+    /**
+     * 为按钮添加青色悬停效果
+     * 鼠标进入时变为青色，离开时恢复白色
+     */
+    protected void addCyanHoverEffect(TextButton button) {
+        button.addListener(new ClickListener() {
+            @Override
+            public void enter(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
+                button.setColor(Color.CYAN);
+            }
+
+            @Override
+            public void exit(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
+                button.setColor(Color.WHITE);
+            }
+        });
     }
 }

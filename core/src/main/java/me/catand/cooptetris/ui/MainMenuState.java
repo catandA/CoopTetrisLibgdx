@@ -53,6 +53,12 @@ public class MainMenuState extends BaseUIState {
         TextButton settingsButton = new TextButton(lang.get("settings"), skin);
         TextButton exitButton = new TextButton(lang.get("exit"), skin);
 
+        // 添加青色悬停效果
+        addCyanHoverEffect(startButton);
+        addCyanHoverEffect(onlineButton);
+        addCyanHoverEffect(settingsButton);
+        addCyanHoverEffect(exitButton);
+
         startButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 // 开始单机游戏，使用uiManager中已经初始化的gameStateManager
