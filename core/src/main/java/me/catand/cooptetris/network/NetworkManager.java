@@ -11,11 +11,13 @@ import java.util.List;
 
 import lombok.Getter;
 import me.catand.cooptetris.shared.message.ConnectMessage;
+import me.catand.cooptetris.shared.message.CountdownMessage;
 import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NetworkMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
+import me.catand.cooptetris.shared.message.PlayerScoresMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.shared.tetris.GameMode;
 import me.catand.cooptetris.util.LanguageManager;
@@ -130,6 +132,9 @@ public class NetworkManager {
         kryo.register(MoveMessage.MoveType.class);
         kryo.register(NotificationMessage.class);
         kryo.register(NotificationMessage.NotificationType.class);
+        kryo.register(PlayerScoresMessage.class);
+        kryo.register(PlayerScoresMessage.PlayerScore.class);
+        kryo.register(CountdownMessage.class);
         kryo.register(GameMode.class);
         kryo.register(long.class);
     }
@@ -150,6 +155,12 @@ public class NetworkManager {
                 break;
             case "notification":
                 handleNotificationMessage((NotificationMessage) message);
+                break;
+            case "playerScores":
+                handlePlayerScoresMessage((PlayerScoresMessage) message);
+                break;
+            case "countdown":
+                handleCountdownMessage((CountdownMessage) message);
                 break;
         }
     }
@@ -217,6 +228,28 @@ public class NetworkManager {
             // 使用监听器列表的副本进行遍历，避免ConcurrentModificationException
             for (NetworkListener listener : new ArrayList<>(listeners)) {
                 listener.onNotification(finalMessage);
+            }
+        });
+    }
+
+    private void handlePlayerScoresMessage(PlayerScoresMessage message) {
+        // 确保在主线程中调用监听器方法
+        final PlayerScoresMessage finalMessage = message;
+        Gdx.app.postRunnable(() -> {
+            // 使用监听器列表的副本进行遍历，避免ConcurrentModificationException
+            for (NetworkListener listener : new ArrayList<>(listeners)) {
+                listener.onPlayerScoresUpdate(finalMessage);
+            }
+        });
+    }
+
+    private void handleCountdownMessage(CountdownMessage message) {
+        // 确保在主线程中调用监听器方法
+        final CountdownMessage finalMessage = message;
+        Gdx.app.postRunnable(() -> {
+            // 使用监听器列表的副本进行遍历，避免ConcurrentModificationException
+            for (NetworkListener listener : new ArrayList<>(listeners)) {
+                listener.onCountdownUpdate(finalMessage);
             }
         });
     }
@@ -340,6 +373,14 @@ public class NetworkManager {
 
         default void onNotification(NotificationMessage message) {
             // 默认空实现，让实现类可以选择性覆盖
+        }
+
+        default void onPlayerScoresUpdate(PlayerScoresMessage message) {
+            // 默认空实现，用于PVP模式同步玩家分数
+        }
+
+        default void onCountdownUpdate(CountdownMessage message) {
+            // 默认空实现，用于游戏开始倒计时
         }
     }
 }

@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.UUID;
 
 import lombok.Data;
+import me.catand.cooptetris.shared.message.CountdownMessage;
 import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
+import me.catand.cooptetris.shared.message.PlayerScoresMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.shared.tetris.GameLogic;
 import me.catand.cooptetris.shared.tetris.GameMode;
@@ -134,38 +136,94 @@ public class Room {
         }
     }
 
+    private boolean isCountingDown = false;
+    private int countdownSeconds = 3;
+
     public boolean startGame(ClientConnection requester) {
-        if (!started && requester == host && !players.isEmpty()) {
-            started = true;
-
-            // 生成游戏种子，用于同步所有客户端的方块生成
-            gameSeed = Random.Long();
-
-            // 确保游戏逻辑已经初始化（合作模式下可能已经存在）
-            if (gameLogics.isEmpty()) {
-                gameLogics.add(new GameLogic());
-            }
-
-            // 使用种子初始化游戏逻辑，确保所有客户端生成相同的方块序列
-            for (GameLogic gameLogic : gameLogics) {
-                gameLogic.reset(gameSeed);
-            }
-
-            for (int i = 0; i < players.size(); i++) {
-                ClientConnection client = players.get(i);
-                serverManager.sendGameStartMessage(client, this, i, gameSeed);
-            }
-
-            // 启动游戏循环线程
-            startGameLoop();
-
-            // 立即广播一次游戏状态，确保所有客户端同步初始状态
-            broadcastGameState();
-
-            broadcastRoomStatus();
+        if (!started && !isCountingDown && requester == host && !players.isEmpty()) {
+            // 开始倒计时，而不是立即开始游戏
+            startCountdown();
             return true;
         }
         return false;
+    }
+
+    private void startCountdown() {
+        isCountingDown = true;
+        countdownSeconds = 3;
+
+        // 广播倒计时开始消息给所有玩家
+        broadcastCountdownMessage(countdownSeconds, true);
+
+        // 启动倒计时线程
+        new Thread(() -> {
+            while (countdownSeconds > 0 && isCountingDown) {
+                try {
+                    Thread.sleep(1000); // 等待1秒
+                    countdownSeconds--;
+
+                    if (countdownSeconds > 0) {
+                        // 广播剩余秒数
+                        broadcastCountdownMessage(countdownSeconds, true);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    break;
+                }
+            }
+
+            if (isCountingDown) {
+                // 倒计时结束，真正开始游戏
+                isCountingDown = false;
+                broadcastCountdownMessage(0, false);
+                actuallyStartGame();
+            }
+        }).start();
+    }
+
+    private void broadcastCountdownMessage(int seconds, boolean isStarting) {
+        CountdownMessage message = new CountdownMessage(seconds, isStarting);
+        for (ClientConnection client : players) {
+            client.sendMessage(message);
+        }
+    }
+
+    private void actuallyStartGame() {
+        started = true;
+
+        // 生成游戏种子，用于同步所有客户端的方块生成
+        gameSeed = Random.Long();
+
+        // 清除旧的游戏逻辑
+        gameLogics.clear();
+
+        if (gameMode == GameMode.COOP) {
+            // 合作模式：所有玩家共享一个游戏逻辑
+            gameLogics.add(new GameLogic());
+            gameLogics.get(0).reset(gameSeed);
+        } else {
+            // PVP模式：每个玩家有自己的游戏逻辑
+            for (int i = 0; i < players.size(); i++) {
+                GameLogic logic = new GameLogic();
+                logic.reset(gameSeed);
+                gameLogics.add(logic);
+                // 设置每个玩家的游戏逻辑索引
+                players.get(i).setGameLogicIndex(i);
+            }
+        }
+
+        for (int i = 0; i < players.size(); i++) {
+            ClientConnection client = players.get(i);
+            serverManager.sendGameStartMessage(client, this, i, gameSeed);
+        }
+
+        // 启动游戏循环线程
+        startGameLoop();
+
+        // 立即广播一次游戏状态，确保所有客户端同步初始状态
+        broadcastGameState();
+
+        broadcastRoomStatus();
     }
 
     public void handleMove(ClientConnection client, int moveType) {
@@ -209,16 +267,64 @@ public class Room {
                 }
             }
         } else {
-            // PVP模式：每个玩家有自己的游戏状态
+            // PVP模式：广播所有玩家的游戏状态给所有人
+            // 发送给每个玩家：包含所有玩家的游戏状态
             for (int i = 0; i < players.size(); i++) {
                 ClientConnection client = players.get(i);
-                int gameLogicIndex = client.getGameLogicIndex();
-                if (gameLogicIndex >= 0 && gameLogicIndex < gameLogics.size()) {
-                    GameLogic gameLogic = gameLogics.get(gameLogicIndex);
-                    GameStateMessage message = createGameStateMessage(gameLogic);
-                    client.sendMessage(message);
+                int playerGameLogicIndex = client.getGameLogicIndex();
+
+                // 发送自己的游戏状态（设置playerIndex为自己的索引）
+                if (playerGameLogicIndex >= 0 && playerGameLogicIndex < gameLogics.size()) {
+                    GameStateMessage myState = createGameStateMessage(gameLogics.get(playerGameLogicIndex));
+                    myState.setPlayerIndex(playerGameLogicIndex);
+                    client.sendMessage(myState);
+                }
+
+                // 发送其他玩家的游戏状态（用于显示对手游戏板）
+                for (int j = 0; j < gameLogics.size(); j++) {
+                    if (j != playerGameLogicIndex) {
+                        // 为每个对手创建独立的游戏状态消息副本
+                        GameStateMessage opponentState = createGameStateMessage(gameLogics.get(j));
+                        opponentState.setPlayerIndex(j); // 标记这是哪个玩家的状态
+                        client.sendMessage(opponentState);
+                    }
                 }
             }
+
+            // PVP模式下同时广播所有玩家分数
+            broadcastPlayerScores();
+        }
+    }
+
+    /**
+     * 广播所有玩家的分数信息（用于PVP模式）
+     */
+    private void broadcastPlayerScores() {
+        List<PlayerScoresMessage.PlayerScore> scores = new ArrayList<>();
+
+        for (int i = 0; i < players.size(); i++) {
+            ClientConnection player = players.get(i);
+            int gameLogicIndex = player.getGameLogicIndex();
+            if (gameLogicIndex >= 0 && gameLogicIndex < gameLogics.size()) {
+                GameLogic gameLogic = gameLogics.get(gameLogicIndex);
+                scores.add(new PlayerScoresMessage.PlayerScore(
+                    i,
+                    player.getPlayerName(),
+                    gameLogic.getScore(),
+                    gameLogic.getLines(),
+                    gameLogic.getLevel(),
+                    gameLogic.isGameOver()
+                ));
+            }
+        }
+
+        // 按分数降序排序
+        scores.sort((a, b) -> Integer.compare(b.getScore(), a.getScore()));
+
+        // 发送给每个玩家
+        for (int i = 0; i < players.size(); i++) {
+            PlayerScoresMessage message = new PlayerScoresMessage(scores, i);
+            players.get(i).sendMessage(message);
         }
     }
 

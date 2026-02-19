@@ -10,11 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.catand.cooptetris.shared.message.ConnectMessage;
+import me.catand.cooptetris.shared.message.CountdownMessage;
 import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NetworkMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
+import me.catand.cooptetris.shared.message.PlayerScoresMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.shared.tetris.GameMode;
 
@@ -139,6 +141,9 @@ public class ServerManager {
         kryo.register(MoveMessage.MoveType.class);
         kryo.register(NotificationMessage.class);
         kryo.register(NotificationMessage.NotificationType.class);
+        kryo.register(PlayerScoresMessage.class);
+        kryo.register(PlayerScoresMessage.PlayerScore.class);
+        kryo.register(CountdownMessage.class);
         kryo.register(GameMode.class);
         kryo.register(long.class);
     }

@@ -11,6 +11,7 @@ import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.tetris.GameStateManager;
 import me.catand.cooptetris.ui.GameState;
 import me.catand.cooptetris.ui.MainMenuState;
+import me.catand.cooptetris.ui.PVPGameState;
 import me.catand.cooptetris.ui.UIManager;
 import me.catand.cooptetris.ui.UIState;
 import me.catand.cooptetris.util.PlatformSupport;
@@ -132,17 +133,20 @@ public class Main extends ApplicationAdapter {
         // 更新UI
         uiManager.update(Gdx.graphics.getDeltaTime());
 
-        // 渲染游戏
+        // 渲染UI（先渲染UI，游戏板会在UI之上渲染）
+        batch.begin();
+        uiManager.render(batch);
+        batch.end();
+
+        // 渲染游戏板（在UI之上渲染，确保游戏板可见）
         UIState currentState = uiManager.getCurrentState();
         if (currentState instanceof GameState) {
             GameState gameState = (GameState) currentState;
             gameState.renderGame(shapeRenderer);
+        } else if (currentState instanceof PVPGameState) {
+            PVPGameState pvpGameState = (PVPGameState) currentState;
+            pvpGameState.renderGame(shapeRenderer);
         }
-
-        // 渲染UI
-        batch.begin();
-        uiManager.render(batch);
-        batch.end();
     }
 
     @Override

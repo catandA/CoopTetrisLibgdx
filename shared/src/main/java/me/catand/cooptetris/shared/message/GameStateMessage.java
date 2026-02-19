@@ -15,6 +15,7 @@ public class GameStateMessage extends NetworkMessage {
     private int score;
     private int level;
     private int lines;
+    private int playerIndex; // 用于PVP模式标识是哪个玩家的状态
 
     public GameStateMessage() {
         super("gameState");

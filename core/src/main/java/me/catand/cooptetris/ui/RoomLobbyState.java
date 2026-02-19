@@ -19,6 +19,7 @@ import java.util.List;
 
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.NetworkManager;
+import me.catand.cooptetris.shared.message.CountdownMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.shared.tetris.GameMode;
@@ -56,11 +57,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private final NetworkManager.ConnectionType connectionType;
 
     // UI颜色配置
-    private static final Color COLOR_BG = new Color(0.08f, 0.09f, 0.11f, 1f);
     private static final Color COLOR_PANEL = new Color(0.12f, 0.14f, 0.17f, 0.95f);
     private static final Color COLOR_PANEL_HIGHLIGHT = new Color(0.15f, 0.17f, 0.21f, 0.95f);
-    private static final Color COLOR_BORDER = new Color(0.25f, 0.28f, 0.35f, 1f);
-    private static final Color COLOR_BORDER_ACTIVE = new Color(0.2f, 0.8f, 1f, 0.6f);
     private static final Color COLOR_PRIMARY = new Color(0.2f, 0.8f, 1f, 1f);
     private static final Color COLOR_SECONDARY = new Color(0.8f, 0.3f, 0.9f, 1f);
     private static final Color COLOR_SUCCESS = new Color(0.3f, 0.9f, 0.4f, 1f);
@@ -455,13 +453,14 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     // ==================== 功能方法 ====================
 
     private void startGame() {
+        // 只有房主才能开始游戏
+        if (!isHost) {
+            return;
+        }
+
         if (networkManager != null && networkManager.isConnected()) {
+            // 发送开始游戏请求，服务器会广播倒计时
             networkManager.startGame();
-            statusLabel.setText(lang().get("starting.game"));
-            statusLabel.setColor(COLOR_PRIMARY);
-            startGameButton.setDisabled(true);
-            isCountingDown = true;
-            countdownTimer = 3;
         }
     }
 
@@ -546,16 +545,13 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         }
 
         if (isCountingDown) {
-            countdownTimer -= delta;
-            if (countdownTimer > 0) {
-                if (startGameButton != null) {
-                    startGameButton.setText(lang().get("starting.countdown").replace("%d", String.valueOf((int) countdownTimer)));
-                }
-            } else {
-                isCountingDown = false;
-                if (startGameButton != null) {
-                    startGameButton.setText(lang().get("start.game.button"));
-                }
+            // 倒计时由服务器同步，这里只更新UI显示
+            if (startGameButton != null) {
+                startGameButton.setText(lang().get("starting.countdown").replace("%d", String.valueOf(countdownTimer)));
+            }
+            if (statusLabel != null) {
+                statusLabel.setText(lang().get("starting.game"));
+                statusLabel.setColor(COLOR_PRIMARY);
             }
         } else {
             if (statusLabel != null) {
@@ -570,6 +566,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
                     statusLabel.setColor(COLOR_SUCCESS);
                     if (startGameButton != null && isHost) {
                         startGameButton.setDisabled(false);
+                        startGameButton.setText(lang().get("start.game.button"));
                     }
                 }
             }
@@ -617,11 +614,38 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     }
 
     @Override
+    public void onCountdownUpdate(CountdownMessage message) {
+        if (message.isStarting()) {
+            // 开始倒计时
+            isCountingDown = true;
+            countdownTimer = message.getCountdownSeconds();
+            if (startGameButton != null) {
+                startGameButton.setDisabled(true);
+            }
+        } else {
+            // 倒计时结束
+            isCountingDown = false;
+            countdownTimer = 0;
+        }
+    }
+
+    @Override
     public void onGameStart(me.catand.cooptetris.shared.message.GameStartMessage message) {
+        // 重置倒计时状态
+        isCountingDown = false;
+        countdownTimer = 0;
+
         if (uiManager != null && uiManager.gameStateManager != null) {
-            uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), message.getYourIndex());
-            GameState gameState = new GameState(uiManager, uiManager.gameStateManager);
-            uiManager.setScreen(gameState);
+            uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
+
+            // 根据游戏模式启动不同的游戏界面
+            if (currentGameMode == GameMode.PVP) {
+                PVPGameState pvpGameState = new PVPGameState(uiManager, uiManager.gameStateManager);
+                uiManager.setScreen(pvpGameState);
+            } else {
+                GameState gameState = new GameState(uiManager, uiManager.gameStateManager);
+                uiManager.setScreen(gameState);
+            }
         }
     }
 

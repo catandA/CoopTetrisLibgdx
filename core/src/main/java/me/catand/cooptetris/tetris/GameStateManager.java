@@ -5,6 +5,9 @@ import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
+import me.catand.cooptetris.shared.message.PlayerScoresMessage;
+
+import java.util.List;
 
 public class GameStateManager implements NetworkManager.NetworkListener {
     private final me.catand.cooptetris.shared.tetris.GameStateManager sharedManager;
@@ -13,6 +16,10 @@ public class GameStateManager implements NetworkManager.NetworkListener {
     private LocalServerManager localServerManager;
     private boolean isLocalServerStarted;
     private boolean isSinglePlayerMode;
+
+    // PVP模式玩家分数信息
+    private List<PlayerScoresMessage.PlayerScore> playerScores;
+    private PlayerScoresListener playerScoresListener;
 
     public GameStateManager() {
         sharedManager = new me.catand.cooptetris.shared.tetris.GameStateManager();
@@ -100,7 +107,37 @@ public class GameStateManager implements NetworkManager.NetworkListener {
 
     @Override
     public void onGameStateUpdate(GameStateMessage message) {
-        sharedManager.updateGameLogic(message);
+        // PVP模式下，根据playerIndex判断是更新自己还是对手的游戏状态
+        if (sharedManager.isMultiplayer() && message.getPlayerIndex() != sharedManager.getPlayerIndex()) {
+            // 更新对手的游戏状态
+            sharedManager.updateRemoteGameLogic(message.getPlayerIndex(), message);
+        } else {
+            // 更新自己的游戏状态
+            sharedManager.updateGameLogic(message);
+        }
+    }
+
+    @Override
+    public void onPlayerScoresUpdate(PlayerScoresMessage message) {
+        this.playerScores = message.getPlayerScores();
+        if (playerScoresListener != null) {
+            playerScoresListener.onPlayerScoresUpdated(playerScores, message.getYourIndex());
+        }
+    }
+
+    public List<PlayerScoresMessage.PlayerScore> getPlayerScores() {
+        return playerScores;
+    }
+
+    public void setPlayerScoresListener(PlayerScoresListener listener) {
+        this.playerScoresListener = listener;
+    }
+
+    /**
+     * PVP玩家分数更新监听器接口
+     */
+    public interface PlayerScoresListener {
+        void onPlayerScoresUpdated(List<PlayerScoresMessage.PlayerScore> scores, int yourIndex);
     }
 
     @Override

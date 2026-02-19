@@ -78,6 +78,15 @@ public class GameStateManager {
         }
     }
 
+    /**
+     * 更新指定远程玩家的游戏逻辑（用于PVP模式显示对手游戏板）
+     */
+    public void updateRemoteGameLogic(int playerIndex, GameStateMessage message) {
+        if (isMultiplayer && remoteGameLogics != null && playerIndex >= 0 && playerIndex < remoteGameLogics.length) {
+            updateGameLogic(remoteGameLogics[playerIndex], message);
+        }
+    }
+
     private void updateGameLogic(GameLogic gameLogic, GameStateMessage message) {
         gameLogic.updateFromMessage(
             message.getBoard(),

@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.Align;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.input.InputBinding;
 import me.catand.cooptetris.shared.message.MoveMessage;
+import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.model.Tetromino;
 import me.catand.cooptetris.shared.tetris.GameLogic;
 import me.catand.cooptetris.tetris.GameStateManager;
@@ -43,6 +44,18 @@ public class GameState extends BaseUIState {
     private float lastSoftDropTime = 0;
     private float boardX;
     private float boardY;
+
+    // 游戏结束弹窗
+    private NotificationDialog gameOverDialog;
+    private boolean isGameOverShown = false;
+
+    // 暂停状态
+    private boolean isPaused = false;
+    private Table pauseOverlay;
+
+    // 下一个方块预览
+    private Table previewArea;
+    private float previewCellSize = 20f;
 
     // UI颜色配置
     private static final Color COLOR_BG = new Color(0.06f, 0.07f, 0.09f, 1f);
@@ -170,12 +183,55 @@ public class GameState extends BaseUIState {
 
         previewPanel.add(previewTitle).fillX().padBottom(h(10f)).row();
 
-        // 预览区域（空白，后续可添加方块预览）
-        Table previewArea = new Table();
+        // 预览区域
+        previewArea = new Table();
         previewArea.setBackground(createPanelBackground(COLOR_PANEL));
         previewPanel.add(previewArea).height(w(100f)).fillX();
 
         return previewPanel;
+    }
+
+    private void updatePreview() {
+        if (previewArea == null) return;
+
+        previewArea.clear();
+
+        GameLogic gameLogic = gameStateManager.getSharedManager().getLocalGameLogic();
+        int nextPiece = gameLogic.getNextPiece();
+        int[][] pieceShape = Tetromino.SHAPES[nextPiece];
+
+        // 计算预览方块的单元格大小
+        float cellSize = w(20f);
+        int pieceSize = pieceShape.length;
+
+        // 创建预览表格
+        Table pieceTable = new Table();
+
+        for (int y = 0; y < pieceSize; y++) {
+            for (int x = 0; x < pieceSize; x++) {
+                if (pieceShape[y][x] != 0) {
+                    // 创建方块单元格
+                    Table cell = new Table();
+                    cell.setBackground(createColoredBackground(Tetromino.COLORS[nextPiece]));
+                    pieceTable.add(cell).size(cellSize).pad(w(1f));
+                } else {
+                    // 空白占位
+                    pieceTable.add().size(cellSize).pad(w(1f));
+                }
+            }
+            pieceTable.row();
+        }
+
+        previewArea.add(pieceTable).center().expand();
+    }
+
+    private com.badlogic.gdx.scenes.scene2d.utils.Drawable createColoredBackground(Color color) {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(color);
+        pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(texture);
     }
 
     private Table createBottomPanel() {
@@ -185,7 +241,7 @@ public class GameState extends BaseUIState {
         pauseButton.setColor(COLOR_PRIMARY);
         pauseButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                // 暂停游戏
+                togglePause();
             }
             return true;
         });
@@ -230,9 +286,103 @@ public class GameState extends BaseUIState {
 
     @Override
     public void update(float delta) {
-        handleInput();
-        gameStateManager.update(delta);
-        updateUI();
+        if (!isPaused) {
+            handleInput();
+            gameStateManager.update(delta);
+            updateUI();
+            checkGameOver();
+        }
+    }
+
+    private void togglePause() {
+        isPaused = !isPaused;
+        if (isPaused) {
+            showPauseOverlay();
+        } else {
+            hidePauseOverlay();
+        }
+    }
+
+    private void showPauseOverlay() {
+        if (pauseOverlay == null) {
+            pauseOverlay = new Table();
+            pauseOverlay.setFillParent(true);
+            pauseOverlay.setBackground(createPanelBackground(new Color(0, 0, 0, 0.7f)));
+
+            // 暂停标题
+            BitmapFont pauseFont = Main.platform.getFont(fontSize(36), lang().get("pause.title"), false, false);
+            Label.LabelStyle pauseStyle = new Label.LabelStyle(pauseFont, COLOR_PRIMARY);
+            Label pauseLabel = new Label(lang().get("pause.title"), pauseStyle);
+            pauseLabel.setAlignment(Align.center);
+
+            // 继续按钮
+            TextButton resumeButton = new TextButton(lang().get("resume"), skin);
+            resumeButton.setColor(COLOR_SUCCESS);
+            resumeButton.addListener(event -> {
+                if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
+                    togglePause();
+                }
+                return true;
+            });
+
+            pauseOverlay.add(pauseLabel).padBottom(h(30f)).row();
+            pauseOverlay.add(resumeButton).width(w(160f)).height(h(50f));
+        }
+
+        stage.addActor(pauseOverlay);
+    }
+
+    private void hidePauseOverlay() {
+        if (pauseOverlay != null) {
+            pauseOverlay.remove();
+        }
+    }
+
+    private void checkGameOver() {
+        GameLogic gameLogic = gameStateManager.getSharedManager().getLocalGameLogic();
+        if (gameLogic.isGameOver() && !isGameOverShown) {
+            isGameOverShown = true;
+            showGameOverDialog();
+        }
+    }
+
+    private void showGameOverDialog() {
+        GameLogic gameLogic = gameStateManager.getSharedManager().getLocalGameLogic();
+
+        NotificationMessage message = new NotificationMessage();
+        message.setNotificationType(NotificationMessage.NotificationType.INFO);
+        message.setTitle(lang().get("game.over.title"));
+        message.setMessage(lang().get("game.over.message")
+            .replace("%d", String.valueOf(gameLogic.getScore()))
+            .replace("%l", String.valueOf(gameLogic.getLines()))
+            .replace("%v", String.valueOf(gameLogic.getLevel())));
+
+        gameOverDialog = new NotificationDialog(skin);
+        gameOverDialog.setNotification(message);
+        gameOverDialog.setOnCloseAction(() -> {
+            returnToPreviousScreen();
+        });
+        gameOverDialog.show(stage);
+    }
+
+    private void returnToPreviousScreen() {
+        if (gameStateManager.isMultiplayer()) {
+            // 多人模式：返回房间
+            if (uiManager.getNetworkManager() != null && uiManager.getNetworkManager().isConnected()) {
+                uiManager.setScreen(new RoomLobbyState(uiManager, uiManager.getNetworkManager()));
+            } else {
+                uiManager.setScreen(new MainMenuState(uiManager));
+            }
+        } else {
+            // 单人模式：返回主菜单
+            if (uiManager.getLocalServerManager() != null && uiManager.getLocalServerManager().isRunning()) {
+                uiManager.getLocalServerManager().stopServer();
+            }
+            if (uiManager.getNetworkManager() != null) {
+                uiManager.getNetworkManager().disconnect();
+            }
+            uiManager.setScreen(new MainMenuState(uiManager));
+        }
     }
 
     private void handleInput() {
@@ -287,6 +437,7 @@ public class GameState extends BaseUIState {
         if (linesValueLabel != null) {
             linesValueLabel.setText(String.valueOf(gameLogic.getLines()));
         }
+        updatePreview();
     }
 
     public void renderGame(ShapeRenderer shapeRenderer) {

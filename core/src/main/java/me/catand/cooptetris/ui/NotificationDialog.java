@@ -154,7 +154,15 @@ public class NotificationDialog {
             isVisible = true;
         }
         dialogTable.setVisible(true);
-        updatePosition(stage);
+        // 确保弹窗在最上层显示
+        dialogTable.toFront();
+        // 确保在下一帧布局完成后更新位置
+        com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+            if (isVisible && dialogTable != null) {
+                updatePosition(stage);
+                dialogTable.toFront();
+            }
+        });
     }
 
     public void hide() {
