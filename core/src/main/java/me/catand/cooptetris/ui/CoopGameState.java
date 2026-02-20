@@ -1,10 +1,13 @@
 package me.catand.cooptetris.ui;
 
+import java.util.List;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -31,7 +34,7 @@ import me.catand.cooptetris.util.TetrisSettings;
 public class CoopGameState extends BaseUIState {
 
     // 玩家颜色：蓝、红、绿、黄
-    private static final Color[] PLAYER_COLORS = {
+    public static final Color[] PLAYER_COLORS = {
         new Color(0.2f, 0.5f, 1.0f, 1.0f),    // 蓝色 - 玩家1
         new Color(1.0f, 0.2f, 0.2f, 1.0f),    // 红色 - 玩家2
         new Color(0.2f, 0.8f, 0.2f, 1.0f),    // 绿色 - 玩家3
@@ -60,9 +63,11 @@ public class CoopGameState extends BaseUIState {
     private Label levelValueLabel;
     private Label linesValueLabel;
     private final Label[] playerLabels;
+    private final Label[] playerNameLabels; // 出口上方的玩家名字标签
     private BitmapFont titleFont;
     private BitmapFont statsFont;
     private BitmapFont smallFont;
+    private BitmapFont playerNameFont; // 用于绘制玩家名字的字体
 
     // 游戏板渲染参数
     private float boardX, boardY;
@@ -88,6 +93,9 @@ public class CoopGameState extends BaseUIState {
     private boolean isPaused = false;
     private Table pauseOverlay;
 
+    // 玩家名字列表
+    private final List<String> playerNames;
+
     public CoopGameState(UIManager uiManager, GameStateManager gameStateManager) {
         super(uiManager);
         this.gameStateManager = gameStateManager;
@@ -96,8 +104,10 @@ public class CoopGameState extends BaseUIState {
         this.downKeyPressTime = new float[4];
         this.lastSoftDropTime = new float[4];
         this.playerLabels = new Label[4];
+        this.playerNameLabels = new Label[4];
         this.myPlayerIndex = gameStateManager.getPlayerIndex();
         this.playerCount = gameStateManager.getPlayerCount();
+        this.playerNames = gameStateManager.getPlayerNames();
     }
 
     @Override
@@ -107,6 +117,7 @@ public class CoopGameState extends BaseUIState {
         titleFont = Main.platform.getFont(fontSize(24), lang().get("coop.game.title"), false, false);
         statsFont = Main.platform.getFont(fontSize(20), "0123456789", false, false);
         smallFont = Main.platform.getFont(fontSize(14), "Players", false, false);
+        playerNameFont = Main.platform.getFont(fontSize(12), "Player Names", false, false);
 
         // 主容器
         uiTable = new Table();
@@ -135,6 +146,50 @@ public class CoopGameState extends BaseUIState {
 
         uiTable.add(contentTable).expand().center();
         stage.addActor(uiTable);
+
+        // 创建出口上方的玩家名字标签
+        createPlayerNameLabels();
+    }
+
+    /**
+     * 创建出口上方的玩家名字标签
+     */
+    private void createPlayerNameLabels() {
+        for (int i = 0; i < playerCount && i < 4; i++) {
+            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
+            String playerName = (playerNames != null && i < playerNames.size())
+                ? playerNames.get(i)
+                : "P" + (i + 1);
+
+            Label.LabelStyle nameStyle = new Label.LabelStyle(playerNameFont, PLAYER_COLORS[assignedPlayerIndex]);
+            playerNameLabels[i] = new Label(playerName, nameStyle);
+            playerNameLabels[i].setAlignment(Align.center);
+            stage.addActor(playerNameLabels[i]);
+        }
+    }
+
+    /**
+     * 更新玩家名字标签位置
+     */
+    private void updatePlayerNameLabelPositions() {
+        if (boardArea == null) return;
+
+        com.badlogic.gdx.math.Vector2 boardPos = boardArea.localToStageCoordinates(new com.badlogic.gdx.math.Vector2(0, 0));
+        float boardWidth = CoopGameLogic.BOARD_WIDTH * cellSize;
+        float boardHeight = CoopGameLogic.BOARD_HEIGHT * cellSize;
+        float actualBoardX = boardPos.x + (boardArea.getWidth() - boardWidth) / 2;
+        float actualBoardY = boardPos.y + (boardArea.getHeight() - boardHeight) / 2;
+
+        for (int i = 0; i < playerCount && i < 4; i++) {
+            if (playerNameLabels[i] != null) {
+                int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
+                int exitX = CoopGameLogic.EXIT_POSITIONS[assignedPlayerIndex];
+                float exitCenterX = actualBoardX + exitX * cellSize + (3 * cellSize) / 2;
+                float exitTopY = actualBoardY + CoopGameLogic.BOARD_HEIGHT * cellSize + 20;
+
+                playerNameLabels[i].setPosition(exitCenterX - playerNameLabels[i].getWidth() / 2, exitTopY);
+            }
+        }
     }
 
     /**
@@ -199,20 +254,37 @@ public class CoopGameState extends BaseUIState {
         gameTitle.setAlignment(Align.center);
         panel.add(gameTitle).fillX().padBottom(h(25f)).row();
 
-        // 分数面板
-        panel.add(createStatPanel(lang().get("score.title"), "0", COLOR_PRIMARY)).fillX().padBottom(h(15f)).row();
+        // 分数面板 - 使用当前玩家的颜色
+        Color myPlayerColor = getMyPlayerColor();
+        panel.add(createStatPanel(lang().get("score.title"), "0", myPlayerColor)).fillX().padBottom(h(15f)).row();
 
-        // 等级面板
-        panel.add(createStatPanel(lang().get("level.title"), "1", COLOR_SECONDARY)).fillX().padBottom(h(15f)).row();
+        // 等级面板 - 使用当前玩家颜色的变体
+        Color myPlayerColorVariant = myPlayerColor.cpy().lerp(COLOR_SECONDARY, 0.3f);
+        panel.add(createStatPanel(lang().get("level.title"), "1", myPlayerColorVariant)).fillX().padBottom(h(15f)).row();
 
-        // 行数面板
-        panel.add(createStatPanel(lang().get("lines.title"), "0", COLOR_SUCCESS)).fillX().padBottom(h(25f)).row();
+        // 行数面板 - 使用当前玩家颜色的另一个变体
+        Color myPlayerColorVariant2 = myPlayerColor.cpy().lerp(COLOR_SUCCESS, 0.3f);
+        panel.add(createStatPanel(lang().get("lines.title"), "0", myPlayerColorVariant2)).fillX().padBottom(h(25f)).row();
 
-        // 玩家颜色说明
-        Table colorLegendPanel = createColorLegendPanel();
+        // 玩家颜色说明 - 显示所有玩家及其名字
+        Table colorLegendPanel = createColorLegendPanelWithNames();
         panel.add(colorLegendPanel).fillX().expand().bottom();
 
         return panel;
+    }
+
+    /**
+     * 获取当前玩家的颜色
+     */
+    private Color getMyPlayerColor() {
+        // 找到当前玩家在游戏中的位置索引
+        for (int i = 0; i < playerCount && i < 4; i++) {
+            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
+            if (assignedPlayerIndex == myPlayerIndex) {
+                return PLAYER_COLORS[assignedPlayerIndex];
+            }
+        }
+        return COLOR_PRIMARY; // 默认颜色
     }
 
     private Table createStatPanel(String title, String initialValue, Color accentColor) {
@@ -244,9 +316,9 @@ public class CoopGameState extends BaseUIState {
     }
 
     /**
-     * 创建玩家颜色说明面板
+     * 创建玩家颜色说明面板（带玩家名字）
      */
-    private Table createColorLegendPanel() {
+    private Table createColorLegendPanelWithNames() {
         Table panel = new Table();
         panel.setBackground(createPanelBackground(COLOR_BG));
         panel.pad(w(12f));
@@ -256,19 +328,23 @@ public class CoopGameState extends BaseUIState {
         legendTitle.setAlignment(Align.center);
         panel.add(legendTitle).fillX().padBottom(h(10f)).row();
 
-        // 颜色说明
-        String[] colorNames = {lang().get("color.blue"), lang().get("color.red"), lang().get("color.green"), lang().get("color.yellow")};
-        for (int i = 0; i < 4; i++) {
+        // 显示实际玩家及其名字（按照分配顺序）
+        for (int i = 0; i < playerCount && i < 4; i++) {
+            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
+            String playerName = (playerNames != null && i < playerNames.size())
+                ? playerNames.get(i)
+                : "P" + (i + 1);
+
             Table row = new Table();
 
             // 颜色方块
             Table colorBlock = new Table();
-            colorBlock.setBackground(createColoredBackground(PLAYER_COLORS[i]));
+            colorBlock.setBackground(createColoredBackground(PLAYER_COLORS[assignedPlayerIndex]));
             row.add(colorBlock).size(w(16f), h(16f)).padRight(w(8f));
 
-            // 颜色名称
-            Label.LabelStyle nameStyle = new Label.LabelStyle(smallFont, PLAYER_COLORS[i]);
-            Label nameLabel = new Label(colorNames[i], nameStyle);
+            // 玩家名字（使用对应的颜色）
+            Label.LabelStyle nameStyle = new Label.LabelStyle(smallFont, PLAYER_COLORS[assignedPlayerIndex]);
+            Label nameLabel = new Label(playerName, nameStyle);
             row.add(nameLabel).left();
 
             panel.add(row).fillX().padBottom(h(5f)).row();
@@ -389,6 +465,8 @@ public class CoopGameState extends BaseUIState {
             updateUI();
             checkGameOver();
         }
+        // 更新玩家名字标签位置
+        updatePlayerNameLabelPositions();
         stage.act(delta);
     }
 
@@ -647,6 +725,10 @@ public class CoopGameState extends BaseUIState {
         if (smallFont != null) {
             smallFont.dispose();
             smallFont = null;
+        }
+        if (playerNameFont != null) {
+            playerNameFont.dispose();
+            playerNameFont = null;
         }
         shapeRenderer.dispose();
     }

@@ -141,6 +141,9 @@ public class NetworkManager {
         kryo.register(CoopGameStateMessage.PlayerPieceState[].class);
         kryo.register(GameMode.class);
         kryo.register(long.class);
+
+        // 注册String列表类型（用于玩家名字列表）
+        kryo.register(java.util.List.class);
     }
 
     private void handleMessage(NetworkMessage message) {

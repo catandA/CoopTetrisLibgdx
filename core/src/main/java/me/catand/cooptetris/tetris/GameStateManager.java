@@ -1,13 +1,16 @@
 package me.catand.cooptetris.tetris;
 
+import lombok.Getter;
 import lombok.Setter;
 import me.catand.cooptetris.network.LocalServerManager;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.CoopGameStateMessage;
+import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.PlayerScoresMessage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GameStateManager implements NetworkManager.NetworkListener {
@@ -21,6 +24,12 @@ public class GameStateManager implements NetworkManager.NetworkListener {
     // PVP模式玩家分数信息
     private List<PlayerScoresMessage.PlayerScore> playerScores;
     private PlayerScoresListener playerScoresListener;
+
+    // 合作模式玩家名字列表
+    @Getter
+    private List<String> playerNames;
+    @Getter
+    private GameStartMessage lastGameStartMessage;
 
     public GameStateManager() {
         sharedManager = new me.catand.cooptetris.shared.tetris.GameStateManager();
@@ -106,6 +115,14 @@ public class GameStateManager implements NetworkManager.NetworkListener {
 
     @Override
     public void onGameStart(me.catand.cooptetris.shared.message.GameStartMessage message) {
+        // 保存游戏开始消息（包含玩家名字）
+        this.lastGameStartMessage = message;
+        // 保存玩家名字列表
+        if (message.getPlayerNames() != null) {
+            this.playerNames = new ArrayList<>(message.getPlayerNames());
+        } else {
+            this.playerNames = new ArrayList<>();
+        }
         // 根据游戏模式启动不同的游戏
         if (message.getGameMode() == me.catand.cooptetris.shared.tetris.GameMode.COOP) {
             // 合作模式

@@ -150,6 +150,9 @@ public class ServerManager {
         kryo.register(CoopGameStateMessage.PlayerPieceState[].class);
         kryo.register(GameMode.class);
         kryo.register(long.class);
+
+        // 注册String列表类型（用于玩家名字列表）
+        kryo.register(java.util.List.class);
     }
 
 
@@ -462,6 +465,12 @@ public class ServerManager {
         message.setYourIndex(playerIndex);
         message.setSeed(seed);
         message.setGameMode(room.getGameMode());
+        // 收集所有玩家名字
+        List<String> playerNames = new ArrayList<>();
+        for (ClientConnection player : room.getPlayers()) {
+            playerNames.add(player.getPlayerName());
+        }
+        message.setPlayerNames(playerNames);
         client.sendMessage(message);
     }
 
