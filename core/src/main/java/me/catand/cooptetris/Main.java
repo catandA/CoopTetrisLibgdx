@@ -17,6 +17,7 @@ import me.catand.cooptetris.ui.UIManager;
 import me.catand.cooptetris.ui.UIState;
 import me.catand.cooptetris.util.PlatformSupport;
 import me.catand.cooptetris.util.TetrisSettings;
+import me.catand.cooptetris.util.UIScaler;
 
 /**
  * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
@@ -151,6 +152,61 @@ public class Main extends ApplicationAdapter {
             CoopGameState coopGameState = (CoopGameState) currentState;
             coopGameState.renderGame(shapeRenderer);
         }
+
+        // 在16:9渲染区域外绘制黑色边框
+        renderBlackBars();
+    }
+
+    // 黑色纹理缓存
+    private com.badlogic.gdx.graphics.Texture blackTexture;
+
+    /**
+     * 在16:9渲染区域外绘制黑色边框
+     */
+    private void renderBlackBars() {
+        UIScaler scaler = UIScaler.getInstance();
+        float offsetX = scaler.getOffsetX();
+        float offsetY = scaler.getOffsetY();
+        float displayWidth = scaler.getDisplayWidth();
+        float displayHeight = scaler.getDisplayHeight();
+        float screenWidth = scaler.getScreenWidth();
+        float screenHeight = scaler.getScreenHeight();
+
+        // 如果没有黑边（屏幕正好是16:9），则不绘制
+        if (offsetX <= 0 && offsetY <= 0) {
+            return;
+        }
+
+        // 延迟初始化黑色纹理
+        if (blackTexture == null) {
+            com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(1, 1, com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888);
+            pixmap.setColor(0f, 0f, 0f, 1f);
+            pixmap.fill();
+            blackTexture = new com.badlogic.gdx.graphics.Texture(pixmap);
+            pixmap.dispose();
+        }
+
+        // 设置SpriteBatch为屏幕坐标系
+        batch.getProjectionMatrix().setToOrtho2D(0, 0, screenWidth, screenHeight);
+        batch.begin();
+
+        // 绘制左右黑边（当屏幕比16:9宽时）
+        if (offsetX > 0) {
+            // 左边黑边
+            batch.draw(blackTexture, 0, 0, offsetX, screenHeight);
+            // 右边黑边
+            batch.draw(blackTexture, screenWidth - offsetX, 0, offsetX, screenHeight);
+        }
+
+        // 绘制上下黑边（当屏幕比16:9高时）
+        if (offsetY > 0) {
+            // 上边黑边
+            batch.draw(blackTexture, 0, screenHeight - offsetY, screenWidth, offsetY);
+            // 下边黑边
+            batch.draw(blackTexture, 0, 0, screenWidth, offsetY);
+        }
+
+        batch.end();
     }
 
     @Override
