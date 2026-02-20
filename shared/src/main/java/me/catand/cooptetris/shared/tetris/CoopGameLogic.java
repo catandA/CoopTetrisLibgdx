@@ -1,20 +1,21 @@
 package me.catand.cooptetris.shared.tetris;
 
 import lombok.Data;
-import me.catand.cooptetris.shared.model.Tetromino;
 import me.catand.cooptetris.shared.util.Random;
 
 /**
- * 多人合作模式游戏逻辑
- * - 场地宽度为14格（比原来减少约三分之一）
+ * 多人合作模式游戏逻辑 - 重构版
+ * - 场地宽度为15格（3*4+3）：4个玩家各3格 + 3个分隔格
  * - 支持4个出口（顶部4个位置）
+ * - 每个出口3格宽，出口之间1格分隔
  * - 每个玩家有独立的颜色（蓝红绿黄）
  * - 每个玩家独立控制自己的物块
  * - 共用一个游戏板和游戏状态
+ * - 只有两种三格砖块：直线型(I3)和小L型(L3)
  */
 @Data
 public class CoopGameLogic {
-    public static final int BOARD_WIDTH = 14;  // 减少后的宽度
+    public static final int BOARD_WIDTH = 15;  // 3*4+3 = 15格（4个玩家各3格 + 3个分隔格）
     public static final int BOARD_HEIGHT = 20;
     public static final int MAX_PLAYERS = 4;
 
@@ -34,13 +35,35 @@ public class CoopGameLogic {
     private long randomSeed;
     private int activePlayerCount; // 实际活跃玩家数量
 
-    // 出口位置（顶部4个位置，每个出口3-4格宽）
-    // 出口顺序：1(蓝), 2(红), 3(绿), 4(黄) -> 位置从左到右
-    public static final int[] EXIT_POSITIONS = {2, 5, 8, 11}; // 每个出口的中心X坐标
+    // 出口位置（每个出口3格宽，出口之间1格分隔）
+    // 布局: [P1:0-2] [分隔:3] [P2:4-6] [分隔:7] [P3:8-10] [分隔:11] [P4:12-14]
+    // 出口中心X坐标（物块生成位置）
+    public static final int[] EXIT_POSITIONS = {0, 4, 8, 12}; // 每个出口的起始X坐标
 
     // 玩家分配顺序（从中心向两边）：2(红), 3(绿), 1(蓝), 4(黄)
     // 对应玩家索引：1, 2, 0, 3
     public static final int[] PLAYER_ASSIGNMENT_ORDER = {1, 2, 0, 3};
+
+    // 合作模式专用砖块类型
+    public static final int PIECE_I3 = 0;  // 直线型三格
+    public static final int PIECE_L3 = 1;  // 小L型三格
+    public static final int PIECE_COUNT = 2; // 只有两种砖块
+
+    // 合作模式专用砖块形状定义（3x3矩阵）
+    public static final int[][][] COOP_SHAPES = {
+        // I3: 直线型三格
+        {
+            {0, 0, 0},
+            {1, 1, 1},
+            {0, 0, 0}
+        },
+        // L3: 小L型三格 (形状: 10 / 11)
+        {
+            {1, 0, 0},
+            {1, 1, 0},
+            {0, 0, 0}
+        }
+    };
 
     public CoopGameLogic() {
         board = new int[BOARD_HEIGHT][BOARD_WIDTH];
@@ -94,11 +117,12 @@ public class CoopGameLogic {
 
     /**
      * 为指定玩家生成新物块
+     * 合作模式只有两种三格砖块
      */
     public void spawnNewPieceForPlayer(int playerIndex) {
         PlayerPiece piece = playerPieces[playerIndex];
-        piece.setPieceType(Random.Int(7));
-        piece.setX(EXIT_POSITIONS[playerIndex] - 2); // 在对应出口位置生成
+        piece.setPieceType(Random.Int(PIECE_COUNT)); // 只有两种砖块: 0或1
+        piece.setX(EXIT_POSITIONS[playerIndex]); // 在对应出口起始位置生成
         piece.setY(0);
         piece.setRotation(Random.Int(4));
         piece.setActive(true);
@@ -179,12 +203,7 @@ public class CoopGameLogic {
      */
     private boolean canMoveToBoard(int playerIndex, int x, int y, int rotation) {
         PlayerPiece piece = playerPieces[playerIndex];
-        int[][] shape = Tetromino.SHAPES[piece.getPieceType()];
-
-        int rotations = rotation % 4;
-        for (int i = 0; i < rotations; i++) {
-            shape = Tetromino.rotateClockwise(shape);
-        }
+        int[][] shape = getCoopShape(piece.getPieceType(), rotation);
 
         int size = shape.length;
 
@@ -241,12 +260,7 @@ public class CoopGameLogic {
 
     private boolean canMove(int playerIndex, int x, int y, int rotation) {
         PlayerPiece piece = playerPieces[playerIndex];
-        int[][] shape = Tetromino.SHAPES[piece.getPieceType()];
-
-        int rotations = rotation % 4;
-        for (int i = 0; i < rotations; i++) {
-            shape = Tetromino.rotateClockwise(shape);
-        }
+        int[][] shape = getCoopShape(piece.getPieceType(), rotation);
 
         int size = shape.length;
 
@@ -267,11 +281,7 @@ public class CoopGameLogic {
                     for (int otherPlayerIndex = 0; otherPlayerIndex < MAX_PLAYERS; otherPlayerIndex++) {
                         if (otherPlayerIndex != playerIndex && playerPieces[otherPlayerIndex].isActive()) {
                             PlayerPiece otherPiece = playerPieces[otherPlayerIndex];
-                            int[][] otherShape = Tetromino.SHAPES[otherPiece.getPieceType()];
-                            int otherRotations = otherPiece.getRotation() % 4;
-                            for (int r = 0; r < otherRotations; r++) {
-                                otherShape = Tetromino.rotateClockwise(otherShape);
-                            }
+                            int[][] otherShape = getCoopShape(otherPiece.getPieceType(), otherPiece.getRotation());
                             int otherSize = otherShape.length;
                             for (int oy = 0; oy < otherSize; oy++) {
                                 for (int ox = 0; ox < otherSize; ox++) {
@@ -294,12 +304,7 @@ public class CoopGameLogic {
 
     private void lockPiece(int playerIndex) {
         PlayerPiece piece = playerPieces[playerIndex];
-        int[][] shape = Tetromino.SHAPES[piece.getPieceType()];
-
-        int rotations = piece.getRotation() % 4;
-        for (int i = 0; i < rotations; i++) {
-            shape = Tetromino.rotateClockwise(shape);
-        }
+        int[][] shape = getCoopShape(piece.getPieceType(), piece.getRotation());
 
         int size = shape.length;
         boolean pieceLocked = false;
@@ -380,15 +385,53 @@ public class CoopGameLogic {
     }
 
     /**
-     * 获取指定类型和旋转状态的物块形状
+     * 获取指定类型和旋转状态的物块形状（合作模式专用）
      */
     public int[][] getPieceShape(int pieceType, int rotation) {
-        int[][] shape = Tetromino.SHAPES[pieceType];
+        return getCoopShape(pieceType, rotation);
+    }
+
+    /**
+     * 获取合作模式砖块形状（带旋转）
+     */
+    private int[][] getCoopShape(int pieceType, int rotation) {
+        // 确保pieceType在有效范围内
+        if (pieceType < 0 || pieceType >= PIECE_COUNT) {
+            pieceType = 0;
+        }
+
+        int[][] shape = copyShape(COOP_SHAPES[pieceType]);
         int rotations = rotation % 4;
         for (int i = 0; i < rotations; i++) {
-            shape = Tetromino.rotateClockwise(shape);
+            shape = rotateShapeClockwise(shape);
         }
         return shape;
+    }
+
+    /**
+     * 复制形状矩阵
+     */
+    private int[][] copyShape(int[][] original) {
+        int size = original.length;
+        int[][] copy = new int[size][size];
+        for (int i = 0; i < size; i++) {
+            System.arraycopy(original[i], 0, copy[i], 0, size);
+        }
+        return copy;
+    }
+
+    /**
+     * 顺时针旋转形状矩阵
+     */
+    private int[][] rotateShapeClockwise(int[][] piece) {
+        int size = piece.length;
+        int[][] rotated = new int[size][size];
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                rotated[j][size - 1 - i] = piece[i][j];
+            }
+        }
+        return rotated;
     }
 
     /**

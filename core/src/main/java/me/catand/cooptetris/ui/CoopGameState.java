@@ -552,12 +552,22 @@ public class CoopGameState extends BaseUIState {
         }
 
         // 绘制出口标记（根据实际分配的玩家索引）
+        // 布局: [P1:0-2] [分隔:3] [P2:4-6] [分隔:7] [P3:8-10] [分隔:11] [P4:12-14]
         for (int i = 0; i < playerCount && i < 4; i++) {
             int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
             int exitX = CoopGameLogic.EXIT_POSITIONS[assignedPlayerIndex];
             shapeRenderer.setColor(PLAYER_COLORS[assignedPlayerIndex]);
+            // 每个出口3格宽
             shapeRenderer.rect(boardX + exitX * cellSize - 2, boardY + CoopGameLogic.BOARD_HEIGHT * cellSize,
                 3 * cellSize + 4, 6);
+        }
+
+        // 绘制分隔区域标记
+        shapeRenderer.setColor(COLOR_PANEL_BORDER);
+        int[] separatorX = {3, 7, 11}; // 分隔格位置
+        for (int sepX : separatorX) {
+            shapeRenderer.rect(boardX + sepX * cellSize, boardY + CoopGameLogic.BOARD_HEIGHT * cellSize - 2,
+                cellSize, 4);
         }
 
         // 绘制已固定的方块
