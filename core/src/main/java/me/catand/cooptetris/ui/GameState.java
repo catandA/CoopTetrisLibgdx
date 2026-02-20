@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.Align;
 
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.input.InputBinding;
+import me.catand.cooptetris.input.TouchInputProcessor;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.model.Tetromino;
@@ -57,6 +58,9 @@ public class GameState extends BaseUIState {
     private Table previewArea;
     private float previewCellSize = 20f;
 
+    // 触屏输入处理器
+    private TouchInputProcessor touchInput;
+
     // UI颜色配置
     private static final Color COLOR_BG = new Color(0.06f, 0.07f, 0.09f, 1f);
     private static final Color COLOR_PANEL = new Color(0.1f, 0.12f, 0.15f, 0.9f);
@@ -80,6 +84,10 @@ public class GameState extends BaseUIState {
     @Override
     protected void createUI() {
         calculateBoardPosition();
+
+        // 初始化触屏输入处理器
+        touchInput = new TouchInputProcessor(stage);
+        com.badlogic.gdx.Gdx.input.setInputProcessor(new com.badlogic.gdx.InputMultiplexer(stage, touchInput));
 
         titleFont = Main.platform.getFont(fontSize(24), lang().get("game.title"), false, false);
         statsFont = Main.platform.getFont(fontSize(20), "0123456789", false, false);
@@ -386,18 +394,26 @@ public class GameState extends BaseUIState {
     }
 
     private void handleInput() {
+        // 处理键盘输入
+        boolean keyboardInputHandled = false;
+
         if (isInputJustPressed(TetrisSettings.leftKey(), TetrisSettings.leftKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.LEFT);
+            keyboardInputHandled = true;
         } else if (isInputJustPressed(TetrisSettings.rightKey(), TetrisSettings.rightKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.RIGHT);
+            keyboardInputHandled = true;
         } else if (isInputJustPressed(TetrisSettings.rotateKey(), TetrisSettings.rotateKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.ROTATE_CLOCKWISE);
+            keyboardInputHandled = true;
         } else if (isInputJustPressed(TetrisSettings.dropKey(), TetrisSettings.dropKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.DROP);
+            keyboardInputHandled = true;
         }
 
-        // 软降处理
-        if (isInputPressed(TetrisSettings.downKey(), TetrisSettings.downKey2())) {
+        // 键盘软降处理
+        boolean keyboardSoftDrop = isInputPressed(TetrisSettings.downKey(), TetrisSettings.downKey2());
+        if (keyboardSoftDrop) {
             if (!isDownKeyPressed) {
                 gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
                 isDownKeyPressed = true;
@@ -413,8 +429,62 @@ public class GameState extends BaseUIState {
                     }
                 }
             }
+            keyboardInputHandled = true;
         } else {
             isDownKeyPressed = false;
+        }
+
+        // 处理触屏输入（如果键盘没有输入）
+        if (!keyboardInputHandled && touchInput != null) {
+            handleTouchInput();
+        }
+    }
+
+    // 触屏软降状态（独立于键盘）
+    private boolean isTouchDownKeyPressed = false;
+    private float touchDownKeyPressTime = 0;
+    private float touchLastSoftDropTime = 0;
+
+    private void handleTouchInput() {
+        // 获取触屏操作
+        TouchInputProcessor.TouchAction action = touchInput.pollAction();
+
+        switch (action) {
+            case LEFT:
+                gameStateManager.handleInput(MoveMessage.MoveType.LEFT);
+                break;
+            case RIGHT:
+                gameStateManager.handleInput(MoveMessage.MoveType.RIGHT);
+                break;
+            case ROTATE:
+                gameStateManager.handleInput(MoveMessage.MoveType.ROTATE_CLOCKWISE);
+                break;
+            case HARD_DROP:
+                gameStateManager.handleInput(MoveMessage.MoveType.DROP);
+                break;
+            default:
+                break;
+        }
+
+        // 处理触屏软降（长按下半部分）
+        if (touchInput.isSoftDropping()) {
+            if (!isTouchDownKeyPressed) {
+                gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
+                isTouchDownKeyPressed = true;
+                touchDownKeyPressTime = 0;
+                touchLastSoftDropTime = 0;
+            } else {
+                touchDownKeyPressTime += com.badlogic.gdx.Gdx.graphics.getDeltaTime();
+                if (touchDownKeyPressTime >= initialDelay) {
+                    touchLastSoftDropTime += com.badlogic.gdx.Gdx.graphics.getDeltaTime();
+                    if (touchLastSoftDropTime >= softDropInterval) {
+                        gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
+                        touchLastSoftDropTime = 0;
+                    }
+                }
+            }
+        } else {
+            isTouchDownKeyPressed = false;
         }
     }
 

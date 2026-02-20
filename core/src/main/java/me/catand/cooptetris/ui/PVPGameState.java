@@ -16,6 +16,7 @@ import java.util.List;
 
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.input.InputBinding;
+import me.catand.cooptetris.input.TouchInputProcessor;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.PlayerScoresMessage;
@@ -78,6 +79,9 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
     private Table selfBoardArea;
     private Table opponentBoardArea;
 
+    // 触屏输入处理器
+    private TouchInputProcessor touchInput;
+
     // UI颜色配置
     private static final Color COLOR_BG = new Color(0.06f, 0.07f, 0.09f, 1f);
     private static final Color COLOR_PANEL = new Color(0.1f, 0.12f, 0.15f, 0.9f);
@@ -104,6 +108,10 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
     @Override
     protected void createUI() {
         calculateBoardPositions();
+
+        // 初始化触屏输入处理器
+        touchInput = new TouchInputProcessor(stage);
+        com.badlogic.gdx.Gdx.input.setInputProcessor(new com.badlogic.gdx.InputMultiplexer(stage, touchInput));
 
         titleFont = Main.platform.getFont(fontSize(24), lang().get("game.title"), false, false);
         statsFont = Main.platform.getFont(fontSize(20), "0123456789", false, false);
@@ -699,18 +707,26 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
     }
 
     private void handleInput() {
+        // 处理键盘输入
+        boolean keyboardInputHandled = false;
+
         if (isInputJustPressed(TetrisSettings.leftKey(), TetrisSettings.leftKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.LEFT);
+            keyboardInputHandled = true;
         } else if (isInputJustPressed(TetrisSettings.rightKey(), TetrisSettings.rightKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.RIGHT);
+            keyboardInputHandled = true;
         } else if (isInputJustPressed(TetrisSettings.rotateKey(), TetrisSettings.rotateKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.ROTATE_CLOCKWISE);
+            keyboardInputHandled = true;
         } else if (isInputJustPressed(TetrisSettings.dropKey(), TetrisSettings.dropKey2())) {
             gameStateManager.handleInput(MoveMessage.MoveType.DROP);
+            keyboardInputHandled = true;
         }
 
-        // 软降处理
-        if (isInputPressed(TetrisSettings.downKey(), TetrisSettings.downKey2())) {
+        // 键盘软降处理
+        boolean keyboardSoftDrop = isInputPressed(TetrisSettings.downKey(), TetrisSettings.downKey2());
+        if (keyboardSoftDrop) {
             if (!isDownKeyPressed) {
                 gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
                 isDownKeyPressed = true;
@@ -726,7 +742,63 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
                     }
                 }
             }
+            keyboardInputHandled = true;
         } else {
+            isDownKeyPressed = false;
+        }
+
+        // 处理触屏输入（如果键盘没有输入）
+        if (!keyboardInputHandled && touchInput != null) {
+            handleTouchInput();
+        }
+    }
+
+    private void handleTouchInput() {
+        // 获取触屏操作（只在触摸开始时返回一次）
+        TouchInputProcessor.TouchAction action = touchInput.pollAction();
+
+        // 处理瞬时操作（左/右/旋转/硬降）
+        switch (action) {
+            case LEFT:
+                gameStateManager.handleInput(MoveMessage.MoveType.LEFT);
+                break;
+            case RIGHT:
+                gameStateManager.handleInput(MoveMessage.MoveType.RIGHT);
+                break;
+            case ROTATE:
+                gameStateManager.handleInput(MoveMessage.MoveType.ROTATE_CLOCKWISE);
+                break;
+            case HARD_DROP:
+                gameStateManager.handleInput(MoveMessage.MoveType.DROP);
+                break;
+            case SOFT_DROP:
+                // 软降首次触发，初始化状态
+                if (!isDownKeyPressed) {
+                    gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
+                    isDownKeyPressed = true;
+                    downKeyPressTime = 0;
+                    lastSoftDropTime = 0;
+                }
+                break;
+            default:
+                break;
+        }
+
+        // 处理触屏软降的持续下降（长按下半部分）
+        if (touchInput.isSoftDropping()) {
+            // 首次触发已经在上面处理了，这里只处理后续的持续下降
+            if (isDownKeyPressed) {
+                downKeyPressTime += com.badlogic.gdx.Gdx.graphics.getDeltaTime();
+                if (downKeyPressTime >= initialDelay) {
+                    lastSoftDropTime += com.badlogic.gdx.Gdx.graphics.getDeltaTime();
+                    if (lastSoftDropTime >= softDropInterval) {
+                        gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
+                        lastSoftDropTime = 0;
+                    }
+                }
+            }
+        } else if (!isInputPressed(TetrisSettings.downKey(), TetrisSettings.downKey2())) {
+            // 如果键盘也没有按下，则重置软降状态
             isDownKeyPressed = false;
         }
     }
