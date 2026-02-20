@@ -547,7 +547,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         if (isCountingDown) {
             // 倒计时由服务器同步，这里只更新UI显示
             if (startGameButton != null) {
-                startGameButton.setText(lang().get("starting.countdown").replace("%d", String.valueOf(countdownTimer)));
+                startGameButton.setText(lang().get("starting.countdown").replace("%d", String.valueOf((int) countdownTimer)));
             }
             if (statusLabel != null) {
                 statusLabel.setText(lang().get("starting.game"));

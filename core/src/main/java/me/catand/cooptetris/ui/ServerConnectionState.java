@@ -259,11 +259,21 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
 
         // 启动本地服务器
         if (uiManager.getLocalServerManager() != null) {
-            uiManager.getLocalServerManager().startServer(8080);
+            int port = uiManager.getLocalServerManager().startServer(8080);
+            if (port == -1) {
+                // 服务器启动失败
+                isConnecting = false;
+                isCreatingLocalServer = false;
+                setStatus(lang.get("error.local.server.failed"), COLOR_DANGER);
+                return;
+            }
+            // 使用实际启动的端口连接
+            connect("127.0.0.1", port, playerName);
+        } else {
+            isConnecting = false;
+            isCreatingLocalServer = false;
+            setStatus(lang.get("error.local.server.manager.null"), COLOR_DANGER);
         }
-
-        // 连接到本地服务器
-        connect("127.0.0.1", 8080, playerName);
     }
 
     private void connectToServer() {
@@ -314,7 +324,20 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
 
         NetworkManager networkManager = uiManager.getNetworkManager();
         if (networkManager != null) {
-            networkManager.connect(address, port, playerName);
+            boolean success = networkManager.connect(address, port, playerName);
+            if (!success) {
+                // 连接失败，重置状态
+                isConnecting = false;
+                isCreatingLocalServer = false;
+                LanguageManager lang = LanguageManager.getInstance();
+                setStatus(lang.get("error.connection.failed").replace("%s", lang.get("error.connection.refused")), COLOR_DANGER);
+            }
+        } else {
+            // NetworkManager 为空，重置状态
+            isConnecting = false;
+            isCreatingLocalServer = false;
+            LanguageManager lang = LanguageManager.getInstance();
+            setStatus(lang.get("error.connection.failed").replace("%s", "NetworkManager is null"), COLOR_DANGER);
         }
     }
 
