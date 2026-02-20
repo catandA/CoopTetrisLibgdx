@@ -48,6 +48,11 @@ public class NotificationDialog {
     private static final float DIALOG_WIDTH = 400f;
     private static final float DIALOG_PADDING = 30f;
 
+    // 弹窗位置枚举
+    public enum Position {
+        CENTER, LEFT, RIGHT
+    }
+
     public NotificationDialog(com.badlogic.gdx.scenes.scene2d.ui.Skin skin) {
         createDialog(skin);
     }
@@ -149,6 +154,10 @@ public class NotificationDialog {
     }
 
     public void show(Stage stage) {
+        show(stage, Position.CENTER);
+    }
+
+    public void show(Stage stage, Position position) {
         if (!isVisible) {
             stage.addActor(dialogTable);
             isVisible = true;
@@ -159,7 +168,7 @@ public class NotificationDialog {
         // 确保在下一帧布局完成后更新位置
         com.badlogic.gdx.Gdx.app.postRunnable(() -> {
             if (isVisible && dialogTable != null) {
-                updatePosition(stage);
+                updatePosition(stage, position);
                 dialogTable.toFront();
             }
         });
@@ -170,16 +179,32 @@ public class NotificationDialog {
         isVisible = false;
     }
 
-    private void updatePosition(Stage stage) {
-        // 居中显示
-        float x = (stage.getWidth() - dialogTable.getWidth()) / 2;
-        float y = (stage.getHeight() - dialogTable.getHeight()) / 2;
+    private void updatePosition(Stage stage, Position position) {
+        float x, y;
+        switch (position) {
+            case RIGHT:
+                // 显示在右侧
+                x = stage.getWidth() - dialogTable.getWidth() - w(20f);
+                y = (stage.getHeight() - dialogTable.getHeight()) / 2;
+                break;
+            case LEFT:
+                // 显示在左侧
+                x = w(20f);
+                y = (stage.getHeight() - dialogTable.getHeight()) / 2;
+                break;
+            case CENTER:
+            default:
+                // 居中显示
+                x = (stage.getWidth() - dialogTable.getWidth()) / 2;
+                y = (stage.getHeight() - dialogTable.getHeight()) / 2;
+                break;
+        }
         dialogTable.setPosition(x, y);
     }
 
     public void onResize(Stage stage) {
         if (isVisible) {
-            updatePosition(stage);
+            updatePosition(stage, Position.CENTER);
         }
     }
 

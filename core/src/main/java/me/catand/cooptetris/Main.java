@@ -134,7 +134,12 @@ public class Main extends ApplicationAdapter {
         // 更新UI
         uiManager.update(Gdx.graphics.getDeltaTime());
 
-        // 先渲染游戏板（在最底层）
+        // 先渲染UI（作为背景层）
+        batch.begin();
+        uiManager.render(batch);
+        batch.end();
+
+        // 再渲染游戏板（显示在UI之上）
         UIState currentState = uiManager.getCurrentState();
         if (currentState instanceof GameState) {
             GameState gameState = (GameState) currentState;
@@ -146,11 +151,6 @@ public class Main extends ApplicationAdapter {
             CoopGameState coopGameState = (CoopGameState) currentState;
             coopGameState.renderGame(shapeRenderer);
         }
-
-        // 再渲染UI（包含弹窗，显示在游戏板之上）
-        batch.begin();
-        uiManager.render(batch);
-        batch.end();
     }
 
     @Override
