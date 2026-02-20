@@ -62,7 +62,6 @@ public class CoopGameState extends BaseUIState {
     private Label scoreValueLabel;
     private Label levelValueLabel;
     private Label linesValueLabel;
-    private final Label[] playerLabels;
     private final Label[] playerNameLabels; // 出口上方的玩家名字标签
     private BitmapFont titleFont;
     private BitmapFont statsFont;
@@ -103,7 +102,6 @@ public class CoopGameState extends BaseUIState {
         this.isDownKeyPressed = new boolean[4];
         this.downKeyPressTime = new float[4];
         this.lastSoftDropTime = new float[4];
-        this.playerLabels = new Label[4];
         this.playerNameLabels = new Label[4];
         this.myPlayerIndex = gameStateManager.getPlayerIndex();
         this.playerCount = gameStateManager.getPlayerCount();
@@ -209,32 +207,7 @@ public class CoopGameState extends BaseUIState {
         // 游戏板区域（由ShapeRenderer绘制）
         boardArea = new Table();
         boardArea.setBackground(createPanelBackground(COLOR_BG));
-        panel.add(boardArea).width(w(400f)).height(h(500f)).padBottom(h(10f)).row();
-
-        // 底部玩家状态
-        Table playerStatusPanel = createPlayerStatusPanel();
-        panel.add(playerStatusPanel).fillX().height(h(60f));
-
-        return panel;
-    }
-
-    /**
-     * 创建玩家状态面板
-     */
-    private Table createPlayerStatusPanel() {
-        Table panel = new Table();
-        panel.setBackground(createPanelBackground(COLOR_BG));
-        panel.pad(w(10f));
-
-        String[] playerNames = {"P1", "P2", "P3", "P4"};
-
-        // 只显示实际玩家数量，使用正确的玩家索引颜色
-        for (int i = 0; i < playerCount && i < 4; i++) {
-            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
-            playerLabels[i] = new Label(playerNames[i], skin);
-            playerLabels[i].setColor(PLAYER_COLORS[assignedPlayerIndex]);
-            panel.add(playerLabels[i]).padRight(w(15f)).expandX();
-        }
+        panel.add(boardArea).width(w(400f)).height(h(500f));
 
         return panel;
     }
@@ -527,17 +500,6 @@ public class CoopGameState extends BaseUIState {
         }
         if (linesValueLabel != null) {
             linesValueLabel.setText(String.valueOf(coopGameLogic.getLines()));
-        }
-
-        // 更新玩家状态显示（只更新实际玩家数量）
-        for (int i = 0; i < playerCount && i < 4; i++) {
-            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
-            CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(assignedPlayerIndex);
-            if (piece.isActive()) {
-                playerLabels[i].setText("P" + (i + 1) + " ✓");
-            } else {
-                playerLabels[i].setText("P" + (i + 1) + " ✗");
-            }
         }
     }
 
