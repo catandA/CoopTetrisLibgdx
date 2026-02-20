@@ -32,11 +32,12 @@ public class CoopGameLogic {
     private int lines;
     private boolean gameOver;
     private long randomSeed;
+    private int activePlayerCount; // 实际活跃玩家数量
 
     // 出口位置（顶部4个位置，每个出口3-4格宽）
     // 出口顺序：1(蓝), 2(红), 3(绿), 4(黄) -> 位置从左到右
     public static final int[] EXIT_POSITIONS = {2, 5, 8, 11}; // 每个出口的中心X坐标
-    
+
     // 玩家分配顺序（从中心向两边）：2(红), 3(绿), 1(蓝), 4(黄)
     // 对应玩家索引：1, 2, 0, 3
     public static final int[] PLAYER_ASSIGNMENT_ORDER = {1, 2, 0, 3};
@@ -52,14 +53,19 @@ public class CoopGameLogic {
         reset();
     }
 
-    public void reset(long seed) {
+    public void reset(long seed, int playerCount) {
         this.randomSeed = seed;
+        this.activePlayerCount = Math.min(playerCount, MAX_PLAYERS);
         Random.pushGenerator(seed);
         try {
             reset();
         } finally {
             Random.popGenerator();
         }
+    }
+
+    public void reset(long seed) {
+        reset(seed, MAX_PLAYERS);
     }
 
     public void reset() {
@@ -70,9 +76,14 @@ public class CoopGameLogic {
             }
         }
 
-        // 为每个玩家初始化物块
+        // 为每个活跃玩家初始化物块
+        // 根据 PLAYER_ASSIGNMENT_ORDER 生成对应玩家索引的物块
         for (int i = 0; i < MAX_PLAYERS; i++) {
-            spawnNewPieceForPlayer(i);
+            playerPieces[i].setActive(false);
+        }
+        for (int i = 0; i < activePlayerCount && i < MAX_PLAYERS; i++) {
+            int assignedPlayerIndex = PLAYER_ASSIGNMENT_ORDER[i];
+            spawnNewPieceForPlayer(assignedPlayerIndex);
         }
 
         score = 0;
@@ -145,20 +156,59 @@ public class CoopGameLogic {
         if (gameOver || !playerPieces[playerIndex].isActive()) return false;
 
         PlayerPiece piece = playerPieces[playerIndex];
+        // 检查是否可以向下移动（检查边界、游戏板和其他玩家）
         if (canMove(playerIndex, piece.getX(), piece.getY() + 1, piece.getRotation())) {
             piece.setY(piece.getY() + 1);
             return true;
         } else {
-            // 锁定物块
-            lockPiece(playerIndex);
-            clearLines();
-            spawnNewPieceForPlayer(playerIndex);
+            // 检查是否是因为碰到游戏板或边界而不能移动
+            if (!canMoveToBoard(playerIndex, piece.getX(), piece.getY() + 1, piece.getRotation())) {
+                // 锁定物块（只有碰到游戏板或边界时才锁定）
+                lockPiece(playerIndex);
+                clearLines();
+                spawnNewPieceForPlayer(playerIndex);
+            }
+            // 如果是因为碰到其他玩家，则不锁定，只是停止下落
             return false;
         }
     }
 
+    /**
+     * 检查是否可以移动到指定位置（只检查边界和游戏板，不检查其他玩家物块）
+     * 用于判断是否应该锁定物块
+     */
+    private boolean canMoveToBoard(int playerIndex, int x, int y, int rotation) {
+        PlayerPiece piece = playerPieces[playerIndex];
+        int[][] shape = Tetromino.SHAPES[piece.getPieceType()];
+
+        int rotations = rotation % 4;
+        for (int i = 0; i < rotations; i++) {
+            shape = Tetromino.rotateClockwise(shape);
+        }
+
+        int size = shape.length;
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (shape[i][j] != 0) {
+                    int newX = x + j;
+                    int newY = y + i;
+                    // 检查边界
+                    if (newX < 0 || newX >= BOARD_WIDTH || newY < 0 || newY >= BOARD_HEIGHT) {
+                        return false;
+                    }
+                    // 检查与游戏板的碰撞
+                    if (newY >= 0 && board[newY][newX] != 0) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     public void dropPiece(int playerIndex) {
-        while (moveDown(playerIndex));
+        while (moveDown(playerIndex)) ;
     }
 
     public boolean rotateClockwise(int playerIndex) {

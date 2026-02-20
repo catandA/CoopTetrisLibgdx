@@ -5,18 +5,16 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.utils.ScreenUtils;
+
 import me.catand.cooptetris.input.InputBinding;
-import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.MoveMessage;
-import me.catand.cooptetris.shared.model.Tetromino;
+import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.tetris.CoopGameLogic;
 import me.catand.cooptetris.tetris.GameStateManager;
 import me.catand.cooptetris.util.LanguageManager;
@@ -44,8 +42,8 @@ public class CoopGameState extends BaseUIState {
     private static final Color COLOR_TEXT = new Color(0.9f, 0.9f, 0.9f, 1f);
     private static final Color COLOR_PRIMARY = new Color(0.2f, 0.8f, 1f, 1f);
 
-    private GameStateManager gameStateManager;
-    private ShapeRenderer shapeRenderer;
+    private final GameStateManager gameStateManager;
+    private final ShapeRenderer shapeRenderer;
 
     // 游戏板渲染参数
     private float boardX, boardY;
@@ -55,19 +53,23 @@ public class CoopGameState extends BaseUIState {
     private Label scoreLabel;
     private Label levelLabel;
     private Label linesLabel;
-    private Label[] playerLabels;
+    private final Label[] playerLabels;
 
     // 输入控制
-    private boolean[] isDownKeyPressed;
-    private float[] downKeyPressTime;
-    private float[] lastSoftDropTime;
+    private final boolean[] isDownKeyPressed;
+    private final float[] downKeyPressTime;
+    private final float[] lastSoftDropTime;
     private static final float initialDelay = 0.15f;
     private static final float softDropInterval = 0.05f;
 
     // 我的玩家索引
-    private int myPlayerIndex;
+    private final int myPlayerIndex;
     // 实际玩家数量
-    private int playerCount;
+    private final int playerCount;
+
+    // 游戏结束弹窗
+    private NotificationDialog gameOverDialog;
+    private boolean isGameOverShown = false;
 
     public CoopGameState(UIManager uiManager, GameStateManager gameStateManager) {
         super(uiManager);
@@ -183,6 +185,44 @@ public class CoopGameState extends BaseUIState {
 
         // 更新UI
         updateUI();
+
+        // 检查游戏结束
+        checkGameOver();
+    }
+
+    private void checkGameOver() {
+        CoopGameLogic coopGameLogic = gameStateManager.getSharedManager().getCoopGameLogic();
+        if (coopGameLogic == null) return;
+
+        // 检查是否所有玩家都游戏结束
+        if (coopGameLogic.isGameOver() && !isGameOverShown) {
+            isGameOverShown = true;
+            showGameOverDialog();
+        }
+    }
+
+    private void showGameOverDialog() {
+        CoopGameLogic coopGameLogic = gameStateManager.getSharedManager().getCoopGameLogic();
+        if (coopGameLogic == null) return;
+
+        int score = coopGameLogic.getScore();
+        int lines = coopGameLogic.getLines();
+        int level = coopGameLogic.getLevel();
+
+        String message = String.format(lang().get("coop.game.over.message"), score, lines, level);
+
+        NotificationMessage notificationMessage = new NotificationMessage();
+        notificationMessage.setNotificationType(NotificationMessage.NotificationType.INFO);
+        notificationMessage.setTitle(lang().get("coop.game.over.title"));
+        notificationMessage.setMessage(message);
+
+        gameOverDialog = new NotificationDialog(skin);
+        gameOverDialog.setNotification(notificationMessage);
+        gameOverDialog.setOnCloseAction(() -> {
+            returnToMenu();
+        });
+
+        gameOverDialog.show(stage);
     }
 
     private void handleInput(float delta) {
@@ -360,6 +400,14 @@ public class CoopGameState extends BaseUIState {
     }
 
     private void returnToMenu() {
+        // 断开网络连接
+        if (uiManager.getNetworkManager() != null && uiManager.getNetworkManager().isConnected()) {
+            uiManager.getNetworkManager().disconnect();
+        }
+        // 停止本地服务器
+        if (uiManager.getLocalServerManager() != null && uiManager.getLocalServerManager().isRunning()) {
+            uiManager.getLocalServerManager().stopServer();
+        }
         uiManager.setScreen(new MainMenuState(uiManager));
     }
 

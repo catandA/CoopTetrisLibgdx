@@ -34,7 +34,7 @@ public class GameStateManager {
         this.playerCount = playerCount;
         this.playerIndex = playerIndex;
         coopGameLogic = new CoopGameLogic();
-        coopGameLogic.reset(seed);
+        coopGameLogic.reset(seed, playerCount);
     }
 
     public void startMultiplayer(int playerCount, int playerIndex) {
@@ -141,12 +141,16 @@ public class GameStateManager {
         if (playerPieces != null) {
             for (int i = 0; i < playerPieces.length && i < CoopGameLogic.MAX_PLAYERS; i++) {
                 CoopGameStateMessage.PlayerPieceState pieceState = playerPieces[i];
-                CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(i);
-                piece.setPieceType(pieceState.getPieceType());
-                piece.setX(pieceState.getX());
-                piece.setY(pieceState.getY());
-                piece.setRotation(pieceState.getRotation());
-                piece.setActive(pieceState.isActive());
+                // 使用消息中的玩家索引来获取正确的物块
+                int playerIndex = pieceState.getPlayerIndex();
+                if (playerIndex >= 0 && playerIndex < CoopGameLogic.MAX_PLAYERS) {
+                    CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(playerIndex);
+                    piece.setPieceType(pieceState.getPieceType());
+                    piece.setX(pieceState.getX());
+                    piece.setY(pieceState.getY());
+                    piece.setRotation(pieceState.getRotation());
+                    piece.setActive(pieceState.isActive());
+                }
             }
         }
     }

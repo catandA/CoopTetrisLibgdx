@@ -5,9 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import lombok.Data;
-import me.catand.cooptetris.shared.message.CountdownMessage;
 import me.catand.cooptetris.shared.message.CoopGameStateMessage;
-import me.catand.cooptetris.shared.message.GameStartMessage;
+import me.catand.cooptetris.shared.message.CountdownMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.PlayerScoresMessage;
@@ -219,7 +218,8 @@ public class Room {
         if (gameMode == GameMode.COOP) {
             // 合作模式：使用新的 CoopGameLogic
             coopGameLogic = new CoopGameLogic();
-            coopGameLogic.reset(gameSeed);
+            // 传入实际玩家数量，只激活对应数量的物块
+            coopGameLogic.reset(gameSeed, players.size());
             // 只添加一个GameLogic作为占位，保持兼容性
             gameLogics.add(new GameLogic());
         } else {
@@ -402,12 +402,14 @@ public class Room {
         message.setPlayerCount(players.size());
 
         // 设置每个玩家的物块状态
-        // 使用 MAX_PLAYERS 大小数组，确保所有4个可能的玩家位置都被包含
-        CoopGameStateMessage.PlayerPieceState[] playerPieceStates = new CoopGameStateMessage.PlayerPieceState[CoopGameLogic.MAX_PLAYERS];
-        for (int i = 0; i < CoopGameLogic.MAX_PLAYERS; i++) {
-            CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(i);
+        // 只包含实际活跃的玩家（根据玩家分配顺序）
+        CoopGameStateMessage.PlayerPieceState[] playerPieceStates = new CoopGameStateMessage.PlayerPieceState[players.size()];
+        for (int i = 0; i < players.size() && i < CoopGameLogic.MAX_PLAYERS; i++) {
+            // 获取第i个玩家分配到的玩家索引
+            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
+            CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(assignedPlayerIndex);
             playerPieceStates[i] = new CoopGameStateMessage.PlayerPieceState(
-                i,
+                assignedPlayerIndex,
                 piece.getPieceType(),
                 piece.getX(),
                 piece.getY(),
@@ -544,11 +546,13 @@ public class Room {
     public void updateGameState() {
         if (gameMode == GameMode.COOP && coopGameLogic != null) {
             // 合作模式：让所有活跃的物块自动下落
-            // 遍历所有4个可能的玩家位置
-            for (int i = 0; i < CoopGameLogic.MAX_PLAYERS; i++) {
-                CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(i);
+            // 只遍历实际玩家数量
+            for (int i = 0; i < players.size() && i < CoopGameLogic.MAX_PLAYERS; i++) {
+                // 获取第i个玩家分配到的玩家索引
+                int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
+                CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(assignedPlayerIndex);
                 if (piece.isActive()) {
-                    coopGameLogic.moveDown(i);
+                    coopGameLogic.moveDown(assignedPlayerIndex);
                 }
             }
         } else {
