@@ -17,6 +17,7 @@ import java.util.List;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.input.InputBinding;
 import me.catand.cooptetris.input.TouchInputProcessor;
+import me.catand.cooptetris.ui.FontUtils;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.PlayerScoresMessage;
@@ -158,9 +159,8 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         panel.setBackground(createPanelBackground(COLOR_PANEL));
         panel.pad(w(10f));
 
-        // 玩家名称标签
-        Label.LabelStyle nameStyle = new Label.LabelStyle(smallFont, COLOR_PRIMARY);
-        Label nameLabel = new Label(lang().get("you"), nameStyle);
+        // 玩家名称标签 - 使用动态字体
+        Label nameLabel = FontUtils.createLabel(lang().get("you"), skin, fontSize(14), COLOR_PRIMARY);
         nameLabel.setAlignment(Align.center);
         panel.add(nameLabel).fillX().padBottom(h(10f)).row();
 
@@ -188,8 +188,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
 
         if (playerCount <= 2) {
             // 两人对战：显示单个对手的游戏板
-            Label.LabelStyle nameStyle = new Label.LabelStyle(smallFont, COLOR_SECONDARY);
-            Label nameLabel = new Label(lang().get("opponent"), nameStyle);
+            Label nameLabel = FontUtils.createLabel(lang().get("opponent"), skin, fontSize(14), COLOR_SECONDARY);
             nameLabel.setAlignment(Align.center);
             panel.add(nameLabel).fillX().padBottom(h(10f)).row();
 
@@ -208,8 +207,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             }
         } else {
             // 多人对战：显示排行榜和顶部玩家
-            Label.LabelStyle titleStyle = new Label.LabelStyle(smallFont, COLOR_SECONDARY);
-            Label titleLabel = new Label(lang().get("top.players"), titleStyle);
+            Label titleLabel = FontUtils.createLabel(lang().get("top.players"), skin, fontSize(14), COLOR_SECONDARY);
             titleLabel.setAlignment(Align.center);
             panel.add(titleLabel).fillX().padBottom(h(10f)).row();
 
@@ -257,8 +255,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         panel.setBackground(createPanelBackground(COLOR_BG));
         panel.pad(w(10f));
 
-        Label.LabelStyle titleStyle = new Label.LabelStyle(smallFont, COLOR_PRIMARY);
-        Label titleLabel = new Label(lang().get("your.stats"), titleStyle);
+        Label titleLabel = FontUtils.createLabel(lang().get("your.stats"), skin, fontSize(14), COLOR_PRIMARY);
         titleLabel.setAlignment(Align.center);
         panel.add(titleLabel).fillX().padBottom(h(15f)).row();
 
@@ -277,8 +274,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
     private Table createStatRow(String title, String initialValue, Color accentColor) {
         Table row = new Table();
 
-        Label.LabelStyle titleStyle = new Label.LabelStyle(skin.get("default", com.badlogic.gdx.graphics.g2d.BitmapFont.class), COLOR_TEXT_MUTED);
-        Label titleLabel = new Label(title, titleStyle);
+        Label titleLabel = FontUtils.createLabel(title, skin, fontSize(16), COLOR_TEXT_MUTED);
         titleLabel.setAlignment(Align.left);
 
         Label.LabelStyle valueStyle = new Label.LabelStyle(statsFont, accentColor);
@@ -308,8 +304,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         panel.setBackground(createPanelBackground(COLOR_BG));
         panel.pad(w(10f));
 
-        Label.LabelStyle titleStyle = new Label.LabelStyle(smallFont, COLOR_WARNING);
-        Label titleLabel = new Label(lang().get("leaderboard"), titleStyle);
+        Label titleLabel = FontUtils.createLabel(lang().get("leaderboard"), skin, fontSize(14), COLOR_WARNING);
         titleLabel.setAlignment(Align.center);
         panel.add(titleLabel).fillX().padBottom(h(10f)).row();
 
@@ -337,8 +332,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             // 排名
             String rankText = rank + ".";
             Color rankColor = rank == 1 ? COLOR_WARNING : (rank == 2 ? COLOR_SECONDARY : COLOR_TEXT_MUTED);
-            Label.LabelStyle rankStyle = new Label.LabelStyle(smallFont, rankColor);
-            Label rankLabel = new Label(rankText, rankStyle);
+            Label rankLabel = FontUtils.createLabel(rankText, skin, fontSize(14), rankColor);
             row.add(rankLabel).width(w(25f)).left();
 
             // 玩家名称
@@ -346,9 +340,8 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             if (score.getPlayerIndex() == myPlayerIndex) {
                 nameText += " " + lang().get("you.suffix");
             }
-            Label.LabelStyle nameStyle = new Label.LabelStyle(smallFont,
-                score.getPlayerIndex() == myPlayerIndex ? COLOR_PRIMARY : COLOR_TEXT);
-            Label nameLabel = new Label(nameText, nameStyle);
+            Color nameColor = score.getPlayerIndex() == myPlayerIndex ? COLOR_PRIMARY : COLOR_TEXT;
+            Label nameLabel = FontUtils.createLabel(nameText, skin, fontSize(14), nameColor);
             row.add(nameLabel).left().expandX().padRight(w(5f));
 
             // 分数
@@ -358,8 +351,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
 
             // 游戏结束标记
             if (score.isGameOver()) {
-                Label.LabelStyle overStyle = new Label.LabelStyle(smallFont, COLOR_DANGER);
-                Label overLabel = new Label(lang().get("game.over.short"), overStyle);
+                Label overLabel = FontUtils.createLabel(lang().get("game.over.short"), skin, fontSize(14), COLOR_DANGER);
                 row.add(overLabel).width(w(40f)).right().padLeft(w(5f));
             }
 
@@ -394,8 +386,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
 
         if (playerCount <= 2) {
             // 两人对战：显示单个对手
-            Label.LabelStyle titleStyle = new Label.LabelStyle(smallFont, COLOR_SECONDARY);
-            Label titleLabel = new Label(lang().get("opponent"), titleStyle);
+            Label titleLabel = FontUtils.createLabel(lang().get("opponent"), skin, fontSize(14), COLOR_SECONDARY);
             titleLabel.setAlignment(Align.center);
             opponentPanel.add(titleLabel).fillX().padBottom(h(10f)).row();
 
@@ -412,8 +403,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             opponentPanel.add().height(h(450f));
         } else {
             // 多人对战：显示分数最高的两人（不包括自己）
-            Label.LabelStyle titleStyle = new Label.LabelStyle(smallFont, COLOR_SECONDARY);
-            Label titleLabel = new Label(lang().get("top.players"), titleStyle);
+            Label titleLabel = FontUtils.createLabel(lang().get("top.players"), skin, fontSize(14), COLOR_SECONDARY);
             titleLabel.setAlignment(Align.center);
             opponentPanel.add(titleLabel).fillX().padBottom(h(10f)).row();
 
@@ -437,19 +427,18 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         table.pad(w(8f));
 
         // 玩家名称
-        Label.LabelStyle nameStyle = new Label.LabelStyle(smallFont, COLOR_TEXT);
-        Label nameLabel = new Label(score.getPlayerName(), nameStyle);
+        Label nameLabel = FontUtils.createLabel(score.getPlayerName(), skin, fontSize(14), COLOR_TEXT);
         table.add(nameLabel).left().row();
 
         // 分数信息
         Table statsTable = new Table();
 
-        Label.LabelStyle statsStyle = new Label.LabelStyle(smallFont, COLOR_TEXT_MUTED);
-
-        Label scoreLabel = new Label(lang().get("score.short") + ": " + score.getScore(), statsStyle);
+        String scoreText = lang().get("score.short") + ": " + score.getScore();
+        Label scoreLabel = FontUtils.createLabel(scoreText, skin, fontSize(14), COLOR_TEXT_MUTED);
         statsTable.add(scoreLabel).left().padRight(w(10f));
 
-        Label linesLabel = new Label(lang().get("lines.short") + ": " + score.getLines(), statsStyle);
+        String linesText = lang().get("lines.short") + ": " + score.getLines();
+        Label linesLabel = FontUtils.createLabel(linesText, skin, fontSize(14), COLOR_TEXT_MUTED);
         statsTable.add(linesLabel).left();
 
         table.add(statsTable).left().padTop(h(5f));
@@ -462,8 +451,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         previewPanel.setBackground(createPanelBackground(COLOR_BG));
         previewPanel.pad(w(10f));
 
-        Label.LabelStyle previewTitleStyle = new Label.LabelStyle(skin.get("default", com.badlogic.gdx.graphics.g2d.BitmapFont.class), COLOR_TEXT_MUTED);
-        Label previewTitle = new Label(lang().get("next.piece"), previewTitleStyle);
+        Label previewTitle = FontUtils.createLabel(lang().get("next.piece"), skin, fontSize(16), COLOR_TEXT_MUTED);
         previewTitle.setAlignment(Align.center);
 
         previewPanel.add(previewTitle).fillX().padBottom(h(5f)).row();
@@ -518,8 +506,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
     private Table createBottomPanel() {
         Table bottomPanel = new Table();
 
-        TextButton pauseButton = new TextButton(lang().get("pause"), skin);
-        pauseButton.setColor(COLOR_PRIMARY);
+        TextButton pauseButton = FontUtils.createTextButton(lang().get("pause"), skin, fontSize(24), COLOR_PRIMARY);
         pauseButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 togglePause();
@@ -527,8 +514,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             return true;
         });
 
-        TextButton exitButton = new TextButton(lang().get("exit"), skin);
-        exitButton.setColor(COLOR_DANGER);
+        TextButton exitButton = FontUtils.createTextButton(lang().get("exit"), skin, fontSize(24), COLOR_DANGER);
         exitButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 if (uiManager.getNetworkManager() != null && uiManager.getNetworkManager().isConnected()) {
@@ -597,8 +583,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             Label pauseLabel = new Label(lang().get("pause.title"), pauseStyle);
             pauseLabel.setAlignment(Align.center);
 
-            TextButton resumeButton = new TextButton(lang().get("resume"), skin);
-            resumeButton.setColor(COLOR_SUCCESS);
+            TextButton resumeButton = FontUtils.createTextButton(lang().get("resume"), skin, fontSize(24), COLOR_SUCCESS);
             resumeButton.addListener(event -> {
                 if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                     togglePause();

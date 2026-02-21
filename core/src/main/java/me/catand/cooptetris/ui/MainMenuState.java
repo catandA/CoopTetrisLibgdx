@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.Align;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.VersionManager;
+import me.catand.cooptetris.ui.FontUtils;
 
 /**
  * 主菜单状态 - 现代化暗色游戏UI风格
@@ -139,16 +140,13 @@ public class MainMenuState extends BaseUIState {
     }
 
     private TextButton createStyledButton(String text, Color color) {
-        TextButton button = new TextButton(text, skin);
-        button.setColor(color);
-        return button;
+        return FontUtils.createTextButton(text, skin, fontSize(24), color);
     }
 
     private void addVersionLabel() {
         VersionManager versionManager = VersionManager.getInstance();
         String versionInfo = versionManager.getVersionInfo();
-        versionLabel = new Label(versionInfo, skin);
-        versionLabel.setColor(COLOR_TEXT_MUTED);
+        versionLabel = FontUtils.createLabel(versionInfo, skin, fontSize(14), COLOR_TEXT_MUTED);
         versionLabel.setAlignment(Align.bottomRight);
         versionLabel.setPosition(
             offsetX() + displayWidth() - versionLabel.getWidth() - w(20f),

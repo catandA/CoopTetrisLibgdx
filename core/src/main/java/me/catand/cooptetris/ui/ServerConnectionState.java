@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.Align;
 
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.NetworkManager;
+import me.catand.cooptetris.ui.FontUtils;
 import me.catand.cooptetris.shared.message.GameStartMessage;
 import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
@@ -105,7 +106,7 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
         Table buttonArea = createButtonArea();
 
         // 状态标签
-        statusLabel = new Label("", skin);
+        statusLabel = FontUtils.createLabel("", skin, fontSize(16), COLOR_TEXT);
         statusLabel.setAlignment(Align.center);
 
         // 组装主界面
@@ -124,36 +125,33 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
         card.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
         card.pad(w(25f));
 
-        // 卡片标题
-        Label.LabelStyle sectionStyle = new Label.LabelStyle(sectionFont, COLOR_SECONDARY);
-        Label cardTitle = new Label(lang.get("connection.info"), sectionStyle);
+        // 卡片标题 - 使用动态字体
+        String titleText = lang.get("connection.info");
+        Label cardTitle = FontUtils.createLabel(titleText, skin, fontSize(18), COLOR_SECONDARY);
 
-        // 玩家名称输入
+        // 玩家名称输入 - 使用动态字体，支持中文输入
         Table nameRow = createInputRow(
             lang.get("player.name"),
             () -> {
-                playerNameField = new TextField("", skin);
-                playerNameField.setMessageText(lang.get("enter.player.name"));
+                playerNameField = FontUtils.createTextField(skin, fontSize(16), lang.get("enter.player.name"), null);
                 return playerNameField;
             }
         );
 
-        // 服务器地址输入
+        // 服务器地址输入 - 使用动态字体
         Table addressRow = createInputRow(
             lang.get("server.address"),
             () -> {
-                serverAddressField = new TextField("", skin);
-                serverAddressField.setMessageText("127.0.0.1");
+                serverAddressField = FontUtils.createTextField(skin, fontSize(16), "127.0.0.1", "0123456789.");
                 return serverAddressField;
             }
         );
 
-        // 端口输入
+        // 端口输入 - 使用动态字体，只允许数字
         Table portRow = createInputRow(
             lang.get("server.port"),
             () -> {
-                serverPortField = new TextField("", skin);
-                serverPortField.setMessageText("8080");
+                serverPortField = FontUtils.createTextField(skin, fontSize(16), "8080", "0123456789");
                 serverPortField.setTextFieldFilter(new TextField.TextFieldFilter.DigitsOnlyFilter());
                 return serverPortField;
             }
@@ -171,8 +169,7 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
         Table rowTable = new Table();
 
         // 左侧标签
-        Label label = new Label(labelText, skin);
-        label.setColor(COLOR_TEXT_MUTED);
+        Label label = FontUtils.createLabel(labelText, skin, fontSize(16), COLOR_TEXT_MUTED);
         rowTable.add(label).left().width(w(LABEL_WIDTH)).padRight(w(15f));
 
         // 右侧输入框
@@ -188,8 +185,7 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
         Table buttonTable = new Table();
 
         // 创建本地服务器按钮
-        TextButton localServerButton = new TextButton(lang.get("create.local.server"), skin);
-        localServerButton.setColor(COLOR_SUCCESS);
+        TextButton localServerButton = FontUtils.createTextButton(lang.get("create.local.server"), skin, fontSize(24), COLOR_SUCCESS);
         localServerButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 createLocalServer();
@@ -198,8 +194,7 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
         });
 
         // 连接按钮
-        TextButton connectButton = new TextButton(lang.get("connect"), skin);
-        connectButton.setColor(COLOR_PRIMARY);
+        TextButton connectButton = FontUtils.createTextButton(lang.get("connect"), skin, fontSize(24), COLOR_PRIMARY);
         connectButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 connectToServer();
@@ -208,8 +203,7 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
         });
 
         // 返回按钮
-        TextButton backButton = new TextButton(lang.get("back"), skin);
-        backButton.setColor(COLOR_TEXT_MUTED);
+        TextButton backButton = FontUtils.createTextButton(lang.get("back"), skin, fontSize(24), COLOR_TEXT_MUTED);
         backButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 uiManager.popState();
@@ -342,6 +336,11 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
     }
 
     private void setStatus(String message, Color color) {
+        // 动态获取字体以支持中文显示
+        BitmapFont font = Main.platform.getFont(fontSize(16), message, false, false);
+        Label.LabelStyle style = new Label.LabelStyle(statusLabel.getStyle());
+        style.font = font;
+        statusLabel.setStyle(style);
         statusLabel.setText(message);
         statusLabel.setColor(color);
     }

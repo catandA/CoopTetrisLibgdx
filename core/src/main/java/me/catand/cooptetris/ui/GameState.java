@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.Align;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.input.InputBinding;
 import me.catand.cooptetris.input.TouchInputProcessor;
+import me.catand.cooptetris.ui.FontUtils;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.model.Tetromino;
@@ -154,8 +155,7 @@ public class GameState extends BaseUIState {
         statPanel.setBackground(createPanelBackground(COLOR_BG));
         statPanel.pad(w(12f));
 
-        Label.LabelStyle titleStyle = new Label.LabelStyle(skin.get("default", com.badlogic.gdx.graphics.g2d.BitmapFont.class), COLOR_TEXT_MUTED);
-        Label titleLabel = new Label(title, titleStyle);
+        Label titleLabel = FontUtils.createLabel(title, skin, fontSize(16), COLOR_TEXT_MUTED);
         titleLabel.setAlignment(Align.left);
 
         Label.LabelStyle valueStyle = new Label.LabelStyle(statsFont, accentColor);
@@ -185,8 +185,7 @@ public class GameState extends BaseUIState {
         previewPanel.setBackground(createPanelBackground(COLOR_BG));
         previewPanel.pad(w(12f));
 
-        Label.LabelStyle previewTitleStyle = new Label.LabelStyle(skin.get("default", com.badlogic.gdx.graphics.g2d.BitmapFont.class), COLOR_TEXT_MUTED);
-        Label previewTitle = new Label(lang().get("next.piece"), previewTitleStyle);
+        Label previewTitle = FontUtils.createLabel(lang().get("next.piece"), skin, fontSize(16), COLOR_TEXT_MUTED);
         previewTitle.setAlignment(Align.center);
 
         previewPanel.add(previewTitle).fillX().padBottom(h(10f)).row();
@@ -245,8 +244,7 @@ public class GameState extends BaseUIState {
     private Table createBottomPanel() {
         Table bottomPanel = new Table();
 
-        TextButton pauseButton = new TextButton(lang().get("pause"), skin);
-        pauseButton.setColor(COLOR_PRIMARY);
+        TextButton pauseButton = FontUtils.createTextButton(lang().get("pause"), skin, fontSize(24), COLOR_PRIMARY);
         pauseButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 togglePause();
@@ -254,8 +252,7 @@ public class GameState extends BaseUIState {
             return true;
         });
 
-        TextButton exitButton = new TextButton(lang().get("exit"), skin);
-        exitButton.setColor(COLOR_DANGER);
+        TextButton exitButton = FontUtils.createTextButton(lang().get("exit"), skin, fontSize(24), COLOR_DANGER);
         exitButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 if (uiManager.getNetworkManager() != null && uiManager.getNetworkManager().isConnected()) {
@@ -324,8 +321,7 @@ public class GameState extends BaseUIState {
             pauseLabel.setAlignment(Align.center);
 
             // 继续按钮
-            TextButton resumeButton = new TextButton(lang().get("resume"), skin);
-            resumeButton.setColor(COLOR_SUCCESS);
+            TextButton resumeButton = FontUtils.createTextButton(lang().get("resume"), skin, fontSize(24), COLOR_SUCCESS);
             resumeButton.addListener(event -> {
                 if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                     togglePause();

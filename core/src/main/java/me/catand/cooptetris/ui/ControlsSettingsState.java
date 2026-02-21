@@ -134,10 +134,10 @@ public class ControlsSettingsState extends BaseUIState {
         card.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
         card.pad(w(20f));
 
-        // 卡片标题
-        Label.LabelStyle sectionStyle = new Label.LabelStyle(sectionFont,
+        // 卡片标题 - 使用动态字体
+        String titleText = lang.get("player") + " " + playerNum;
+        Label cardTitle = FontUtils.createLabel(titleText, skin, fontSize(18),
             playerNum == 1 ? COLOR_PRIMARY : COLOR_SECONDARY);
-        Label cardTitle = new Label(lang.get("player") + " " + playerNum, sectionStyle);
 
         // 创建键位行
         Table controlsTable = new Table();
@@ -199,8 +199,7 @@ public class ControlsSettingsState extends BaseUIState {
         Table rowTable = new Table();
 
         // 左侧标签
-        Label label = new Label(labelText, skin);
-        label.setColor(COLOR_TEXT_MUTED);
+        Label label = FontUtils.createLabel(labelText, skin, fontSize(16), COLOR_TEXT_MUTED);
         rowTable.add(label).left().width(w(LABEL_WIDTH)).padRight(w(10f));
 
         // 右侧绑定按钮
@@ -218,8 +217,7 @@ public class ControlsSettingsState extends BaseUIState {
         Table buttonTable = new Table();
 
         // 保存按钮
-        TextButton saveButton = new TextButton(lang.get("save"), skin);
-        saveButton.setColor(COLOR_SUCCESS);
+        TextButton saveButton = FontUtils.createTextButton(lang.get("save"), skin, fontSize(18), COLOR_SUCCESS);
         saveButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 saveControls();
@@ -229,8 +227,7 @@ public class ControlsSettingsState extends BaseUIState {
         });
 
         // 重置按钮
-        TextButton resetButton = new TextButton(lang.get("reset"), skin);
-        resetButton.setColor(COLOR_WARNING);
+        TextButton resetButton = FontUtils.createTextButton(lang.get("reset"), skin, fontSize(18), COLOR_WARNING);
         resetButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 resetControls();
@@ -239,8 +236,7 @@ public class ControlsSettingsState extends BaseUIState {
         });
 
         // 返回按钮
-        TextButton backButton = new TextButton(lang.get("back"), skin);
-        backButton.setColor(COLOR_TEXT_MUTED);
+        TextButton backButton = FontUtils.createTextButton(lang.get("back"), skin, fontSize(18), COLOR_TEXT_MUTED);
         backButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 uiManager.popState();

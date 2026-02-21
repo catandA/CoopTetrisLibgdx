@@ -184,25 +184,21 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         roomNameLabel.setAlignment(Align.left);
 
         // 状态标签
-        statusLabel = new Label(lang().get("waiting.players"), skin);
-        statusLabel.setColor(COLOR_WARNING);
+        statusLabel = FontUtils.createLabel(lang().get("waiting.players"), skin, fontSize(16), COLOR_WARNING);
         statusLabel.setAlignment(Align.right);
 
         // 玩家数量
-        playerCountLabel = new Label("0/" + maxPlayers + " " + lang().get("players.label"), skin);
-        playerCountLabel.setColor(TEXT_MUTED);
+        String playerCountText = "0/" + maxPlayers + " " + lang().get("players.label");
+        playerCountLabel = FontUtils.createLabel(playerCountText, skin, fontSize(16), TEXT_MUTED);
         playerCountLabel.setAlignment(Align.right);
 
         // 游戏模式选择
         Table modeTable = new Table();
-        gameModeLabel = new Label(lang().get("game.mode.label"), skin);
-        gameModeLabel.setColor(TEXT_MUTED);
+        gameModeLabel = FontUtils.createLabel(lang().get("game.mode.label"), skin, fontSize(16), TEXT_MUTED);
 
-        gameModeSelectBox = new SelectBox<>(skin);
-        Array<String> gameModeItems = new Array<>();
-        gameModeItems.add(lang().get("game.mode.coop"));
-        gameModeItems.add(lang().get("game.mode.pvp"));
-        gameModeSelectBox.setItems(gameModeItems);
+        String coopMode = lang().get("game.mode.coop");
+        String pvpMode = lang().get("game.mode.pvp");
+        gameModeSelectBox = FontUtils.createSelectBox(skin, fontSize(16), COLOR_TEXT, coopMode, pvpMode);
         gameModeSelectBox.setSelected(lang().get("game.mode.coop"));
         gameModeSelectBox.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -236,9 +232,9 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         panel.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
         panel.pad(w(15f));
 
-        // 标题
-        Label.LabelStyle sectionTitleStyle = new Label.LabelStyle(smallFont, COLOR_SECONDARY);
-        Label sectionTitle = new Label(lang().get("players.title"), sectionTitleStyle);
+        // 标题 - 使用动态字体
+        String playersTitle = lang().get("players.title");
+        Label sectionTitle = FontUtils.createLabel(playersTitle, skin, fontSize(14), COLOR_SECONDARY);
         panel.add(sectionTitle).left().padBottom(h(15f)).row();
 
         // 玩家列表
@@ -261,9 +257,9 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         panel.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
         panel.pad(w(15f));
 
-        // 聊天标题
-        Label.LabelStyle chatTitleStyle = new Label.LabelStyle(smallFont, COLOR_PRIMARY);
-        Label chatTitle = new Label(lang().get("chat.label"), chatTitleStyle);
+        // 聊天标题 - 使用动态字体
+        String chatTitleText = lang().get("chat.label");
+        Label chatTitle = FontUtils.createLabel(chatTitleText, skin, fontSize(14), COLOR_PRIMARY);
         panel.add(chatTitle).left().padBottom(h(10f)).row();
 
         // 聊天消息区域
@@ -279,8 +275,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         // 输入区域
         Table inputArea = new Table();
 
-        chatInputField = new TextField("", skin);
-        chatInputField.setMessageText(lang().get("type.message"));
+        // 使用动态字体创建TextField，聊天输入需要支持中文
+        chatInputField = FontUtils.createTextField(skin, fontSize(16), lang().get("type.message"), null);
         chatInputField.addListener(event -> {
             if (event instanceof InputEvent) {
                 InputEvent inputEvent = (InputEvent) event;
@@ -293,8 +289,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             return true;
         });
 
-        sendChatButton = new TextButton(lang().get("send.button"), skin);
-        stylePrimaryButton(sendChatButton);
+        sendChatButton = FontUtils.createTextButton(lang().get("send.button"), skin, fontSize(16), COLOR_PRIMARY);
         sendChatButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 sendChatMessage();
@@ -315,9 +310,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private Table createButtonArea() {
         Table buttonArea = new Table();
 
-        startGameButton = new TextButton(lang().get("start.game.button"), skin);
+        startGameButton = FontUtils.createTextButton(lang().get("start.game.button"), skin, fontSize(18), isHost ? COLOR_SUCCESS : TEXT_MUTED);
         startGameButton.setDisabled(!isHost);
-        styleSuccessButton(startGameButton);
         if (!isHost) {
             startGameButton.setColor(TEXT_MUTED);
         }
@@ -328,8 +322,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             return true;
         });
 
-        leaveRoomButton = new TextButton(lang().get("leave.room.button"), skin);
-        styleDangerButton(leaveRoomButton);
+        leaveRoomButton = FontUtils.createTextButton(lang().get("leave.room.button"), skin, fontSize(18), new Color(1f, 0.3f, 0.3f, 1f));
         leaveRoomButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 leaveRoom();
@@ -347,8 +340,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         playerListTable.clear();
 
         if (playerNames.isEmpty()) {
-            Label emptyLabel = new Label(lang().get("no.players"), skin);
-            emptyLabel.setColor(TEXT_MUTED);
+            Label emptyLabel = FontUtils.createLabel(lang().get("no.players"), skin, fontSize(16), TEXT_MUTED);
             playerListTable.add(emptyLabel).left().padBottom(h(8f)).row();
         } else {
             for (int i = 0; i < playerNames.size(); i++) {
@@ -359,19 +351,18 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
                 playerRow.padBottom(h(8f));
 
                 // 玩家指示器（圆点）
-                Label indicator = new Label(isPlayerHost ? "★" : "●", skin);
-                indicator.setColor(isPlayerHost ? COLOR_WARNING : COLOR_SUCCESS);
+                String indicatorText = isPlayerHost ? "★" : "●";
+                Label indicator = FontUtils.createLabel(indicatorText, skin, fontSize(16), isPlayerHost ? COLOR_WARNING : COLOR_SUCCESS);
                 playerRow.add(indicator).width(w(20f)).left();
 
                 // 玩家名称
-                Label nameLabel = new Label(playerName + (isPlayerHost ? " " + lang().get("host.suffix") : ""), skin);
-                nameLabel.setColor(COLOR_TEXT);
+                String nameText = playerName + (isPlayerHost ? " " + lang().get("host.suffix") : "");
+                Label nameLabel = FontUtils.createLabel(nameText, skin, fontSize(16), COLOR_TEXT);
                 playerRow.add(nameLabel).left().expandX();
 
                 // 踢出按钮（仅房主可见）
                 if (isHost && !isPlayerHost) {
-                    TextButton kickButton = new TextButton(lang().get("kick.button"), skin);
-                    kickButton.setColor(new Color(1f, 0.3f, 0.3f, 1f));
+                    TextButton kickButton = FontUtils.createTextButton(lang().get("kick.button"), skin, fontSize(14), new Color(1f, 0.3f, 0.3f, 1f));
                     final String targetPlayerName = playerName;
                     kickButton.addListener(event -> {
                         if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
@@ -407,9 +398,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     }
 
     private void addChatMessageToUI(String message) {
-        Label messageLabel = new Label(message, skin);
+        Label messageLabel = FontUtils.createLabel(message, skin, fontSize(14), COLOR_TEXT);
         messageLabel.setWrap(true);
-        messageLabel.setColor(COLOR_TEXT);
         chatTable.add(messageLabel).left().width(w(340f)).padBottom(h(4f)).row();
     }
 

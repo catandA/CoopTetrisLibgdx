@@ -101,20 +101,19 @@ public class SettingsState extends BaseUIState {
 
         Table card = createCardBase();
 
-        // 卡片标题
-        Label.LabelStyle cardTitleStyle = new Label.LabelStyle(cardTitleFont, COLOR_SECONDARY);
-        Label cardTitle = new Label(lang.get("settings.display.title"), cardTitleStyle);
+        // 卡片标题 - 使用动态字体
+        String titleText = lang.get("settings.display.title");
+        Label cardTitle = FontUtils.createLabel(titleText, skin, fontSize(18), COLOR_SECONDARY);
 
         // 全屏设置行
         Table rowTable = createSettingRow(
             lang.get("settings.fullscreen"),
             () -> {
                 boolean isFullscreen = TetrisSettings.fullscreen();
-                TextButton toggleButton = new TextButton(
+                TextButton toggleButton = FontUtils.createTextButton(
                     isFullscreen ? lang.get("settings.on") : lang.get("settings.off"),
-                    skin
+                    skin, fontSize(16), isFullscreen ? COLOR_SUCCESS : COLOR_TEXT_MUTED
                 );
-                toggleButton.setColor(isFullscreen ? COLOR_SUCCESS : COLOR_TEXT_MUTED);
                 toggleButton.addListener(new ChangeListener() {
                     @Override
                     public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
@@ -140,17 +139,17 @@ public class SettingsState extends BaseUIState {
 
         Table card = createCardBase();
 
-        // 卡片标题
-        Label.LabelStyle cardTitleStyle = new Label.LabelStyle(cardTitleFont, COLOR_SECONDARY);
-        Label cardTitle = new Label(lang.get("settings.language.title"), cardTitleStyle);
+        // 卡片标题 - 使用动态字体
+        String titleText = lang.get("settings.language.title");
+        Label cardTitle = FontUtils.createLabel(titleText, skin, fontSize(18), COLOR_SECONDARY);
 
         // 语言设置行
         Table rowTable = createSettingRow(
             lang.get("language"),
             () -> {
-                languageBox = new com.badlogic.gdx.scenes.scene2d.ui.SelectBox<>(skin);
-                String[] languages = {lang.get("en"), lang.get("zh")};
-                languageBox.setItems(languages);
+                String enLang = lang.get("en");
+                String zhLang = lang.get("zh");
+                languageBox = FontUtils.createSelectBox(skin, fontSize(16), COLOR_TEXT, enLang, zhLang);
 
                 if (lang.getCurrentLanguageCode().equals("zh")) {
                     languageBox.setSelectedIndex(1);
@@ -183,16 +182,15 @@ public class SettingsState extends BaseUIState {
 
         Table card = createCardBase();
 
-        // 卡片标题
-        Label.LabelStyle cardTitleStyle = new Label.LabelStyle(cardTitleFont, COLOR_SECONDARY);
-        Label cardTitle = new Label(lang.get("settings.controls.title"), cardTitleStyle);
+        // 卡片标题 - 使用动态字体
+        String titleText = lang.get("settings.controls.title");
+        Label cardTitle = FontUtils.createLabel(titleText, skin, fontSize(18), COLOR_SECONDARY);
 
         // 键位设置行
         Table rowTable = createSettingRow(
             lang.get("settings.controls"),
             () -> {
-                TextButton controlsButton = new TextButton(lang.get("settings.controls.configure"), skin);
-                controlsButton.setColor(COLOR_PRIMARY);
+                TextButton controlsButton = FontUtils.createTextButton(lang.get("settings.controls.configure"), skin, fontSize(16), COLOR_PRIMARY);
                 controlsButton.addListener(event -> {
                     if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                         uiManager.pushState(new ControlsSettingsState(uiManager));
@@ -214,8 +212,7 @@ public class SettingsState extends BaseUIState {
 
         // 左侧标签
         if (!labelText.isEmpty()) {
-            Label label = new Label(labelText, skin);
-            label.setColor(COLOR_TEXT_MUTED);
+            Label label = FontUtils.createLabel(labelText, skin, fontSize(16), COLOR_TEXT_MUTED);
             rowTable.add(label).left().width(w(LABEL_WIDTH)).padRight(w(15f));
         } else {
             rowTable.add().left().width(w(LABEL_WIDTH)).padRight(w(15f));
@@ -241,8 +238,7 @@ public class SettingsState extends BaseUIState {
         Table buttonTable = new Table();
 
         // 返回按钮
-        TextButton backButton = new TextButton(lang.get("back"), skin);
-        backButton.setColor(COLOR_PRIMARY);
+        TextButton backButton = FontUtils.createTextButton(lang.get("back"), skin, fontSize(18), COLOR_PRIMARY);
         backButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 uiManager.popState();

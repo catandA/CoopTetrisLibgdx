@@ -117,37 +117,54 @@ public abstract class PlatformSupport {
         }
 
         int key = size;
-        if (border) key += Short.MAX_VALUE; //surely we'll never have a size above 32k
+        if (border) key += Short.MAX_VALUE;
         if (flipped) key = -key;
-        if (!fonts.get(generator).containsKey(key)) {
-            FreeTypeFontGenerator.FreeTypeFontParameter parameters = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameters.size = size;
-            parameters.flip = flipped;
-            if (border) {
-                parameters.borderWidth = parameters.size / 10f;
-            }
-            if (size >= 20) {
-                parameters.renderCount = 2;
-            } else {
-                parameters.renderCount = 3;
-            }
-            parameters.hinting = FreeTypeFontGenerator.Hinting.None;
-            parameters.spaceX = -(int) parameters.borderWidth;
-            parameters.incremental = true;
-            parameters.characters = "�";
-            parameters.packer = packer;
 
-            try {
-                BitmapFont font = generator.generateFont(parameters);
-                font.getData().missingGlyph = font.getData().getGlyph('�');
-                fonts.get(generator).put(key, font);
-            } catch (Exception e) {
-                System.err.println(e.getMessage());
-                return null;
+        BitmapFont existingFont = fonts.get(generator).get(key);
+
+        if (existingFont != null) {
+            // Check if existing font can render all characters in text
+            if (canRenderText(existingFont, text)) {
+                return existingFont;
             }
         }
 
-        return fonts.get(generator).get(key);
+        // Need to create or regenerate font with new characters
+        FreeTypeFontGenerator.FreeTypeFontParameter parameters = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameters.size = size;
+        parameters.flip = flipped;
+        if (border) {
+            parameters.borderWidth = parameters.size / 10f;
+        }
+        if (size >= 20) {
+            parameters.renderCount = 2;
+        } else {
+            parameters.renderCount = 3;
+        }
+        parameters.hinting = FreeTypeFontGenerator.Hinting.None;
+        parameters.spaceX = -(int) parameters.borderWidth;
+        parameters.incremental = true;
+        parameters.characters = "�" + text;
+        parameters.packer = packer;
+
+        try {
+            BitmapFont font = generator.generateFont(parameters);
+            font.getData().missingGlyph = font.getData().getGlyph('�');
+            fonts.get(generator).put(key, font);
+            return font;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private boolean canRenderText(BitmapFont font, String text) {
+        for (char c : text.toCharArray()) {
+            if (font.getData().getGlyph(c) == null) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

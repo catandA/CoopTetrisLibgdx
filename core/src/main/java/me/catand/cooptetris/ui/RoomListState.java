@@ -124,13 +124,11 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         NetworkManager networkManager = uiManager.getNetworkManager();
         String serverInfo = networkManager != null ?
             lang().get("connected.to") + ": " + networkManager.getPlayerName() : lang().get("unknown.server");
-        serverInfoLabel = new Label(serverInfo, skin);
-        serverInfoLabel.setColor(COLOR_SECONDARY);
+        serverInfoLabel = FontUtils.createLabel(serverInfo, skin, fontSize(16), COLOR_SECONDARY);
         serverInfoLabel.setAlignment(Align.right);
 
-        statusLabel = new Label(lang().get("status.loading.rooms"), skin);
+        statusLabel = FontUtils.createLabel(lang().get("status.loading.rooms"), skin, fontSize(16), TEXT_MUTED);
         statusLabel.setAlignment(Align.center);
-        statusLabel.setColor(TEXT_MUTED);
 
         header.add(title).left().expandX();
         header.add(serverInfoLabel).right().row();
@@ -144,9 +142,9 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         panel.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
         panel.pad(w(15f));
 
-        // 列表标题
-        Label.LabelStyle listTitleStyle = new Label.LabelStyle(smallFont, COLOR_SECONDARY);
-        Label listTitle = new Label(lang().get("available.rooms"), listTitleStyle);
+        // 列表标题 - 使用动态字体
+        String listTitleText = lang().get("available.rooms");
+        Label listTitle = FontUtils.createLabel(listTitleText, skin, fontSize(14), COLOR_SECONDARY);
         panel.add(listTitle).left().padBottom(h(10f)).row();
 
         // 房间列表
@@ -167,11 +165,12 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         panel.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
         panel.pad(w(15f));
 
-        Label roomNameLabel = new Label(lang().get("new.room.name"), skin);
-        roomNameLabel.setColor(TEXT_MUTED);
+        Label roomNameLabel = FontUtils.createLabel(lang().get("new.room.name"), skin, fontSize(16), TEXT_MUTED);
 
-        newRoomNameField = new TextField(lang().get("default.room.name") + (int)(Math.random() * 1000), skin);
-        newRoomNameField.setMessageText(lang().get("enter.room.name"));
+        // 使用动态字体创建TextField，包含房间名可能用到的字符
+        String roomNameChars = lang().get("default.room.name") + lang().get("enter.room.name");
+        newRoomNameField = FontUtils.createTextField(skin, fontSize(16), lang().get("enter.room.name"), roomNameChars);
+        newRoomNameField.setText(lang().get("default.room.name") + (int)(Math.random() * 1000));
 
         panel.add(roomNameLabel).padRight(w(10f));
         panel.add(newRoomNameField).width(w(250f)).height(h(40f)).expandX();
@@ -182,9 +181,8 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
     private Table createButtonArea() {
         Table buttonArea = new Table();
 
-        joinButton = new TextButton(lang().get("join.room"), skin);
+        joinButton = FontUtils.createTextButton(lang().get("join.room"), skin, fontSize(18), COLOR_PRIMARY);
         joinButton.setDisabled(true);
-        stylePrimaryButton(joinButton);
         joinButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 joinSelectedRoom();
@@ -192,8 +190,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
             return true;
         });
 
-        createButton = new TextButton(lang().get("create.room"), skin);
-        styleSuccessButton(createButton);
+        createButton = FontUtils.createTextButton(lang().get("create.room"), skin, fontSize(18), COLOR_SUCCESS);
         createButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 createNewRoom();
@@ -201,8 +198,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
             return true;
         });
 
-        refreshButton = new TextButton(lang().get("refresh"), skin);
-        styleSecondaryButton(refreshButton);
+        refreshButton = FontUtils.createTextButton(lang().get("refresh"), skin, fontSize(18), COLOR_SECONDARY);
         refreshButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 refreshRoomList();
@@ -210,8 +206,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
             return true;
         });
 
-        disconnectButton = new TextButton(lang().get("disconnect"), skin);
-        styleDangerButton(disconnectButton);
+        disconnectButton = FontUtils.createTextButton(lang().get("disconnect"), skin, fontSize(18), COLOR_DANGER);
         disconnectButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 disconnectFromServer();
@@ -236,8 +231,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         roomListTable.clear();
 
         if (rooms == null || rooms.isEmpty()) {
-            Label emptyLabel = new Label(lang().get("no.rooms.available"), skin);
-            emptyLabel.setColor(TEXT_MUTED);
+            Label emptyLabel = FontUtils.createLabel(lang().get("no.rooms.available"), skin, fontSize(16), TEXT_MUTED);
             roomListTable.add(emptyLabel).center().padTop(h(50f)).row();
             setStatus(lang().get("status.no.rooms"), TEXT_MUTED);
             return;
@@ -249,7 +243,7 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
             String buttonText = String.format("%s (%d/%d)",
                 room.getName(), room.getPlayerCount(), room.getMaxPlayers());
 
-            TextButton roomButton = new TextButton(buttonText, skin);
+            TextButton roomButton = FontUtils.createTextButton(buttonText, skin, fontSize(16), COLOR_TEXT);
             roomButton.setUserObject(room);
 
             boolean isFull = room.getPlayerCount() >= room.getMaxPlayers();

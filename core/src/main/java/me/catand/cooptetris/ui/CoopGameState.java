@@ -18,6 +18,7 @@ import com.badlogic.gdx.utils.Align;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.input.InputBinding;
 import me.catand.cooptetris.input.TouchInputProcessor;
+import me.catand.cooptetris.ui.FontUtils;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.tetris.CoopGameLogic;
@@ -273,8 +274,7 @@ public class CoopGameState extends BaseUIState {
         statPanel.setBackground(createPanelBackground(COLOR_BG));
         statPanel.pad(w(12f));
 
-        Label.LabelStyle titleStyle = new Label.LabelStyle(skin.get("default", com.badlogic.gdx.graphics.g2d.BitmapFont.class), COLOR_TEXT_MUTED);
-        Label titleLabel = new Label(title, titleStyle);
+        Label titleLabel = FontUtils.createLabel(title, skin, fontSize(16), COLOR_TEXT_MUTED);
         titleLabel.setAlignment(Align.left);
 
         Label.LabelStyle valueStyle = new Label.LabelStyle(statsFont, accentColor);
@@ -337,8 +337,7 @@ public class CoopGameState extends BaseUIState {
     private Table createBottomPanel() {
         Table bottomPanel = new Table();
 
-        TextButton pauseButton = new TextButton(lang().get("pause"), skin);
-        pauseButton.setColor(COLOR_PRIMARY);
+        TextButton pauseButton = FontUtils.createTextButton(lang().get("pause"), skin, fontSize(24), COLOR_PRIMARY);
         pauseButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 togglePause();
@@ -346,8 +345,7 @@ public class CoopGameState extends BaseUIState {
             return true;
         });
 
-        TextButton exitButton = new TextButton(lang().get("exit"), skin);
-        exitButton.setColor(COLOR_DANGER);
+        TextButton exitButton = FontUtils.createTextButton(lang().get("exit"), skin, fontSize(24), COLOR_DANGER);
         exitButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 returnToMenu();
@@ -381,8 +379,7 @@ public class CoopGameState extends BaseUIState {
             Label pauseLabel = new Label(lang().get("pause.title"), pauseStyle);
             pauseLabel.setAlignment(Align.center);
 
-            TextButton resumeButton = new TextButton(lang().get("resume"), skin);
-            resumeButton.setColor(COLOR_SUCCESS);
+            TextButton resumeButton = FontUtils.createTextButton(lang().get("resume"), skin, fontSize(24), COLOR_SUCCESS);
             resumeButton.addListener(event -> {
                 if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                     togglePause();

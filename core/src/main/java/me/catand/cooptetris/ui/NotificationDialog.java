@@ -26,6 +26,7 @@ public class NotificationDialog {
     private Label reasonLabel;
     private TextButton okButton;
     private Runnable onCloseAction;
+    private com.badlogic.gdx.scenes.scene2d.ui.Skin skin;
 
     private BitmapFont titleFont;
     private BitmapFont messageFont;
@@ -58,11 +59,8 @@ public class NotificationDialog {
     }
 
     private void createDialog(com.badlogic.gdx.scenes.scene2d.ui.Skin skin) {
+        this.skin = skin;
         LanguageManager lang = LanguageManager.getInstance();
-
-        // 创建字体
-        titleFont = Main.platform.getFont((int)fontSize(24), "Notification", false, false);
-        messageFont = Main.platform.getFont((int)fontSize(16), "Message", false, false);
 
         // 创建对话框表格
         dialogTable = new Table();
@@ -70,26 +68,22 @@ public class NotificationDialog {
         dialogTable.pad(w(DIALOG_PADDING));
         dialogTable.setSize(w(DIALOG_WIDTH), h(200f));
 
-        // 标题标签
-        Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, COLOR_TEXT);
-        titleLabel = new Label("", titleStyle);
+        // 标题标签 - 使用空字符串初始化，在updateContent中设置字体
+        titleLabel = new Label("", skin);
         titleLabel.setAlignment(Align.center);
 
-        // 消息标签
-        Label.LabelStyle messageStyle = new Label.LabelStyle(messageFont, COLOR_TEXT);
-        messageLabel = new Label("", messageStyle);
+        // 消息标签 - 使用空字符串初始化，在updateContent中设置字体
+        messageLabel = new Label("", skin);
         messageLabel.setAlignment(Align.center);
         messageLabel.setWrap(true);
 
-        // 原因标签
-        Label.LabelStyle reasonStyle = new Label.LabelStyle(messageFont, COLOR_TEXT_MUTED);
-        reasonLabel = new Label("", reasonStyle);
+        // 原因标签 - 使用空字符串初始化，在updateContent中设置字体
+        reasonLabel = new Label("", skin);
         reasonLabel.setAlignment(Align.center);
         reasonLabel.setWrap(true);
 
         // 确定按钮
-        okButton = new TextButton(lang.get("notification.button.ok"), skin);
-        okButton.setColor(COLOR_PRIMARY);
+        okButton = FontUtils.createTextButton(lang.get("notification.button.ok"), skin, (int)fontSize(18), COLOR_PRIMARY);
         okButton.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
                 hide();
@@ -125,17 +119,25 @@ public class NotificationDialog {
         if (title == null || title.isEmpty()) {
             title = getDefaultTitle(currentMessage.getNotificationType());
         }
+        // 动态获取字体并设置
+        titleFont = Main.platform.getFont((int)fontSize(24), title, false, false);
+        titleLabel.setStyle(new Label.LabelStyle(titleFont, COLOR_TEXT));
         titleLabel.setText(title);
 
         // 根据类型设置标题颜色
         titleLabel.setColor(getColorForType(currentMessage.getNotificationType()));
 
         // 设置消息内容
-        messageLabel.setText(currentMessage.getMessage() != null ? currentMessage.getMessage() : "");
+        String message = currentMessage.getMessage() != null ? currentMessage.getMessage() : "";
+        messageFont = Main.platform.getFont((int)fontSize(16), message, false, false);
+        messageLabel.setStyle(new Label.LabelStyle(messageFont, COLOR_TEXT));
+        messageLabel.setText(message);
 
         // 设置原因（如果有）
         if (currentMessage.getReason() != null && !currentMessage.getReason().isEmpty()) {
             String reasonText = lang.get("notification.reason.label") + " " + currentMessage.getReason();
+            // 原因标签使用消息字体，但颜色不同
+            reasonLabel.setStyle(new Label.LabelStyle(messageFont, COLOR_TEXT_MUTED));
             reasonLabel.setText(reasonText);
             reasonLabel.setVisible(true);
         } else {
@@ -143,7 +145,10 @@ public class NotificationDialog {
         }
 
         // 根据类型设置按钮文字
-        okButton.setText(getButtonTextForType(currentMessage.getNotificationType()));
+        String buttonText = getButtonTextForType(currentMessage.getNotificationType());
+        okButton.setText(buttonText);
+        // 更新按钮字体以包含新的按钮文本
+        FontUtils.updateButtonFont(okButton, skin, (int)fontSize(18));
 
         // 调整对话框高度以适应内容
         dialogTable.pack();
