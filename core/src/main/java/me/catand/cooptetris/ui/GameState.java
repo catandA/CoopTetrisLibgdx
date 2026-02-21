@@ -14,9 +14,16 @@ import com.badlogic.gdx.utils.Align;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.input.InputBinding;
 import me.catand.cooptetris.input.TouchInputProcessor;
+import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.ui.FontUtils;
+import me.catand.cooptetris.shared.message.CountdownMessage;
+import me.catand.cooptetris.shared.message.GameStartMessage;
+import me.catand.cooptetris.shared.message.GameStateMessage;
 import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
+import me.catand.cooptetris.shared.message.PlayerScoresMessage;
+import me.catand.cooptetris.shared.message.PlayerSlotMessage;
+import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.shared.model.Tetromino;
 import me.catand.cooptetris.shared.tetris.GameLogic;
 import me.catand.cooptetris.tetris.GameStateManager;
@@ -26,7 +33,7 @@ import me.catand.cooptetris.util.TetrisSettings;
 /**
  * 游戏状态 - 现代化暗色游戏UI风格
  */
-public class GameState extends BaseUIState {
+public class GameState extends BaseUIState implements NetworkManager.NetworkListener {
     private Table uiTable;
     private final GameStateManager gameStateManager;
     private float cellSize;
@@ -84,6 +91,11 @@ public class GameState extends BaseUIState {
 
     @Override
     protected void createUI() {
+        // 注册网络监听器
+        if (uiManager.getNetworkManager() != null) {
+            uiManager.getNetworkManager().addListener(this);
+        }
+
         calculateBoardPosition();
 
         // 初始化触屏输入处理器
@@ -286,6 +298,10 @@ public class GameState extends BaseUIState {
         if (uiTable != null) {
             uiTable.remove();
             uiTable = null;
+        }
+        // 移除网络监听器
+        if (uiManager.getNetworkManager() != null) {
+            uiManager.getNetworkManager().removeListener(this);
         }
     }
 
@@ -616,5 +632,69 @@ public class GameState extends BaseUIState {
             statsFont.dispose();
             statsFont = null;
         }
+    }
+
+    // ==================== NetworkManager.NetworkListener 接口实现 ====================
+
+    @Override
+    public void onConnectResponse(boolean success, String message, String clientId) {
+    }
+
+    @Override
+    public void onRoomResponse(RoomMessage message) {
+    }
+
+    @Override
+    public void onGameStart(GameStartMessage message) {
+    }
+
+    @Override
+    public void onGameStateUpdate(GameStateMessage message) {
+    }
+
+    @Override
+    public void onDisconnected() {
+        // 显示断开连接弹窗并返回主菜单
+        LanguageManager lang = LanguageManager.getInstance();
+        NotificationMessage message = new NotificationMessage();
+        message.setNotificationType(NotificationMessage.NotificationType.DISCONNECTED);
+        message.setTitle(lang.get("notification.title.disconnected"));
+        message.setMessage(lang.get("error.connection.lost"));
+
+        NotificationDialog dialog = new NotificationDialog(skin);
+        dialog.setNotification(message);
+        dialog.setOnCloseAction(() -> {
+            // 停止本地服务器
+            if (uiManager.getLocalServerManager() != null && uiManager.getLocalServerManager().isRunning()) {
+                uiManager.getLocalServerManager().stopServer();
+            }
+            // 断开网络连接
+            if (uiManager.getNetworkManager() != null) {
+                uiManager.getNetworkManager().disconnect();
+            }
+            // 返回主菜单
+            uiManager.setScreen(new MainMenuState(uiManager));
+        });
+        dialog.show(stage);
+    }
+
+    @Override
+    public void onNotification(NotificationMessage message) {
+    }
+
+    @Override
+    public void onPlayerScoresUpdate(PlayerScoresMessage message) {
+    }
+
+    @Override
+    public void onCountdownUpdate(CountdownMessage message) {
+    }
+
+    @Override
+    public void onCoopGameStateUpdate(me.catand.cooptetris.shared.message.CoopGameStateMessage message) {
+    }
+
+    @Override
+    public void onPlayerSlotUpdate(PlayerSlotMessage message) {
     }
 }

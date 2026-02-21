@@ -556,8 +556,20 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
 
     @Override
     public void onDisconnected() {
-        setStatus(lang().get("status.disconnected"), COLOR_DANGER);
-        uiManager.popState();
+        // 显示断开连接弹窗
+        LanguageManager lang = LanguageManager.getInstance();
+        NotificationMessage message = new NotificationMessage();
+        message.setNotificationType(NotificationMessage.NotificationType.DISCONNECTED);
+        message.setTitle(lang.get("notification.title.disconnected"));
+        message.setMessage(lang.get("error.connection.lost"));
+
+        NotificationDialog dialog = new NotificationDialog(skin);
+        dialog.setNotification(message);
+        dialog.setOnCloseAction(() -> {
+            // 返回主菜单
+            uiManager.setScreen(new MainMenuState(uiManager));
+        });
+        dialog.show(stage);
     }
 
     @Override

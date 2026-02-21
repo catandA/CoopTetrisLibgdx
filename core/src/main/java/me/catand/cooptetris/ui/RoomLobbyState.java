@@ -1173,7 +1173,35 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
 
     @Override
     public void onDisconnected() {
-        uiManager.popState();
+        // 显示断开连接弹窗
+        if (currentNotificationDialog != null && currentNotificationDialog.isVisible()) {
+            currentNotificationDialog.hide();
+        }
+
+        LanguageManager lang = LanguageManager.getInstance();
+        NotificationMessage message = new NotificationMessage();
+        message.setNotificationType(NotificationMessage.NotificationType.DISCONNECTED);
+        message.setTitle(lang.get("notification.title.disconnected"));
+        message.setMessage(lang.get("error.connection.lost"));
+
+        currentNotificationDialog = new NotificationDialog(skin);
+        currentNotificationDialog.setNotification(message);
+        currentNotificationDialog.setOnCloseAction(() -> {
+            currentNotificationDialog = null;
+            // 停止本地服务器（如果是本地服务器模式）
+            if (connectionType == NetworkManager.ConnectionType.LOCAL_SERVER) {
+                if (uiManager.getLocalServerManager() != null && uiManager.getLocalServerManager().isRunning()) {
+                    uiManager.getLocalServerManager().stopServer();
+                }
+            }
+            // 断开网络连接
+            if (networkManager != null) {
+                networkManager.disconnect();
+            }
+            // 返回主菜单
+            uiManager.setScreen(new MainMenuState(uiManager));
+        });
+        currentNotificationDialog.show(stage);
     }
 
     @Override
