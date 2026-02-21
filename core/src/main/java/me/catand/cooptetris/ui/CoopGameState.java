@@ -470,6 +470,13 @@ public class CoopGameState extends BaseUIState {
             gameOverDialog.hide();
             gameOverDialog = null;
         }
+        // 清理玩家名字标签
+        for (int i = 0; i < playerNameLabels.length; i++) {
+            if (playerNameLabels[i] != null) {
+                playerNameLabels[i].remove();
+                playerNameLabels[i] = null;
+            }
+        }
     }
 
     @Override
