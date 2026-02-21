@@ -221,12 +221,6 @@ public class CoopGameState extends BaseUIState {
         panel.setBackground(createPanelBackground(COLOR_PANEL));
         panel.pad(w(15f));
 
-        // 游戏标题
-        Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, COLOR_PRIMARY);
-        Label gameTitle = new Label(lang().get("coop.game.title"), titleStyle);
-        gameTitle.setAlignment(Align.center);
-        panel.add(gameTitle).fillX().padBottom(h(10f)).row();
-
         // 游戏板区域（由ShapeRenderer绘制）
         boardArea = new Table();
         boardArea.setBackground(createPanelBackground(COLOR_BG));
