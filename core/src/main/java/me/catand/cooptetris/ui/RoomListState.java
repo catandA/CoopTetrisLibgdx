@@ -67,6 +67,8 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         this.availableRooms = new ArrayList<>();
     }
 
+    private boolean isFirstCreate = true;
+
     @Override
     protected void createUI() {
         titleFont = Main.platform.getFont(fontSize(28), lang().get("room.list.title"), false, false);
@@ -86,7 +88,11 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         if (networkManager != null) {
             networkManager.addListener(this);
             isProcessing = false;
-            refreshRoomList();
+            // 只在第一次创建UI时刷新房间列表，避免resize时重复发送
+            if (isFirstCreate) {
+                refreshRoomList();
+                isFirstCreate = false;
+            }
         }
     }
 

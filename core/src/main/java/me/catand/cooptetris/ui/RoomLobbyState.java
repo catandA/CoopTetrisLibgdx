@@ -171,6 +171,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         }
     }
 
+    private boolean isFirstCreate = true;
+
     @Override
     protected void createUI() {
         titleFont = Main.platform.getFont(fontSize(28), lang().get("room.lobby"), false, false);
@@ -188,8 +190,12 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
 
         if (networkManager != null) {
             networkManager.addListener(this);
-            RoomMessage statusMessage = new RoomMessage(RoomMessage.RoomAction.STATUS);
-            networkManager.sendMessage(statusMessage);
+            // 只在第一次创建UI时发送状态请求，避免resize时重复发送
+            if (isFirstCreate) {
+                RoomMessage statusMessage = new RoomMessage(RoomMessage.RoomAction.STATUS);
+                networkManager.sendMessage(statusMessage);
+                isFirstCreate = false;
+            }
         }
     }
 
