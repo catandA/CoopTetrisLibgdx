@@ -19,6 +19,7 @@ public class ClientConnection {
 	private int gameLogicIndex; // 玩家对应的游戏逻辑索引（用于PVP模式）
 	private int slotIndex; // 玩家在房间中的槽位索引（0-3，用于COOP模式）
 	private int colorIndex; // 玩家选择的颜色索引（0-3）
+	private boolean spectator; // 是否是观战者
 
 	public ClientConnection(Connection connection, ServerManager serverManager) {
 		this.connection = connection;
@@ -29,6 +30,7 @@ public class ClientConnection {
 		this.gameLogicIndex = -1;
 		this.slotIndex = -1;
 		this.colorIndex = -1; // 初始未选择颜色
+		this.spectator = false; // 初始不是观战者
 	}
 
 	public void sendMessage(NetworkMessage message) {

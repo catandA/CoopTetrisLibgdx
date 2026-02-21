@@ -83,6 +83,9 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
     // 触屏输入处理器
     private TouchInputProcessor touchInput;
 
+    // 观战者模式
+    private boolean spectatorMode = false;
+
     // UI颜色配置
     private static final Color COLOR_BG = new Color(0.06f, 0.07f, 0.09f, 1f);
     private static final Color COLOR_PANEL = new Color(0.1f, 0.12f, 0.15f, 0.9f);
@@ -100,6 +103,13 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         this.gameStateManager = gameStateManager;
         // 设置玩家分数监听器
         gameStateManager.setPlayerScoresListener(this);
+    }
+
+    /**
+     * 设置观战者模式
+     */
+    public void setSpectatorMode(boolean spectatorMode) {
+        this.spectatorMode = spectatorMode;
     }
 
     private LanguageManager lang() {
@@ -692,6 +702,9 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
     }
 
     private void handleInput() {
+        // 观战者模式下禁用输入
+        if (spectatorMode) return;
+
         // 处理键盘输入
         boolean keyboardInputHandled = false;
 

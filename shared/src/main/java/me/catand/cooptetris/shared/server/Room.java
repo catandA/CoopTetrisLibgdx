@@ -37,6 +37,10 @@ public class Room {
 	// 玩家槽位管理
 	private final PlayerSlot[] playerSlots;
 
+	// 观战者管理
+	private final List<ClientConnection> spectators = new ArrayList<>();
+	private boolean spectatorLocked = false; // 观战是否被锁定（禁用）
+
 	public Room(String name, int maxPlayers, ServerManager serverManager) {
 		this(name, maxPlayers, serverManager, false);
 	}
@@ -382,6 +386,113 @@ public class Room {
 	}
 
 	/**
+	 * 处理玩家请求成为观战者或退出观战
+	 * @return 是否成功
+	 */
+	public boolean requestSpectator(ClientConnection requester, boolean becomeSpectator) {
+		if (started) {
+			return false;
+		}
+
+		if (becomeSpectator) {
+			// 成为观战者
+			if (spectatorLocked) {
+				return false; // 观战功能被锁定
+			}
+
+			// 从普通玩家列表移除
+			if (players.contains(requester)) {
+				// 从槽位中移除
+				PlayerSlot slot = findPlayerSlot(requester.getClientId());
+				if (slot != null) {
+					slot.clearPlayer();
+				}
+				requester.setSlotIndex(-1);
+				players.remove(requester);
+			}
+
+			// 添加到观战者列表
+			if (!spectators.contains(requester)) {
+				spectators.add(requester);
+				requester.setSpectator(true);
+			}
+
+			broadcastPlayerSlots();
+			broadcastRoomStatus();
+			return true;
+		} else {
+			// 退出观战，成为普通玩家
+			if (spectators.contains(requester)) {
+				spectators.remove(requester);
+				requester.setSpectator(false);
+
+				// 尝试添加到普通玩家
+				if (!players.contains(requester)) {
+					// 查找可用槽位
+					PlayerSlot availableSlot = findFirstAvailableSlot();
+					if (availableSlot != null) {
+						players.add(requester);
+						availableSlot.setPlayer(requester);
+						requester.setSlotIndex(availableSlot.getSlotIndex());
+					}
+				}
+
+				broadcastPlayerSlots();
+				broadcastRoomStatus();
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * 处理房主锁定/解锁观战功能请求
+	 * @return 是否成功
+	 */
+	public boolean requestSpectatorLockToggle(ClientConnection requester) {
+		if (started) {
+			return false;
+		}
+
+		// 只有房主可以锁定/解锁观战功能
+		if (requester != host) {
+			return false;
+		}
+
+		// 如果房主自己是观战者，不允许锁定观战功能（防止房主踢出自己）
+		if (spectators.contains(host)) {
+			return false;
+		}
+
+		// 切换锁定状态
+		spectatorLocked = !spectatorLocked;
+
+		// 如果锁定观战功能，踢出所有观战者
+		if (spectatorLocked) {
+			List<ClientConnection> spectatorsToRemove = new ArrayList<>(spectators);
+			for (ClientConnection spectator : spectatorsToRemove) {
+				// 发送踢出通知
+				String language = spectator.getLanguage();
+				NotificationMessage kickNotification = createLocalizedKickNotification(language);
+				spectator.sendMessage(kickNotification);
+
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+
+				spectator.sendMessage(new RoomMessage(RoomMessage.RoomAction.KICK));
+				removePlayer(spectator);
+			}
+		}
+
+		broadcastPlayerSlots();
+		return true;
+	}
+
+	/**
 	 * 广播玩家槽位状态给所有玩家
 	 */
 	public void broadcastPlayerSlots() {
@@ -397,6 +508,7 @@ public class Room {
 			));
 		}
 
+		// 广播给普通玩家
 		for (ClientConnection client : players) {
 			PlayerSlotMessage message = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.UPDATE_SLOTS);
 			message.setSlots(slotInfos);
@@ -404,7 +516,26 @@ public class Room {
 			message.setMyColorIndex(client.getColorIndex()); // 发送玩家自己的颜色选择
 			message.setHost(client == host);
 			message.setSuccess(true);
+			// 观战者信息
+			message.setSpectatorLocked(spectatorLocked);
+			message.setSpectatorCount(spectators.size());
+			message.setSpectator(false);
 			client.sendMessage(message);
+		}
+
+		// 广播给观战者
+		for (ClientConnection spectator : spectators) {
+			PlayerSlotMessage message = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.UPDATE_SLOTS);
+			message.setSlots(slotInfos);
+			message.setMySlotIndex(-1); // 观战者没有槽位
+			message.setMyColorIndex(spectator.getColorIndex());
+			message.setHost(spectator == host);
+			message.setSuccess(true);
+			// 观战者信息
+			message.setSpectatorLocked(spectatorLocked);
+			message.setSpectatorCount(spectators.size());
+			message.setSpectator(true);
+			spectator.sendMessage(message);
 		}
 	}
 
@@ -467,8 +598,13 @@ public class Room {
 
 	private void broadcastCountdownMessage(int seconds, boolean isStarting) {
 		CountdownMessage message = new CountdownMessage(seconds, isStarting);
+		// 广播给普通玩家
 		for (ClientConnection client : players) {
 			client.sendMessage(message);
+		}
+		// 广播给观战者
+		for (ClientConnection spectator : spectators) {
+			spectator.sendMessage(message);
 		}
 	}
 
@@ -518,6 +654,11 @@ public class Room {
 			// 使用玩家的槽位索引作为玩家索引
 			int playerIndex = client.getSlotIndex();
 			serverManager.sendGameStartMessage(client, this, playerIndex, gameSeed);
+		}
+
+		// 向观战者发送游戏开始消息（playerIndex为-1表示观战者）
+		for (ClientConnection spectator : spectators) {
+			serverManager.sendGameStartMessage(spectator, this, -1, gameSeed);
 		}
 
 		// 启动游戏循环线程
@@ -588,12 +729,18 @@ public class Room {
 	public void broadcastGameState() {
 		// 使用副本进行迭代，避免ConcurrentModificationException
 		List<ClientConnection> playersCopy = new ArrayList<>(players);
+		List<ClientConnection> spectatorsCopy = new ArrayList<>(spectators);
 
 		if (gameMode == GameMode.COOP && coopGameLogic != null) {
 			// 合作模式：广播 CoopGameStateMessage
 			CoopGameStateMessage message = createCoopGameStateMessage();
+			// 发送给普通玩家
 			for (ClientConnection client : playersCopy) {
 				client.sendMessage(message);
+			}
+			// 发送给观战者
+			for (ClientConnection spectator : spectatorsCopy) {
+				spectator.sendMessage(message);
 			}
 		} else {
 			// PVP模式：广播所有玩家的游戏状态给所有人
@@ -617,6 +764,15 @@ public class Room {
 						opponentState.setPlayerIndex(j); // 标记这是哪个玩家的状态
 						client.sendMessage(opponentState);
 					}
+				}
+			}
+
+			// 向观战者发送所有玩家的游戏状态
+			for (ClientConnection spectator : spectatorsCopy) {
+				for (int j = 0; j < gameLogics.size(); j++) {
+					GameStateMessage state = createGameStateMessage(gameLogics.get(j));
+					state.setPlayerIndex(j);
+					spectator.sendMessage(state);
 				}
 			}
 
@@ -654,6 +810,12 @@ public class Room {
 		for (int i = 0; i < players.size(); i++) {
 			PlayerScoresMessage message = new PlayerScoresMessage(scores, i);
 			players.get(i).sendMessage(message);
+		}
+
+		// 发送给观战者（playerIndex为-1表示观战者）
+		for (ClientConnection spectator : spectators) {
+			PlayerScoresMessage message = new PlayerScoresMessage(scores, -1);
+			spectator.sendMessage(message);
 		}
 	}
 

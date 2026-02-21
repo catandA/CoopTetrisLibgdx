@@ -468,14 +468,33 @@ public class ServerManager {
 				break;
 
 			case REQUEST_KICK:
-				// 房主请求踢出玩家
-				boolean kickSuccess = room.requestKick(client, message.getSlotIndex());
-				PlayerSlotMessage kickResponse = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.REQUEST_KICK);
-				kickResponse.setSuccess(kickSuccess);
-				kickResponse.setSlotIndex(message.getSlotIndex());
-				kickResponse.setMessage(kickSuccess ? "Player kicked successfully" : "Failed to kick player");
-				client.sendMessage(kickResponse);
-				break;
+			// 房主请求踢出玩家
+			boolean kickSuccess = room.requestKick(client, message.getSlotIndex());
+			PlayerSlotMessage kickResponse = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.REQUEST_KICK);
+			kickResponse.setSuccess(kickSuccess);
+			kickResponse.setSlotIndex(message.getSlotIndex());
+			kickResponse.setMessage(kickSuccess ? "Player kicked successfully" : "Failed to kick player");
+			client.sendMessage(kickResponse);
+			break;
+
+		case REQUEST_SPECTATOR:
+			// 玩家请求成为观战者或退出观战
+			boolean becomeSpectator = message.getSlotIndex() == 1;
+			boolean spectatorSuccess = room.requestSpectator(client, becomeSpectator);
+			PlayerSlotMessage spectatorResponse = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.SPECTATOR_CHANGED);
+			spectatorResponse.setSuccess(spectatorSuccess);
+			spectatorResponse.setMessage(spectatorSuccess ? "Spectator status changed successfully" : "Failed to change spectator status");
+			client.sendMessage(spectatorResponse);
+			break;
+
+		case REQUEST_SPECTATOR_LOCK:
+			// 房主请求锁定/解锁观战功能
+			boolean lockSpectatorSuccess = room.requestSpectatorLockToggle(client);
+			PlayerSlotMessage spectatorLockResponse = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.SPECTATOR_CHANGED);
+			spectatorLockResponse.setSuccess(lockSpectatorSuccess);
+			spectatorLockResponse.setMessage(lockSpectatorSuccess ? "Spectator lock status changed successfully" : "Failed to change spectator lock status");
+			client.sendMessage(spectatorLockResponse);
+			break;
 		}
 	}
 

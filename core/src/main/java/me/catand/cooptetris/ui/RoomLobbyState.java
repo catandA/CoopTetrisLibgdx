@@ -65,6 +65,11 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private List<PlayerSlotMessage.SlotInfo> playerSlots;
     private int mySlotIndex;
 
+    // 观战者数据
+    private boolean spectatorLocked = false;
+    private int spectatorCount = 0;
+    private boolean isSpectator = false;
+
     // UI颜色配置
     private static final Color COLOR_PANEL = new Color(0.12f, 0.14f, 0.17f, 0.95f);
     private static final Color COLOR_PANEL_HIGHLIGHT = new Color(0.15f, 0.17f, 0.21f, 0.95f);
@@ -157,6 +162,30 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         this.playerSlots = slots != null ? new ArrayList<>(slots) : new ArrayList<>();
         this.mySlotIndex = mySlotIndex;
         this.isHost = isHost;
+
+        if (playerListTable != null) {
+            updatePlayerListUI();
+        }
+        if (playerCountLabel != null) {
+            updatePlayerCountLabel();
+        }
+        if (startGameButton != null) {
+            startGameButton.setDisabled(!isHost);
+            startGameButton.setColor(isHost ? COLOR_SUCCESS : TEXT_MUTED);
+        }
+        if (gameModeSelectBox != null) {
+            gameModeSelectBox.setDisabled(!isHost);
+        }
+    }
+
+    public void updatePlayerSlots(List<PlayerSlotMessage.SlotInfo> slots, int mySlotIndex, boolean isHost,
+                                   boolean spectatorLocked, int spectatorCount, boolean isSpectator) {
+        this.playerSlots = slots != null ? new ArrayList<>(slots) : new ArrayList<>();
+        this.mySlotIndex = mySlotIndex;
+        this.isHost = isHost;
+        this.spectatorLocked = spectatorLocked;
+        this.spectatorCount = spectatorCount;
+        this.isSpectator = isSpectator;
 
         if (playerListTable != null) {
             updatePlayerListUI();
@@ -333,6 +362,10 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             Table slotRow = createSlotRow(slot, i);
             playerListTable.add(slotRow).fillX().padBottom(h(6f)).row();
         }
+
+        // 添加观战者行
+        Table spectatorRow = createSpectatorRow();
+        playerListTable.add(spectatorRow).fillX().padTop(h(10f)).row();
     }
 
     private Table createSlotRow(PlayerSlotMessage.SlotInfo slot, int index) {
@@ -375,6 +408,159 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         row.add(positionSelectBox).width(w(120f)).height(h(32f));
 
         return row;
+    }
+
+    /**
+     * 创建观战者行
+     * 第一列：观战者标签（房主可锁定/解锁）
+     * 第二列：当前观战人数
+     * 第三列：加入/退出观战按钮
+     */
+    private Table createSpectatorRow() {
+        Table row = new Table();
+        // 根据锁定状态设置背景色
+        if (spectatorLocked) {
+            row.setBackground(createPanelBackground(COLOR_LOCKED));
+        } else {
+            row.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
+        }
+        row.pad(w(6f));
+
+        // ========== 第一列：观战者标签（房主可锁定/解锁）==========
+        SelectBox<String> spectatorLabelBox = createSpectatorLabelBox();
+        row.add(spectatorLabelBox).width(w(150f)).height(h(32f)).padRight(w(10f));
+
+        // ========== 第二列：观战人数 ==========
+        String countText = String.format(lang().get("spectator.count.format"), spectatorCount);
+        Label countLabel = FontUtils.createLabel(countText, skin, fontSize(14), spectatorLocked ? TEXT_MUTED : COLOR_TEXT);
+        row.add(countLabel).width(w(100f)).height(h(32f)).padRight(w(10f));
+
+        // ========== 第三列：加入/退出观战按钮 ==========
+        TextButton spectatorButton = createSpectatorButton();
+        row.add(spectatorButton).width(w(120f)).height(h(32f));
+
+        return row;
+    }
+
+    /**
+     * 创建加入/退出观战按钮
+     */
+    private TextButton createSpectatorButton() {
+        String buttonText;
+        Color buttonColor;
+
+        if (isSpectator) {
+            // 当前是观战者，显示退出观战按钮
+            buttonText = lang().get("spectator.action.leave");
+            buttonColor = COLOR_WARNING;
+        } else {
+            // 当前是普通玩家，显示加入观战按钮
+            buttonText = lang().get("spectator.action.join");
+            buttonColor = COLOR_PRIMARY;
+        }
+
+        TextButton button = FontUtils.createTextButton(buttonText, skin, fontSize(14), buttonColor);
+
+        // 设置按钮是否可用
+        boolean canClick = !spectatorLocked || isSpectator;
+        button.setDisabled(!canClick);
+        if (!canClick) {
+            button.setColor(TEXT_MUTED);
+        }
+
+        button.addListener(event -> {
+            if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
+                if (isSpectator) {
+                    // 退出观战，回到普通玩家位置
+                    requestSpectator(false);
+                } else {
+                    // 加入观战
+                    requestSpectator(true);
+                }
+            }
+            return true;
+        });
+
+        return button;
+    }
+
+    /**
+     * 创建观战者标签下拉框（房主可以锁定/解锁观战功能）
+     */
+    private SelectBox<String> createSpectatorLabelBox() {
+        List<String> options = new ArrayList<>();
+
+        // 判断房主自己是否是观战者
+        boolean hostIsSpectator = isHost && isSpectator;
+
+        // 显示文本（根据锁定状态显示不同文字）
+        String displayText;
+        if (hostIsSpectator) {
+            displayText = lang().get("spectator.host.cannot.lock");
+        } else if (spectatorLocked) {
+            displayText = lang().get("spectator.status.locked");
+        } else {
+            displayText = lang().get("spectator.label");
+        }
+
+        // 添加选项
+        if (isHost) {
+            options.add(displayText);
+            // 只有房主不是观战者时才能锁定/解锁
+            if (!hostIsSpectator) {
+                if (spectatorLocked) {
+                    options.add(lang().get("spectator.action.unlock"));
+                } else {
+                    options.add(lang().get("spectator.action.lock"));
+                }
+            }
+        } else {
+            options.add(displayText);
+        }
+
+        String[] optionsArray = options.toArray(new String[0]);
+        SelectBox<String> selectBox = FontUtils.createSelectBox(skin, fontSize(14), COLOR_TEXT, optionsArray);
+        selectBox.setSelected(displayText);
+
+        // 设置颜色
+        if (hostIsSpectator) {
+            selectBox.setColor(COLOR_WARNING);
+        } else if (spectatorLocked) {
+            selectBox.setColor(TEXT_MUTED);
+        } else {
+            selectBox.setColor(COLOR_SECONDARY);
+        }
+
+        selectBox.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                String selected = selectBox.getSelected();
+                handleSpectatorLabelSelection(selected);
+            }
+        });
+
+        return selectBox;
+    }
+
+    private void handleSpectatorLabelSelection(String selected) {
+        if (isHost) {
+            if (lang().get("spectator.action.lock").equals(selected) ||
+                lang().get("spectator.action.unlock").equals(selected)) {
+                requestSpectatorLockToggle();
+            }
+        }
+    }
+
+    private void requestSpectator(boolean becomeSpectator) {
+        if (networkManager != null && networkManager.isConnected()) {
+            networkManager.requestSpectator(becomeSpectator);
+        }
+    }
+
+    private void requestSpectatorLockToggle() {
+        if (networkManager != null && networkManager.isConnected()) {
+            networkManager.requestSpectatorLockToggle();
+        }
     }
 
     /**
@@ -893,10 +1079,12 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     public void onPlayerSlotUpdate(PlayerSlotMessage message) {
         switch (message.getAction()) {
             case UPDATE_SLOTS:
-                updatePlayerSlots(message.getSlots(), message.getMySlotIndex(), message.isHost());
+                updatePlayerSlots(message.getSlots(), message.getMySlotIndex(), message.isHost(),
+                    message.isSpectatorLocked(), message.getSpectatorCount(), message.isSpectator());
                 break;
             case SLOT_ASSIGNED:
             case LOCK_CHANGED:
+            case SPECTATOR_CHANGED:
                 break;
         }
     }
@@ -921,16 +1109,34 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         countdownTimer = 0;
 
         if (uiManager != null && uiManager.gameStateManager != null) {
+            int playerIndex = message.getYourIndex();
+            boolean isSpectatorMode = (playerIndex == -1);
+
+            // 保存是否是观战者状态
+            this.isSpectator = isSpectatorMode;
+
             if (message.getGameMode() == GameMode.COOP) {
-                uiManager.gameStateManager.startCoopMode(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
+                // 合作模式：观战者使用 playerIndex 0 观看，但禁用输入
+                int actualPlayerIndex = isSpectatorMode ? 0 : playerIndex;
+                uiManager.gameStateManager.startCoopMode(message.getPlayerCount(), actualPlayerIndex, message.getSeed());
                 CoopGameState coopGameState = new CoopGameState(uiManager, uiManager.gameStateManager);
+                // 如果是观战者，禁用输入
+                if (isSpectatorMode) {
+                    coopGameState.setSpectatorMode(true);
+                }
                 uiManager.setScreen(coopGameState);
             } else if (message.getGameMode() == GameMode.PVP) {
-                uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
+                // PVP模式：观战者使用 playerIndex 0 观看，但禁用输入
+                int actualPlayerIndex = isSpectatorMode ? 0 : playerIndex;
+                uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), actualPlayerIndex, message.getSeed());
                 PVPGameState pvpGameState = new PVPGameState(uiManager, uiManager.gameStateManager);
+                // 如果是观战者，禁用输入
+                if (isSpectatorMode) {
+                    pvpGameState.setSpectatorMode(true);
+                }
                 uiManager.setScreen(pvpGameState);
             } else {
-                uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
+                uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), playerIndex, message.getSeed());
                 GameState gameState = new GameState(uiManager, uiManager.gameStateManager);
                 uiManager.setScreen(gameState);
             }

@@ -102,6 +102,9 @@ public class CoopGameState extends BaseUIState {
     // 触屏输入处理器
     private TouchInputProcessor touchInput;
 
+    // 观战者模式
+    private boolean spectatorMode = false;
+
     public CoopGameState(UIManager uiManager, GameStateManager gameStateManager) {
         super(uiManager);
         this.gameStateManager = gameStateManager;
@@ -114,6 +117,13 @@ public class CoopGameState extends BaseUIState {
         this.playerCount = gameStateManager.getPlayerCount();
         this.playerNames = gameStateManager.getPlayerNames();
         this.playerColors = gameStateManager.getPlayerColors();
+    }
+
+    /**
+     * 设置观战者模式
+     */
+    public void setSpectatorMode(boolean spectatorMode) {
+        this.spectatorMode = spectatorMode;
     }
 
     @Override
@@ -486,6 +496,9 @@ public class CoopGameState extends BaseUIState {
     }
 
     private void handleInput(float delta) {
+        // 观战者模式下禁用输入
+        if (spectatorMode) return;
+
         // 只控制自己的物块
         if (mySlotIndex < 0 || mySlotIndex >= 4) return;
 

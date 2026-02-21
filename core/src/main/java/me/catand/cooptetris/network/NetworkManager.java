@@ -408,6 +408,23 @@ public class NetworkManager {
         sendMessage(message);
     }
 
+    /**
+     * 请求成为观战者或退出观战
+     */
+    public void requestSpectator(boolean becomeSpectator) {
+        PlayerSlotMessage message = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.REQUEST_SPECTATOR);
+        message.setSlotIndex(becomeSpectator ? 1 : 0);
+        sendMessage(message);
+    }
+
+    /**
+     * 请求锁定/解锁观战功能（仅房主）
+     */
+    public void requestSpectatorLockToggle() {
+        PlayerSlotMessage message = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.REQUEST_SPECTATOR_LOCK);
+        sendMessage(message);
+    }
+
     public void disconnect() {
         if (connected) {
             connected = false;

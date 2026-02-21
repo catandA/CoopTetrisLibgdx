@@ -19,7 +19,10 @@ public class PlayerSlotMessage extends NetworkMessage {
 		REQUEST_COLOR,      // 客户端请求更改颜色
 		COLOR_CHANGED,      // 服务器通知颜色变更
 		SLOT_ASSIGNED,      // 服务器通知槽位分配结果
-		LOCK_CHANGED        // 服务器通知锁定状态变更
+		LOCK_CHANGED,       // 服务器通知锁定状态变更
+		REQUEST_SPECTATOR,  // 客户端请求成为观战者/退出观战
+		REQUEST_SPECTATOR_LOCK, // 房主请求锁定/解锁观战功能
+		SPECTATOR_CHANGED   // 服务器通知观战状态变更
 	}
 
 	private SlotAction action;
@@ -35,6 +38,11 @@ public class PlayerSlotMessage extends NetworkMessage {
 	private int mySlotIndex;
 	private int myColorIndex;       // 当前客户端的颜色索引
 	private boolean isHost;
+
+	// 观战者相关
+	private boolean spectatorLocked;    // 观战是否被锁定（禁用）
+	private int spectatorCount;         // 当前观战人数
+	private boolean isSpectator;        // 当前客户端是否是观战者
 
 	public PlayerSlotMessage() {
 		super("playerSlot");
