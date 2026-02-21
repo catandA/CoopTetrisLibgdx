@@ -253,7 +253,7 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
 
         // 启动本地服务器
         if (uiManager.getLocalServerManager() != null) {
-            int port = uiManager.getLocalServerManager().startServer(8080);
+            int port = uiManager.getLocalServerManager().startServer(52791);
             if (port == -1) {
                 // 服务器启动失败
                 isConnecting = false;

@@ -217,7 +217,7 @@ public class TetrisSettings extends GameSettings {
         rotateKey2(InputBinding.W);
         dropKey2(InputBinding.SPACE);
         defaultHost("localhost");
-        defaultPort(8080);
+        defaultPort(52791);
         language("en");
         playerName("Player" + (int) (Math.random() * 1000));
         fullscreen(false);

@@ -13,12 +13,12 @@ import me.catand.cooptetris.shared.server.ServerManager;
 public class ServerLauncher {
     public static void main(String[] args) {
         // 启动服务器
-        ServerManager serverManager = new ServerManager(8080);
+        ServerManager serverManager = new ServerManager(52791);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             serverManager.stop();
         }));
         
-        System.out.println("ServerLauncher: 服务器启动完成，监听端口 8080");
+        System.out.println("ServerLauncher: 服务器启动完成，监听端口 52791");
     }
 }
