@@ -278,6 +278,7 @@ public class ServerManager {
 			RoomMessage response = new RoomMessage(RoomMessage.RoomAction.CREATE);
 			response.setSuccess(true);
 			response.setRoomId(room.getId());
+			response.setRoomName(room.getName());
 			response.setMessage("Room created successfully");
 			client.sendMessage(response);
 
