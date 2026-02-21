@@ -254,7 +254,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         gameModeSelectBox.setDisabled(!isHost);
 
         modeTable.add(gameModeLabel).padRight(w(10f));
-        modeTable.add(gameModeSelectBox).width(w(120f));
+        modeTable.add(gameModeSelectBox).width(w(120f)).height(h(35f));
 
         header.add(roomNameLabel).left().expandX();
         header.add(modeTable).padRight(w(20f));
@@ -646,7 +646,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             return true;
         });
 
-        inputArea.add(chatInputField).fillX().expandX().height(h(40f)).padRight(w(10f));
+        inputArea.add(chatInputField).width(w(170f)).height(h(40f)).padRight(w(10f));
         inputArea.add(sendChatButton).width(w(70f)).height(h(40f));
 
         panel.add(inputArea).fillX();
@@ -707,7 +707,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private void addChatMessageToUI(String message) {
         Label messageLabel = FontUtils.createLabel(message, skin, fontSize(14), COLOR_TEXT);
         messageLabel.setWrap(true);
-        chatTable.add(messageLabel).left().width(w(240f)).padBottom(h(4f)).row();
+        chatTable.add(messageLabel).left().width(w(250f)).padBottom(h(4f)).row();
     }
 
     public void addChatMessage(String message) {
