@@ -240,13 +240,15 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         availableRooms.addAll(rooms);
 
         for (RoomMessage.RoomInfo room : availableRooms) {
+            // 使用显示的玩家数量（包含锁定的槽位）
+            int displayCount = room.getDisplayPlayerCount() > 0 ? room.getDisplayPlayerCount() : room.getPlayerCount();
             String buttonText = String.format("%s (%d/%d)",
-                room.getName(), room.getPlayerCount(), room.getMaxPlayers());
+                room.getName(), displayCount, room.getMaxPlayers());
 
             TextButton roomButton = FontUtils.createTextButton(buttonText, skin, fontSize(16), COLOR_TEXT);
             roomButton.setUserObject(room);
 
-            boolean isFull = room.getPlayerCount() >= room.getMaxPlayers();
+            boolean isFull = displayCount >= room.getMaxPlayers();
             boolean isStarted = room.isStarted();
             roomButton.setDisabled(isFull || isStarted);
 

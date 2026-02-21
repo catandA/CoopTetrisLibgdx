@@ -49,6 +49,7 @@ public class RoomMessage extends NetworkMessage {
         private int playerCount;
         private int maxPlayers;
         private boolean started;
+        private int displayPlayerCount; // 显示的玩家数量（包含锁定的槽位）
 
         public RoomInfo() {
         }
@@ -59,6 +60,16 @@ public class RoomMessage extends NetworkMessage {
             this.playerCount = playerCount;
             this.maxPlayers = maxPlayers;
             this.started = started;
+            this.displayPlayerCount = playerCount;
+        }
+
+        public RoomInfo(String id, String name, int playerCount, int maxPlayers, boolean started, int displayPlayerCount) {
+            this.id = id;
+            this.name = name;
+            this.playerCount = playerCount;
+            this.maxPlayers = maxPlayers;
+            this.started = started;
+            this.displayPlayerCount = displayPlayerCount;
         }
     }
 }

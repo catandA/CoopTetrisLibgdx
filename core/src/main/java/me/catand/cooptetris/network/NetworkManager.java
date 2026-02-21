@@ -19,6 +19,7 @@ import me.catand.cooptetris.shared.message.MoveMessage;
 import me.catand.cooptetris.shared.message.NetworkMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
 import me.catand.cooptetris.shared.message.PlayerScoresMessage;
+import me.catand.cooptetris.shared.message.PlayerSlotMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
 import me.catand.cooptetris.shared.tetris.GameMode;
 import me.catand.cooptetris.util.LanguageManager;
@@ -117,6 +118,7 @@ public class NetworkManager {
         // 注册基本类型
         kryo.register(boolean.class);
         kryo.register(int.class);
+        kryo.register(Integer.class);
         kryo.register(String.class);
         kryo.register(java.util.ArrayList.class);
         kryo.register(int[].class);
@@ -139,6 +141,9 @@ public class NetworkManager {
         kryo.register(CoopGameStateMessage.class);
         kryo.register(CoopGameStateMessage.PlayerPieceState.class);
         kryo.register(CoopGameStateMessage.PlayerPieceState[].class);
+        kryo.register(PlayerSlotMessage.class);
+        kryo.register(PlayerSlotMessage.SlotAction.class);
+        kryo.register(PlayerSlotMessage.SlotInfo.class);
         kryo.register(GameMode.class);
         kryo.register(long.class);
 
@@ -171,6 +176,9 @@ public class NetworkManager {
                 break;
             case "coopGameState":
                 handleCoopGameStateMessage((CoopGameStateMessage) message);
+                break;
+            case "playerSlot":
+                handlePlayerSlotMessage((PlayerSlotMessage) message);
                 break;
         }
     }
@@ -350,6 +358,56 @@ public class NetworkManager {
         sendMessage(message);
     }
 
+    // ==================== 玩家槽位相关方法 ====================
+
+    private void handlePlayerSlotMessage(PlayerSlotMessage message) {
+        // 确保在主线程中调用监听器方法
+        final PlayerSlotMessage finalMessage = message;
+        Gdx.app.postRunnable(() -> {
+            // 使用监听器列表的副本进行遍历，避免ConcurrentModificationException
+            for (NetworkListener listener : new ArrayList<>(listeners)) {
+                listener.onPlayerSlotUpdate(finalMessage);
+            }
+        });
+    }
+
+    /**
+     * 请求移动到指定槽位
+     */
+    public void requestSlotChange(int slotIndex) {
+        PlayerSlotMessage message = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.REQUEST_SLOT);
+        message.setSlotIndex(slotIndex);
+        sendMessage(message);
+    }
+
+    /**
+     * 请求更改颜色
+     */
+    public void requestColorChange(int slotIndex, int colorIndex) {
+        PlayerSlotMessage message = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.REQUEST_COLOR);
+        message.setSlotIndex(slotIndex);
+        message.setColorIndex(colorIndex);
+        sendMessage(message);
+    }
+
+    /**
+     * 请求锁定/解锁槽位（仅房主）
+     */
+    public void requestLockToggle(int slotIndex) {
+        PlayerSlotMessage message = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.REQUEST_LOCK);
+        message.setSlotIndex(slotIndex);
+        sendMessage(message);
+    }
+
+    /**
+     * 请求踢出玩家（仅房主）
+     */
+    public void requestKick(int slotIndex) {
+        PlayerSlotMessage message = new PlayerSlotMessage(PlayerSlotMessage.SlotAction.REQUEST_KICK);
+        message.setSlotIndex(slotIndex);
+        sendMessage(message);
+    }
+
     public void disconnect() {
         if (connected) {
             connected = false;
@@ -406,6 +464,10 @@ public class NetworkManager {
 
         default void onCoopGameStateUpdate(CoopGameStateMessage message) {
             // 默认空实现，用于合作模式游戏状态同步
+        }
+
+        default void onPlayerSlotUpdate(PlayerSlotMessage message) {
+            // 默认空实现，用于玩家槽位状态更新
         }
     }
 }

@@ -27,20 +27,20 @@ import me.catand.cooptetris.util.LanguageManager;
 import me.catand.cooptetris.util.TetrisSettings;
 
 /**
- * 多人合作模式游戏界面（联机版）- 重构版
+ * 多人合作模式游戏界面（联机版）- 颜色跟随玩家版
  * - 20格宽的游戏板
  * - 4个出口，每个玩家从自己的出口下落
- * - 方块颜色根据玩家决定（蓝红绿黄）
+ * - 方块颜色由玩家选择，跟随玩家移动
  * - 现代化的暗色UI风格，与其他页面保持一致
  */
 public class CoopGameState extends BaseUIState {
 
-    // 玩家颜色：蓝、红、绿、黄
+    // 玩家可选择的颜色：蓝、红、绿、黄
     public static final Color[] PLAYER_COLORS = {
-        new Color(0.2f, 0.5f, 1.0f, 1.0f),    // 蓝色 - 玩家1
-        new Color(1.0f, 0.2f, 0.2f, 1.0f),    // 红色 - 玩家2
-        new Color(0.2f, 0.8f, 0.2f, 1.0f),    // 绿色 - 玩家3
-        new Color(1.0f, 0.9f, 0.2f, 1.0f),    // 黄色 - 玩家4
+        new Color(0.2f, 0.5f, 1.0f, 1.0f),    // 0 - 蓝色
+        new Color(1.0f, 0.2f, 0.2f, 1.0f),    // 1 - 红色
+        new Color(0.2f, 0.8f, 0.2f, 1.0f),    // 2 - 绿色
+        new Color(1.0f, 0.9f, 0.2f, 1.0f),    // 3 - 黄色
     };
 
     // UI颜色配置 - 与其他页面保持一致
@@ -81,8 +81,8 @@ public class CoopGameState extends BaseUIState {
     private static final float INITIAL_DELAY = 0.15f;
     private static final float SOFT_DROP_INTERVAL = 0.05f;
 
-    // 我的玩家索引
-    private final int myPlayerIndex;
+    // 我的槽位索引
+    private final int mySlotIndex;
     // 实际玩家数量
     private final int playerCount;
 
@@ -94,8 +94,10 @@ public class CoopGameState extends BaseUIState {
     private boolean isPaused = false;
     private Table pauseOverlay;
 
-    // 玩家名字列表
+    // 玩家名字列表（按槽位索引 0-3，空字符串表示该槽位无人）
     private final List<String> playerNames;
+    // 玩家颜色列表（按槽位索引 0-3，-1表示该槽位无人）
+    private final List<Integer> playerColors;
 
     // 触屏输入处理器
     private TouchInputProcessor touchInput;
@@ -108,9 +110,10 @@ public class CoopGameState extends BaseUIState {
         this.downKeyPressTime = new float[4];
         this.lastSoftDropTime = new float[4];
         this.playerNameLabels = new Label[4];
-        this.myPlayerIndex = gameStateManager.getPlayerIndex();
+        this.mySlotIndex = gameStateManager.getPlayerIndex();
         this.playerCount = gameStateManager.getPlayerCount();
         this.playerNames = gameStateManager.getPlayerNames();
+        this.playerColors = gameStateManager.getPlayerColors();
     }
 
     @Override
@@ -162,16 +165,26 @@ public class CoopGameState extends BaseUIState {
      * 创建出口上方的玩家名字标签
      */
     private void createPlayerNameLabels() {
-        for (int i = 0; i < playerCount && i < 4; i++) {
-            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
-            String playerName = (playerNames != null && i < playerNames.size())
+        // 遍历所有4个槽位，显示有玩家的出口
+        for (int i = 0; i < 4; i++) {
+            String playerName = (playerNames != null && i < playerNames.size() && !playerNames.get(i).isEmpty())
                 ? playerNames.get(i)
-                : "P" + (i + 1);
+                : null;
 
-            Label.LabelStyle nameStyle = new Label.LabelStyle(playerNameFont, PLAYER_COLORS[assignedPlayerIndex]);
-            playerNameLabels[i] = new Label(playerName, nameStyle);
-            playerNameLabels[i].setAlignment(Align.center);
-            stage.addActor(playerNameLabels[i]);
+            if (playerName != null) {
+                // 使用玩家选择的颜色
+                int colorIndex = (playerColors != null && i < playerColors.size())
+                    ? playerColors.get(i)
+                    : i; // 默认使用槽位索引作为颜色
+                if (colorIndex < 0 || colorIndex >= 4) {
+                    colorIndex = i;
+                }
+                Color playerColor = PLAYER_COLORS[colorIndex];
+                Label.LabelStyle nameStyle = new Label.LabelStyle(playerNameFont, playerColor);
+                playerNameLabels[i] = new Label(playerName, nameStyle);
+                playerNameLabels[i].setAlignment(Align.center);
+                stage.addActor(playerNameLabels[i]);
+            }
         }
     }
 
@@ -187,10 +200,11 @@ public class CoopGameState extends BaseUIState {
         float actualBoardX = boardPos.x + (boardArea.getWidth() - boardWidth) / 2;
         float actualBoardY = boardPos.y + (boardArea.getHeight() - boardHeight) / 2;
 
-        for (int i = 0; i < playerCount && i < 4; i++) {
+        // 遍历所有4个槽位，更新有玩家名字的标签
+        for (int i = 0; i < 4; i++) {
             if (playerNameLabels[i] != null) {
-                int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
-                int exitX = CoopGameLogic.EXIT_POSITIONS[assignedPlayerIndex];
+                // 使用槽位索引获取出口位置
+                int exitX = CoopGameLogic.EXIT_POSITIONS[i];
                 float exitCenterX = actualBoardX + exitX * cellSize + (3 * cellSize) / 2;
                 float exitTopY = actualBoardY + CoopGameLogic.BOARD_HEIGHT * cellSize + 20;
 
@@ -237,16 +251,16 @@ public class CoopGameState extends BaseUIState {
         panel.add(gameTitle).fillX().padBottom(h(25f)).row();
 
         // 分数面板 - 使用当前玩家的颜色
-        Color myPlayerColor = getMyPlayerColor();
-        panel.add(createStatPanel(lang().get("score.title"), "0", myPlayerColor)).fillX().padBottom(h(15f)).row();
+        Color mySlotColor = getMyPlayerColor();
+        panel.add(createStatPanel(lang().get("score.title"), "0", mySlotColor)).fillX().padBottom(h(15f)).row();
 
         // 等级面板 - 使用当前玩家颜色的变体
-        Color myPlayerColorVariant = myPlayerColor.cpy().lerp(COLOR_SECONDARY, 0.3f);
-        panel.add(createStatPanel(lang().get("level.title"), "1", myPlayerColorVariant)).fillX().padBottom(h(15f)).row();
+        Color mySlotColorVariant = mySlotColor.cpy().lerp(COLOR_SECONDARY, 0.3f);
+        panel.add(createStatPanel(lang().get("level.title"), "1", mySlotColorVariant)).fillX().padBottom(h(15f)).row();
 
         // 行数面板 - 使用当前玩家颜色的另一个变体
-        Color myPlayerColorVariant2 = myPlayerColor.cpy().lerp(COLOR_SUCCESS, 0.3f);
-        panel.add(createStatPanel(lang().get("lines.title"), "0", myPlayerColorVariant2)).fillX().padBottom(h(25f)).row();
+        Color mySlotColorVariant2 = mySlotColor.cpy().lerp(COLOR_SUCCESS, 0.3f);
+        panel.add(createStatPanel(lang().get("lines.title"), "0", mySlotColorVariant2)).fillX().padBottom(h(25f)).row();
 
         // 玩家颜色说明 - 显示所有玩家及其名字
         Table colorLegendPanel = createColorLegendPanelWithNames();
@@ -259,14 +273,32 @@ public class CoopGameState extends BaseUIState {
      * 获取当前玩家的颜色
      */
     private Color getMyPlayerColor() {
-        // 找到当前玩家在游戏中的位置索引
-        for (int i = 0; i < playerCount && i < 4; i++) {
-            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
-            if (assignedPlayerIndex == myPlayerIndex) {
-                return PLAYER_COLORS[assignedPlayerIndex];
+        if (mySlotIndex >= 0 && mySlotIndex < 4) {
+            int colorIndex = (playerColors != null && mySlotIndex < playerColors.size())
+                ? playerColors.get(mySlotIndex)
+                : mySlotIndex;
+            if (colorIndex < 0 || colorIndex >= 4) {
+                colorIndex = mySlotIndex;
             }
+            return PLAYER_COLORS[colorIndex];
         }
         return COLOR_PRIMARY; // 默认颜色
+    }
+
+    /**
+     * 获取指定槽位玩家的颜色
+     */
+    private Color getPlayerColor(int slotIndex) {
+        if (slotIndex >= 0 && slotIndex < 4) {
+            int colorIndex = (playerColors != null && slotIndex < playerColors.size())
+                ? playerColors.get(slotIndex)
+                : slotIndex;
+            if (colorIndex < 0 || colorIndex >= 4) {
+                colorIndex = slotIndex;
+            }
+            return PLAYER_COLORS[colorIndex];
+        }
+        return COLOR_PRIMARY;
     }
 
     private Table createStatPanel(String title, String initialValue, Color accentColor) {
@@ -309,22 +341,26 @@ public class CoopGameState extends BaseUIState {
         legendTitle.setAlignment(Align.center);
         panel.add(legendTitle).fillX().padBottom(h(10f)).row();
 
-        // 显示实际玩家及其名字（按照分配顺序）
-        for (int i = 0; i < playerCount && i < 4; i++) {
-            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
-            String playerName = (playerNames != null && i < playerNames.size())
-                ? playerNames.get(i)
-                : "P" + (i + 1);
+        // 显示所有槽位中有玩家的（按照槽位索引 0-3）
+        for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
+            String playerName = (playerNames != null && slotIndex < playerNames.size() && !playerNames.get(slotIndex).isEmpty())
+                ? playerNames.get(slotIndex)
+                : null;
+
+            if (playerName == null) continue;
 
             Table row = new Table();
 
+            // 获取玩家选择的颜色
+            Color slotColor = getPlayerColor(slotIndex);
+
             // 颜色方块
             Table colorBlock = new Table();
-            colorBlock.setBackground(createColoredBackground(PLAYER_COLORS[assignedPlayerIndex]));
+            colorBlock.setBackground(createColoredBackground(slotColor));
             row.add(colorBlock).size(w(16f), h(16f)).padRight(w(8f));
 
             // 玩家名字（使用对应的颜色）
-            Label.LabelStyle nameStyle = new Label.LabelStyle(smallFont, PLAYER_COLORS[assignedPlayerIndex]);
+            Label.LabelStyle nameStyle = new Label.LabelStyle(smallFont, slotColor);
             Label nameLabel = new Label(playerName, nameStyle);
             row.add(nameLabel).left();
 
@@ -450,7 +486,7 @@ public class CoopGameState extends BaseUIState {
 
     private void handleInput(float delta) {
         // 只控制自己的物块
-        if (myPlayerIndex < 0 || myPlayerIndex >= 4) return;
+        if (mySlotIndex < 0 || mySlotIndex >= 4) return;
 
         // 处理键盘输入
         boolean keyboardInputHandled = false;
@@ -473,24 +509,24 @@ public class CoopGameState extends BaseUIState {
         // 键盘软降（带延迟）
         boolean keyboardSoftDrop = isInputPressed(TetrisSettings.downKey(), TetrisSettings.downKey2());
         if (keyboardSoftDrop) {
-            if (!isDownKeyPressed[myPlayerIndex]) {
+            if (!isDownKeyPressed[mySlotIndex]) {
                 gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
-                isDownKeyPressed[myPlayerIndex] = true;
-                downKeyPressTime[myPlayerIndex] = 0;
-                lastSoftDropTime[myPlayerIndex] = 0;
+                isDownKeyPressed[mySlotIndex] = true;
+                downKeyPressTime[mySlotIndex] = 0;
+                lastSoftDropTime[mySlotIndex] = 0;
             } else {
-                downKeyPressTime[myPlayerIndex] += delta;
-                if (downKeyPressTime[myPlayerIndex] >= INITIAL_DELAY) {
-                    lastSoftDropTime[myPlayerIndex] += delta;
-                    if (lastSoftDropTime[myPlayerIndex] >= SOFT_DROP_INTERVAL) {
+                downKeyPressTime[mySlotIndex] += delta;
+                if (downKeyPressTime[mySlotIndex] >= INITIAL_DELAY) {
+                    lastSoftDropTime[mySlotIndex] += delta;
+                    if (lastSoftDropTime[mySlotIndex] >= SOFT_DROP_INTERVAL) {
                         gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
-                        lastSoftDropTime[myPlayerIndex] = 0;
+                        lastSoftDropTime[mySlotIndex] = 0;
                     }
                 }
             }
             keyboardInputHandled = true;
         } else {
-            isDownKeyPressed[myPlayerIndex] = false;
+            isDownKeyPressed[mySlotIndex] = false;
         }
 
         // 处理触屏输入（如果键盘没有输入）
@@ -519,11 +555,11 @@ public class CoopGameState extends BaseUIState {
                 break;
             case SOFT_DROP:
                 // 软降首次触发，初始化状态
-                if (!isDownKeyPressed[myPlayerIndex]) {
+                if (!isDownKeyPressed[mySlotIndex]) {
                     gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
-                    isDownKeyPressed[myPlayerIndex] = true;
-                    downKeyPressTime[myPlayerIndex] = 0;
-                    lastSoftDropTime[myPlayerIndex] = 0;
+                    isDownKeyPressed[mySlotIndex] = true;
+                    downKeyPressTime[mySlotIndex] = 0;
+                    lastSoftDropTime[mySlotIndex] = 0;
                 }
                 break;
             default:
@@ -533,19 +569,19 @@ public class CoopGameState extends BaseUIState {
         // 处理触屏软降的持续下降（长按下半部分）
         if (touchInput.isSoftDropping()) {
             // 首次触发已经在上面处理了，这里只处理后续的持续下降
-            if (isDownKeyPressed[myPlayerIndex]) {
-                downKeyPressTime[myPlayerIndex] += delta;
-                if (downKeyPressTime[myPlayerIndex] >= INITIAL_DELAY) {
-                    lastSoftDropTime[myPlayerIndex] += delta;
-                    if (lastSoftDropTime[myPlayerIndex] >= SOFT_DROP_INTERVAL) {
+            if (isDownKeyPressed[mySlotIndex]) {
+                downKeyPressTime[mySlotIndex] += delta;
+                if (downKeyPressTime[mySlotIndex] >= INITIAL_DELAY) {
+                    lastSoftDropTime[mySlotIndex] += delta;
+                    if (lastSoftDropTime[mySlotIndex] >= SOFT_DROP_INTERVAL) {
                         gameStateManager.handleInput(MoveMessage.MoveType.DOWN);
-                        lastSoftDropTime[myPlayerIndex] = 0;
+                        lastSoftDropTime[mySlotIndex] = 0;
                     }
                 }
             }
         } else if (!isInputPressed(TetrisSettings.downKey(), TetrisSettings.downKey2())) {
             // 如果键盘也没有按下，则重置软降状态
-            isDownKeyPressed[myPlayerIndex] = false;
+            isDownKeyPressed[mySlotIndex] = false;
         }
     }
 
@@ -660,15 +696,20 @@ public class CoopGameState extends BaseUIState {
                 CoopGameLogic.BOARD_WIDTH * cellSize, 1);
         }
 
-        // 绘制出口标记（根据实际分配的玩家索引）
-        // 布局: [P1:0-2] [分隔:3] [P2:4-6] [分隔:7] [P3:8-10] [分隔:11] [P4:12-14]
-        for (int i = 0; i < playerCount && i < 4; i++) {
-            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
-            int exitX = CoopGameLogic.EXIT_POSITIONS[assignedPlayerIndex];
-            shapeRenderer.setColor(PLAYER_COLORS[assignedPlayerIndex]);
-            // 每个出口3格宽
-            shapeRenderer.rect(boardX + exitX * cellSize - 2, boardY + CoopGameLogic.BOARD_HEIGHT * cellSize,
-                3 * cellSize + 4, 6);
+        // 绘制出口标记（根据槽位索引 0-3）
+        // 布局: [槽位0:0-2] [分隔:3] [槽位1:4-6] [分隔:7] [槽位2:8-10] [分隔:11] [槽位3:12-14]
+        for (int i = 0; i < 4; i++) {
+            // 检查该槽位是否有玩家
+            if (playerNames != null && i < playerNames.size() && !playerNames.get(i).isEmpty()) {
+                int exitX = CoopGameLogic.EXIT_POSITIONS[i];
+                // 使用玩家选择的颜色
+                int colorIndex = coopGameLogic.getSlotColor(i);
+                Color playerColor = PLAYER_COLORS[colorIndex];
+                shapeRenderer.setColor(playerColor);
+                // 每个出口3格宽
+                shapeRenderer.rect(boardX + exitX * cellSize - 2, boardY + CoopGameLogic.BOARD_HEIGHT * cellSize,
+                    3 * cellSize + 4, 6);
+            }
         }
 
         // 绘制分隔区域标记
@@ -686,9 +727,9 @@ public class CoopGameState extends BaseUIState {
                 int cell = board[y][x];
                 if (cell != 0) {
                     float screenY = boardY + (CoopGameLogic.BOARD_HEIGHT - 1 - y) * cellSize;
-                    int playerColorIndex = coopGameLogic.getCellColor(x, y);
-                    Color cellColor = (playerColorIndex >= 0 && playerColorIndex < 4)
-                        ? PLAYER_COLORS[playerColorIndex]
+                    int colorIndex = coopGameLogic.getCellColor(x, y);
+                    Color cellColor = (colorIndex >= 0 && colorIndex < 4)
+                        ? PLAYER_COLORS[colorIndex]
                         : Color.GRAY;
 
                     shapeRenderer.setColor(cellColor);
@@ -703,30 +744,33 @@ public class CoopGameState extends BaseUIState {
             }
         }
 
-        // 绘制每个玩家的当前物块（只绘制实际玩家数量）
-        for (int i = 0; i < playerCount && i < 4; i++) {
-            int assignedPlayerIndex = CoopGameLogic.PLAYER_ASSIGNMENT_ORDER[i];
-            CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(assignedPlayerIndex);
-            if (piece.isActive()) {
-                int[][] pieceShape = coopGameLogic.getPieceShape(piece.getPieceType(), piece.getRotation());
-                Color pieceColor = PLAYER_COLORS[assignedPlayerIndex];
+        // 绘制每个槽位的当前物块（遍历所有4个槽位）
+        for (int slotIndex = 0; slotIndex < 4; slotIndex++) {
+            if (coopGameLogic.isSlotActive(slotIndex)) {
+                CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(slotIndex);
+                if (piece.isActive()) {
+                    int[][] pieceShape = coopGameLogic.getPieceShape(piece.getPieceType(), piece.getRotation());
+                    // 使用玩家选择的颜色
+                    int colorIndex = coopGameLogic.getSlotColor(slotIndex);
+                    Color pieceColor = PLAYER_COLORS[colorIndex];
 
-                for (int y = 0; y < pieceShape.length; y++) {
-                    for (int x = 0; x < pieceShape[y].length; x++) {
-                        if (pieceShape[y][x] != 0) {
-                            int boardXPos = piece.getX() + x;
-                            int boardYPos = piece.getY() + y;
-                            if (boardXPos >= 0 && boardXPos < CoopGameLogic.BOARD_WIDTH
-                                && boardYPos >= 0 && boardYPos < CoopGameLogic.BOARD_HEIGHT) {
-                                float screenY = boardY + (CoopGameLogic.BOARD_HEIGHT - 1 - boardYPos) * cellSize;
-                                shapeRenderer.setColor(pieceColor);
-                                shapeRenderer.rect(boardX + boardXPos * cellSize + 1, screenY + 1,
-                                    cellSize - 2, cellSize - 2);
+                    for (int y = 0; y < pieceShape.length; y++) {
+                        for (int x = 0; x < pieceShape[y].length; x++) {
+                            if (pieceShape[y][x] != 0) {
+                                int boardXPos = piece.getX() + x;
+                                int boardYPos = piece.getY() + y;
+                                if (boardXPos >= 0 && boardXPos < CoopGameLogic.BOARD_WIDTH
+                                    && boardYPos >= 0 && boardYPos < CoopGameLogic.BOARD_HEIGHT) {
+                                    float screenY = boardY + (CoopGameLogic.BOARD_HEIGHT - 1 - boardYPos) * cellSize;
+                                    shapeRenderer.setColor(pieceColor);
+                                    shapeRenderer.rect(boardX + boardXPos * cellSize + 1, screenY + 1,
+                                        cellSize - 2, cellSize - 2);
 
-                                // 高光效果
-                                shapeRenderer.setColor(pieceColor.cpy().add(0.2f, 0.2f, 0.2f, 0));
-                                shapeRenderer.rect(boardX + boardXPos * cellSize + 1,
-                                    screenY + cellSize - 4, cellSize - 2, 3);
+                                    // 高光效果
+                                    shapeRenderer.setColor(pieceColor.cpy().add(0.2f, 0.2f, 0.2f, 0));
+                                    shapeRenderer.rect(boardX + boardXPos * cellSize + 1,
+                                        screenY + cellSize - 4, cellSize - 2, 3);
+                                }
                             }
                         }
                     }

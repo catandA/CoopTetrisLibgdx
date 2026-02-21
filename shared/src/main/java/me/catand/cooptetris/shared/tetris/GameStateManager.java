@@ -141,10 +141,13 @@ public class GameStateManager {
         if (playerPieces != null) {
             for (int i = 0; i < playerPieces.length && i < CoopGameLogic.MAX_PLAYERS; i++) {
                 CoopGameStateMessage.PlayerPieceState pieceState = playerPieces[i];
-                // 使用消息中的玩家索引来获取正确的物块
-                int playerIndex = pieceState.getPlayerIndex();
-                if (playerIndex >= 0 && playerIndex < CoopGameLogic.MAX_PLAYERS) {
-                    CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(playerIndex);
+                // 使用消息中的槽位索引来获取正确的物块
+                int slotIndex = pieceState.getSlotIndex();
+                if (slotIndex >= 0 && slotIndex < CoopGameLogic.MAX_PLAYERS) {
+                    // 激活该槽位（如果尚未激活）
+                    coopGameLogic.getSlotActive()[slotIndex] = true;
+                    // 更新物块状态
+                    CoopGameLogic.PlayerPiece piece = coopGameLogic.getPlayerPiece(slotIndex);
                     piece.setPieceType(pieceState.getPieceType());
                     piece.setX(pieceState.getX());
                     piece.setY(pieceState.getY());

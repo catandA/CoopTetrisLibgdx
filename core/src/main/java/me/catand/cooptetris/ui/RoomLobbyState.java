@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
@@ -11,8 +12,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.Array;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,12 +22,15 @@ import me.catand.cooptetris.Main;
 import me.catand.cooptetris.network.NetworkManager;
 import me.catand.cooptetris.shared.message.CountdownMessage;
 import me.catand.cooptetris.shared.message.NotificationMessage;
+import me.catand.cooptetris.shared.message.PlayerSlotMessage;
 import me.catand.cooptetris.shared.message.RoomMessage;
+import me.catand.cooptetris.shared.tetris.CoopGameLogic;
 import me.catand.cooptetris.shared.tetris.GameMode;
 import me.catand.cooptetris.util.LanguageManager;
 
 /**
  * 房间大厅状态 - 现代化暗色游戏UI风格
+ * 简化设计：颜色直接绑定到槽位，0=蓝, 1=红, 2=绿, 3=黄
  */
 public class RoomLobbyState extends BaseUIState implements NetworkManager.NetworkListener {
     private Table mainTable;
@@ -41,7 +45,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private TextButton leaveRoomButton;
     private BitmapFont titleFont;
     private BitmapFont smallFont;
-    private final List<String> playerNames;
     private final List<String> chatMessages;
     private String roomName;
     private int maxPlayers;
@@ -56,6 +59,10 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private GameMode currentGameMode;
     private final NetworkManager.ConnectionType connectionType;
 
+    // 玩家槽位数据
+    private List<PlayerSlotMessage.SlotInfo> playerSlots;
+    private int mySlotIndex;
+
     // UI颜色配置
     private static final Color COLOR_PANEL = new Color(0.12f, 0.14f, 0.17f, 0.95f);
     private static final Color COLOR_PANEL_HIGHLIGHT = new Color(0.15f, 0.17f, 0.21f, 0.95f);
@@ -65,6 +72,25 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private static final Color COLOR_WARNING = new Color(1f, 0.7f, 0.2f, 1f);
     private static final Color COLOR_TEXT = new Color(0.9f, 0.9f, 0.9f, 1f);
     private static final Color TEXT_MUTED = new Color(0.5f, 0.52f, 0.55f, 1f);
+    private static final Color COLOR_LOCKED = new Color(0.3f, 0.3f, 0.3f, 1f);
+    private static final Color COLOR_GRAYED_OUT = new Color(0.4f, 0.4f, 0.4f, 1f);
+
+    // 玩家可选择的颜色：蓝、红、绿、黄
+    private static final Color[] PLAYER_COLORS = {
+        new Color(0.2f, 0.5f, 1.0f, 1.0f),    // 0 - 蓝色
+        new Color(1.0f, 0.2f, 0.2f, 1.0f),    // 1 - 红色
+        new Color(0.2f, 0.8f, 0.2f, 1.0f),    // 2 - 绿色
+        new Color(1.0f, 0.9f, 0.2f, 1.0f),    // 3 - 黄色
+    };
+
+    private String[] getPositionNames() {
+        return new String[]{
+            lang().get("slot.position.p1"),
+            lang().get("slot.position.p2"),
+            lang().get("slot.position.p3"),
+            lang().get("slot.position.p4")
+        };
+    }
 
     public RoomLobbyState(UIManager uiManager, NetworkManager networkManager) {
         this(uiManager, networkManager, false);
@@ -73,7 +99,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     public RoomLobbyState(UIManager uiManager, NetworkManager networkManager, boolean isLocalServerMode) {
         super(uiManager);
         this.networkManager = networkManager;
-        this.playerNames = new ArrayList<>();
         this.chatMessages = new ArrayList<>();
         this.roomName = lang().get("unknown.room");
         this.maxPlayers = 4;
@@ -82,6 +107,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         this.isCountingDown = false;
         this.currentGameMode = GameMode.COOP;
         this.connectionType = isLocalServerMode ? NetworkManager.ConnectionType.LOCAL_SERVER : NetworkManager.ConnectionType.EXTERNAL_SERVER;
+        this.playerSlots = new ArrayList<>();
+        this.mySlotIndex = -1;
     }
 
     private LanguageManager lang() {
@@ -105,25 +132,47 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     }
 
     public void updatePlayerList(List<String> players) {
-        this.playerNames.clear();
-        if (players != null) {
-            this.playerNames.addAll(players);
-        }
-        if (playerListTable != null) {
-            updatePlayerListUI();
-        }
         if (playerCountLabel != null) {
             updatePlayerCountLabel();
         }
     }
 
     private void updatePlayerCountLabel() {
-        playerCountLabel.setText(playerNames.size() + "/" + maxPlayers + " " + lang().get("players.label"));
+        int actualCount = 0;
+        int displayCount = 0;
+        for (PlayerSlotMessage.SlotInfo slot : playerSlots) {
+            if (!slot.getPlayerName().isEmpty()) {
+                actualCount++;
+            }
+            if (!slot.getPlayerName().isEmpty() || slot.isLocked()) {
+                displayCount++;
+            }
+        }
+        playerCountLabel.setText(displayCount + "/" + maxPlayers + " " + lang().get("players.label"));
+    }
+
+    public void updatePlayerSlots(List<PlayerSlotMessage.SlotInfo> slots, int mySlotIndex, boolean isHost) {
+        this.playerSlots = slots != null ? new ArrayList<>(slots) : new ArrayList<>();
+        this.mySlotIndex = mySlotIndex;
+        this.isHost = isHost;
+
+        if (playerListTable != null) {
+            updatePlayerListUI();
+        }
+        if (playerCountLabel != null) {
+            updatePlayerCountLabel();
+        }
+        if (startGameButton != null) {
+            startGameButton.setDisabled(!isHost);
+            startGameButton.setColor(isHost ? COLOR_SUCCESS : TEXT_MUTED);
+        }
+        if (gameModeSelectBox != null) {
+            gameModeSelectBox.setDisabled(!isHost);
+        }
     }
 
     @Override
     protected void createUI() {
-        // 创建字体
         titleFont = Main.platform.getFont(fontSize(28), lang().get("room.lobby"), false, false);
         smallFont = Main.platform.getFont(fontSize(14), "Players", false, false);
 
@@ -132,13 +181,11 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         mainTable.center();
         mainTable.pad(h(30f));
 
-        // 创建主面板
         Table contentPanel = createMainPanel();
 
         mainTable.add(contentPanel).expand().center();
         stage.addActor(mainTable);
 
-        // 注册网络监听器
         if (networkManager != null) {
             networkManager.addListener(this);
             RoomMessage statusMessage = new RoomMessage(RoomMessage.RoomAction.STATUS);
@@ -151,24 +198,19 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         panel.setBackground(createPanelBackground(COLOR_PANEL));
         panel.pad(w(30f));
 
-        // 标题区域
         Table headerTable = createHeader();
         panel.add(headerTable).fillX().padBottom(h(20f)).row();
 
-        // 中间内容区域（玩家列表 + 聊天）
         Table contentArea = new Table();
 
-        // 左侧：玩家列表
         Table leftPanel = createPlayerListPanel();
-        contentArea.add(leftPanel).width(w(280f)).fillY().padRight(w(20f));
+        contentArea.add(leftPanel).width(w(420f)).fillY().padRight(w(20f));
 
-        // 右侧：聊天区域
         Table rightPanel = createChatPanel();
-        contentArea.add(rightPanel).width(w(380f)).fillY();
+        contentArea.add(rightPanel).width(w(280f)).fillY();
 
         panel.add(contentArea).fill().expand().padBottom(h(20f)).row();
 
-        // 底部按钮区域
         Table buttonArea = createButtonArea();
         panel.add(buttonArea).fillX();
 
@@ -178,21 +220,17 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private Table createHeader() {
         Table header = new Table();
 
-        // 房间标题
         Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, COLOR_PRIMARY);
         roomNameLabel = new Label(roomName, titleStyle);
         roomNameLabel.setAlignment(Align.left);
 
-        // 状态标签
         statusLabel = FontUtils.createLabel(lang().get("waiting.players"), skin, fontSize(16), COLOR_WARNING);
         statusLabel.setAlignment(Align.right);
 
-        // 玩家数量
         String playerCountText = "0/" + maxPlayers + " " + lang().get("players.label");
         playerCountLabel = FontUtils.createLabel(playerCountText, skin, fontSize(16), TEXT_MUTED);
         playerCountLabel.setAlignment(Align.right);
 
-        // 游戏模式选择
         Table modeTable = new Table();
         gameModeLabel = FontUtils.createLabel(lang().get("game.mode.label"), skin, fontSize(16), TEXT_MUTED);
 
@@ -218,7 +256,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         modeTable.add(gameModeLabel).padRight(w(10f));
         modeTable.add(gameModeSelectBox).width(w(120f));
 
-        // 组装头部
         header.add(roomNameLabel).left().expandX();
         header.add(modeTable).padRight(w(20f));
         header.add(playerCountLabel).width(w(120f)).row();
@@ -232,12 +269,22 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         panel.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
         panel.pad(w(15f));
 
-        // 标题 - 使用动态字体
         String playersTitle = lang().get("players.title");
         Label sectionTitle = FontUtils.createLabel(playersTitle, skin, fontSize(14), COLOR_SECONDARY);
-        panel.add(sectionTitle).left().padBottom(h(15f)).row();
+        panel.add(sectionTitle).left().padBottom(h(10f)).row();
 
-        // 玩家列表
+        // 表头
+        Table headerTable = new Table();
+        Label nameHeader = FontUtils.createLabel(lang().get("slot.header.player"), skin, fontSize(12), TEXT_MUTED);
+        Label colorHeader = FontUtils.createLabel(lang().get("slot.header.color"), skin, fontSize(12), TEXT_MUTED);
+        Label posHeader = FontUtils.createLabel(lang().get("slot.header.position"), skin, fontSize(12), TEXT_MUTED);
+
+        headerTable.add(nameHeader).width(w(150f)).left().padRight(w(10f));
+        headerTable.add(colorHeader).width(w(100f)).left().padRight(w(10f));
+        headerTable.add(posHeader).width(w(120f)).left();
+
+        panel.add(headerTable).fillX().padBottom(h(5f)).row();
+
         playerListTable = new Table();
         playerListTable.top().left();
 
@@ -252,17 +299,321 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         return panel;
     }
 
+    private void updatePlayerListUI() {
+        playerListTable.clear();
+
+        while (playerSlots.size() < 4) {
+            playerSlots.add(new PlayerSlotMessage.SlotInfo(
+                playerSlots.size(), "", "", -1, false, true
+            ));
+        }
+
+        for (int i = 0; i < 4; i++) {
+            PlayerSlotMessage.SlotInfo slot = playerSlots.get(i);
+            Table slotRow = createSlotRow(slot, i);
+            playerListTable.add(slotRow).fillX().padBottom(h(6f)).row();
+        }
+    }
+
+    private Table createSlotRow(PlayerSlotMessage.SlotInfo slot, int index) {
+        Table row = new Table();
+        boolean isLocked = slot.isLocked();
+        boolean hasPlayer = !slot.getPlayerName().isEmpty();
+        boolean isMySlot = (index == mySlotIndex);
+
+        // 背景色
+        if (isLocked) {
+            row.setBackground(createPanelBackground(COLOR_LOCKED));
+        } else if (hasPlayer) {
+            row.setBackground(createPanelBackground(COLOR_PANEL));
+        } else {
+            row.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
+        }
+
+        row.pad(w(6f));
+
+        // ========== 第一列：名字下拉菜单 ==========
+        SelectBox<String> nameSelectBox = createNameSelectBox(slot, index);
+        row.add(nameSelectBox).width(w(150f)).height(h(32f)).padRight(w(10f));
+
+        // ========== 第二列：颜色选择下拉菜单 ==========
+        SelectBox<String> colorSelectBox = createColorSelectBox(slot, index);
+        boolean canChangeColor = !isLocked && hasPlayer && (isHost || isMySlot);
+        colorSelectBox.setDisabled(!canChangeColor);
+        if (!canChangeColor) {
+            colorSelectBox.setColor(COLOR_GRAYED_OUT);
+        }
+        row.add(colorSelectBox).width(w(100f)).height(h(32f)).padRight(w(10f));
+
+        // ========== 第三列：位置下拉菜单 ==========
+        SelectBox<String> positionSelectBox = createPositionSelectBox(slot, index);
+        boolean canChangePosition = !isLocked && hasPlayer && (isHost || isMySlot);
+        positionSelectBox.setDisabled(!canChangePosition);
+        if (!canChangePosition) {
+            positionSelectBox.setColor(COLOR_GRAYED_OUT);
+        }
+        row.add(positionSelectBox).width(w(120f)).height(h(32f));
+
+        return row;
+    }
+
+    /**
+     * 创建SelectBox样式
+     */
+    private SelectBox.SelectBoxStyle createSelectBoxStyle() {
+        SelectBox.SelectBoxStyle style = new SelectBox.SelectBoxStyle(skin.get(SelectBox.SelectBoxStyle.class));
+        style.font = smallFont;
+        style.listStyle.font = smallFont;
+        return style;
+    }
+
+    private SelectBox<String> createColorSelectBox(PlayerSlotMessage.SlotInfo slot, int index) {
+        // 颜色选项
+        String[] colorNames = {
+            lang().get("color.blue"),
+            lang().get("color.red"),
+            lang().get("color.green"),
+            lang().get("color.yellow")
+        };
+
+        SelectBox<String> selectBox = new SelectBox<>(createSelectBoxStyle());
+        selectBox.setItems(colorNames);
+
+        // 设置当前选中的颜色
+        int colorIndex = slot.getColorIndex();
+        if (colorIndex < 0 || colorIndex >= 4) {
+            colorIndex = index; // 默认使用槽位索引作为颜色
+        }
+        selectBox.setSelectedIndex(colorIndex);
+
+        // 设置选中项的颜色
+        selectBox.getStyle().fontColor = PLAYER_COLORS[colorIndex];
+
+        // 添加监听器
+        final int slotIdx = index;
+        selectBox.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                int newColorIndex = selectBox.getSelectedIndex();
+                // 发送颜色更改请求到服务器
+                if (networkManager != null) {
+                    networkManager.requestColorChange(slotIdx, newColorIndex);
+                }
+                // 更新选中项的颜色
+                selectBox.getStyle().fontColor = PLAYER_COLORS[newColorIndex];
+            }
+        });
+
+        return selectBox;
+    }
+
+    private SelectBox<String> createNameSelectBox(PlayerSlotMessage.SlotInfo slot, int index) {
+        List<String> options = new ArrayList<>();
+        boolean isLocked = slot.isLocked();
+        boolean hasPlayer = !slot.getPlayerName().isEmpty();
+        boolean isMySlot = (index == mySlotIndex);
+
+        // 构建显示文本
+        String displayText;
+        if (isLocked) {
+            displayText = lang().get("slot.status.locked");
+        } else if (hasPlayer) {
+            displayText = slot.getPlayerName();
+            if (isMySlot) {
+                displayText += " " + lang().get("you.suffix");
+            }
+        } else {
+            displayText = lang().get("slot.status.empty");
+        }
+
+        // 添加选项
+        if (isHost) {
+            // 房主选项
+            if (isLocked) {
+                options.add(displayText);
+                options.add(lang().get("slot.action.unlock"));
+            } else if (hasPlayer) {
+                options.add(displayText);
+                if (!isMySlot) {
+                    options.add(lang().get("slot.action.kick"));
+                    options.add(lang().get("slot.action.lock"));
+                }
+            } else {
+                // 空槽位
+                if (mySlotIndex >= 0 && mySlotIndex != index) {
+                    // 房主也可以移动到其他空槽位
+                    options.add(lang().get("slot.status.empty.move"));
+                    options.add(lang().get("slot.action.move.here"));
+                } else {
+                    options.add(displayText);
+                }
+                options.add(lang().get("slot.action.lock.slot"));
+            }
+        } else {
+            // 非房主选项
+            if (isLocked) {
+                options.add(lang().get("slot.status.locked"));
+            } else if (hasPlayer) {
+                options.add(displayText);
+            } else {
+                // 空槽位，可以换位
+                if (mySlotIndex >= 0 && mySlotIndex != index) {
+                    options.add(lang().get("slot.status.empty.move"));
+                    options.add(lang().get("slot.action.move.here"));
+                } else {
+                    options.add(lang().get("slot.status.empty"));
+                }
+            }
+        }
+
+        String[] optionsArray = options.toArray(new String[0]);
+        SelectBox<String> selectBox = FontUtils.createSelectBox(skin, fontSize(14), COLOR_TEXT, optionsArray);
+        selectBox.setSelected(displayText);
+
+        // 设置颜色
+        if (isLocked) {
+            selectBox.setColor(TEXT_MUTED);
+        } else if (hasPlayer) {
+            selectBox.setColor(isMySlot ? COLOR_PRIMARY : COLOR_TEXT);
+        } else {
+            selectBox.setColor(TEXT_MUTED);
+        }
+
+        final int slotIndex = index;
+        selectBox.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                String selected = selectBox.getSelected();
+                handleNameSelection(slotIndex, selected);
+            }
+        });
+
+        return selectBox;
+    }
+
+    private void handleNameSelection(int slotIndex, String selected) {
+        PlayerSlotMessage.SlotInfo slot = playerSlots.get(slotIndex);
+        boolean isLocked = slot.isLocked();
+        boolean hasPlayer = !slot.getPlayerName().isEmpty();
+
+        if (isHost) {
+            if (lang().get("slot.action.unlock").equals(selected)) {
+                requestLockToggle(slotIndex);
+            } else if (lang().get("slot.action.kick").equals(selected)) {
+                requestKick(slotIndex);
+            } else if (lang().get("slot.action.lock").equals(selected) || lang().get("slot.action.lock.slot").equals(selected)) {
+                requestLockToggle(slotIndex);
+            } else if (lang().get("slot.action.move.here").equals(selected)) {
+                requestSlotChange(slotIndex);
+            }
+        } else {
+            if (lang().get("slot.action.move.here").equals(selected)) {
+                requestSlotChange(slotIndex);
+            }
+        }
+    }
+
+    private SelectBox<String> createPositionSelectBox(PlayerSlotMessage.SlotInfo slot, int index) {
+        List<String> options = new ArrayList<>();
+        boolean isLocked = slot.isLocked();
+        boolean hasPlayer = !slot.getPlayerName().isEmpty();
+        boolean isMySlot = (index == mySlotIndex);
+
+        // 构建位置选项
+        String[] positionNames = getPositionNames();
+        for (int i = 0; i < 4; i++) {
+            PlayerSlotMessage.SlotInfo targetSlot = playerSlots.get(i);
+            boolean targetHasPlayer = !targetSlot.getPlayerName().isEmpty();
+            boolean targetIsLocked = targetSlot.isLocked();
+
+            String prefix = (i == index) ? "● " : "○ ";
+            String option = prefix + positionNames[i];
+
+            if (i == index) {
+                // 当前位置
+                options.add(option);
+            } else if (targetIsLocked) {
+                // 锁定位置不能选择
+                if (isHost) {
+                    options.add(prefix + positionNames[i] + " " + lang().get("slot.status.locked"));
+                }
+            } else if (targetHasPlayer) {
+                // 有玩家的位置
+                if (isHost) {
+                    // 房主可以交换
+                    options.add(option + " (Swap with " + targetSlot.getPlayerName() + ")");
+                } else if (isMySlot) {
+                    // 非房主只能移动到空位
+                    // 不添加此选项
+                }
+            } else {
+                // 空位置
+                if (isHost || isMySlot) {
+                    options.add(option + " " + lang().get("slot.status.empty"));
+                }
+            }
+        }
+
+        if (options.isEmpty()) {
+            options.add("● " + positionNames[index]);
+        }
+
+        String[] optionsArray = options.toArray(new String[0]);
+        SelectBox<String> selectBox = FontUtils.createSelectBox(skin, fontSize(12), COLOR_TEXT, optionsArray);
+        selectBox.setSelected("● " + positionNames[index]);
+
+        final int slotIndex = index;
+        selectBox.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                String selected = selectBox.getSelected();
+                int newPosition = extractPositionIndex(selected);
+                if (newPosition >= 0 && newPosition != slotIndex) {
+                    requestSlotChange(newPosition);
+                }
+            }
+        });
+
+        return selectBox;
+    }
+
+    private int extractPositionIndex(String selected) {
+        String[] positionNames = getPositionNames();
+        for (int i = 0; i < positionNames.length; i++) {
+            if (selected.contains(positionNames[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void requestSlotChange(int targetSlotIndex) {
+        if (networkManager != null && networkManager.isConnected()) {
+            networkManager.requestSlotChange(targetSlotIndex);
+        }
+    }
+
+    private void requestLockToggle(int slotIndex) {
+        if (networkManager != null && networkManager.isConnected()) {
+            networkManager.requestLockToggle(slotIndex);
+        }
+    }
+
+    private void requestKick(int slotIndex) {
+        if (networkManager != null && networkManager.isConnected()) {
+            networkManager.requestKick(slotIndex);
+        }
+    }
+
     private Table createChatPanel() {
         Table panel = new Table();
         panel.setBackground(createPanelBackground(COLOR_PANEL_HIGHLIGHT));
         panel.pad(w(15f));
 
-        // 聊天标题 - 使用动态字体
         String chatTitleText = lang().get("chat.label");
         Label chatTitle = FontUtils.createLabel(chatTitleText, skin, fontSize(14), COLOR_PRIMARY);
         panel.add(chatTitle).left().padBottom(h(10f)).row();
 
-        // 聊天消息区域
         chatTable = new Table();
         chatTable.top().left();
 
@@ -272,10 +623,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
 
         panel.add(chatScrollPane).height(h(200f)).fillX().padBottom(h(10f)).row();
 
-        // 输入区域
         Table inputArea = new Table();
 
-        // 使用动态字体创建TextField，聊天输入需要支持中文
         chatInputField = FontUtils.createTextField(skin, fontSize(16), lang().get("type.message"), null);
         chatInputField.addListener(event -> {
             if (event instanceof InputEvent) {
@@ -336,48 +685,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         return buttonArea;
     }
 
-    private void updatePlayerListUI() {
-        playerListTable.clear();
-
-        if (playerNames.isEmpty()) {
-            Label emptyLabel = FontUtils.createLabel(lang().get("no.players"), skin, fontSize(16), TEXT_MUTED);
-            playerListTable.add(emptyLabel).left().padBottom(h(8f)).row();
-        } else {
-            for (int i = 0; i < playerNames.size(); i++) {
-                String playerName = playerNames.get(i);
-                boolean isPlayerHost = (i == 0);
-
-                Table playerRow = new Table();
-                playerRow.padBottom(h(8f));
-
-                // 玩家指示器（圆点）
-                String indicatorText = isPlayerHost ? "★" : "●";
-                Label indicator = FontUtils.createLabel(indicatorText, skin, fontSize(16), isPlayerHost ? COLOR_WARNING : COLOR_SUCCESS);
-                playerRow.add(indicator).width(w(20f)).left();
-
-                // 玩家名称
-                String nameText = playerName + (isPlayerHost ? " " + lang().get("host.suffix") : "");
-                Label nameLabel = FontUtils.createLabel(nameText, skin, fontSize(16), COLOR_TEXT);
-                playerRow.add(nameLabel).left().expandX();
-
-                // 踢出按钮（仅房主可见）
-                if (isHost && !isPlayerHost) {
-                    TextButton kickButton = FontUtils.createTextButton(lang().get("kick.button"), skin, fontSize(14), new Color(1f, 0.3f, 0.3f, 1f));
-                    final String targetPlayerName = playerName;
-                    kickButton.addListener(event -> {
-                        if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
-                            kickPlayer(targetPlayerName);
-                        }
-                        return true;
-                    });
-                    playerRow.add(kickButton).width(w(50f)).height(h(28f));
-                }
-
-                playerListTable.add(playerRow).fillX().row();
-            }
-        }
-    }
-
     private void initChatMessages() {
         if (chatTable != null) {
             chatTable.clear();
@@ -400,7 +707,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private void addChatMessageToUI(String message) {
         Label messageLabel = FontUtils.createLabel(message, skin, fontSize(14), COLOR_TEXT);
         messageLabel.setWrap(true);
-        chatTable.add(messageLabel).left().width(w(340f)).padBottom(h(4f)).row();
+        chatTable.add(messageLabel).left().width(w(240f)).padBottom(h(4f)).row();
     }
 
     public void addChatMessage(String message) {
@@ -415,22 +722,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         }
     }
 
-    // ==================== 按钮样式 ====================
-
-    private void stylePrimaryButton(TextButton button) {
-        button.setColor(COLOR_PRIMARY);
-    }
-
-    private void styleSuccessButton(TextButton button) {
-        button.setColor(COLOR_SUCCESS);
-    }
-
-    private void styleDangerButton(TextButton button) {
-        button.setColor(new Color(1f, 0.3f, 0.3f, 1f));
-    }
-
-    // ==================== 背景创建 ====================
-
     private com.badlogic.gdx.scenes.scene2d.utils.Drawable createPanelBackground(Color color) {
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(color);
@@ -440,16 +731,12 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         return new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(texture);
     }
 
-    // ==================== 功能方法 ====================
-
     private void startGame() {
-        // 只有房主才能开始游戏
         if (!isHost) {
             return;
         }
 
         if (networkManager != null && networkManager.isConnected()) {
-            // 发送开始游戏请求，服务器会广播倒计时
             networkManager.startGame();
         }
     }
@@ -458,23 +745,14 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         if (networkManager != null && networkManager.isConnected()) {
             networkManager.leaveRoom();
             if (connectionType == NetworkManager.ConnectionType.LOCAL_SERVER) {
-                // 本地服务器模式：断开连接并停止服务器，返回主菜单
                 networkManager.disconnect();
                 if (uiManager.getLocalServerManager() != null && uiManager.getLocalServerManager().isRunning()) {
                     uiManager.getLocalServerManager().stopServer();
                 }
-                // 使用setScreen返回主菜单，因为ServerConnectionState已经被替换
                 uiManager.setScreen(new MainMenuState(uiManager));
             } else {
-                // 外部服务器模式：返回房间列表
                 uiManager.popState();
             }
-        }
-    }
-
-    private void kickPlayer(String playerName) {
-        if (networkManager != null && networkManager.isConnected() && isHost) {
-            networkManager.kickPlayer(playerName);
         }
     }
 
@@ -515,8 +793,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         }
     }
 
-    // ==================== 生命周期方法 ====================
-
     @Override
     protected void clearUI() {
         if (networkManager != null) {
@@ -535,7 +811,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         }
 
         if (isCountingDown) {
-            // 倒计时由服务器同步，这里只更新UI显示
             if (startGameButton != null) {
                 startGameButton.setText(lang().get("starting.countdown").replace("%d", String.valueOf((int) countdownTimer)));
             }
@@ -545,7 +820,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             }
         } else {
             if (statusLabel != null) {
-                if (playerNames.isEmpty()) {
+                if (playerSlots.isEmpty() || getActualPlayerCount() == 0) {
                     statusLabel.setText(lang().get("waiting.players"));
                     statusLabel.setColor(COLOR_WARNING);
                     if (startGameButton != null) {
@@ -563,6 +838,16 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         }
     }
 
+    private int getActualPlayerCount() {
+        int count = 0;
+        for (PlayerSlotMessage.SlotInfo slot : playerSlots) {
+            if (!slot.getPlayerName().isEmpty()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     @Override
     public void dispose() {
         if (titleFont != null) {
@@ -574,8 +859,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             smallFont = null;
         }
     }
-
-    // ==================== 网络回调 ====================
 
     @Override
     public void onConnectResponse(boolean success, String message, String clientId) {}
@@ -604,16 +887,26 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     }
 
     @Override
+    public void onPlayerSlotUpdate(PlayerSlotMessage message) {
+        switch (message.getAction()) {
+            case UPDATE_SLOTS:
+                updatePlayerSlots(message.getSlots(), message.getMySlotIndex(), message.isHost());
+                break;
+            case SLOT_ASSIGNED:
+            case LOCK_CHANGED:
+                break;
+        }
+    }
+
+    @Override
     public void onCountdownUpdate(CountdownMessage message) {
         if (message.isStarting()) {
-            // 开始倒计时
             isCountingDown = true;
             countdownTimer = message.getCountdownSeconds();
             if (startGameButton != null) {
                 startGameButton.setDisabled(true);
             }
         } else {
-            // 倒计时结束
             isCountingDown = false;
             countdownTimer = 0;
         }
@@ -621,24 +914,19 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
 
     @Override
     public void onGameStart(me.catand.cooptetris.shared.message.GameStartMessage message) {
-        // 重置倒计时状态
         isCountingDown = false;
         countdownTimer = 0;
 
         if (uiManager != null && uiManager.gameStateManager != null) {
-            // 根据游戏模式启动不同的游戏
             if (message.getGameMode() == GameMode.COOP) {
-                // 合作模式
                 uiManager.gameStateManager.startCoopMode(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
                 CoopGameState coopGameState = new CoopGameState(uiManager, uiManager.gameStateManager);
                 uiManager.setScreen(coopGameState);
             } else if (message.getGameMode() == GameMode.PVP) {
-                // PVP模式
                 uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
                 PVPGameState pvpGameState = new PVPGameState(uiManager, uiManager.gameStateManager);
                 uiManager.setScreen(pvpGameState);
             } else {
-                // 单人模式（兼容旧版本）
                 uiManager.gameStateManager.startMultiplayer(message.getPlayerCount(), message.getYourIndex(), message.getSeed());
                 GameState gameState = new GameState(uiManager, uiManager.gameStateManager);
                 uiManager.setScreen(gameState);

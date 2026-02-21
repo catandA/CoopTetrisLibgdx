@@ -28,6 +28,9 @@ public class GameStateManager implements NetworkManager.NetworkListener {
     // 合作模式玩家名字列表
     @Getter
     private List<String> playerNames;
+    // 合作模式玩家颜色列表
+    @Getter
+    private List<Integer> playerColors;
     @Getter
     private GameStartMessage lastGameStartMessage;
 
@@ -123,6 +126,16 @@ public class GameStateManager implements NetworkManager.NetworkListener {
         } else {
             this.playerNames = new ArrayList<>();
         }
+        // 保存玩家颜色列表（按槽位索引）
+        if (message.getPlayerColors() != null) {
+            this.playerColors = new ArrayList<>(message.getPlayerColors());
+        } else {
+            // 如果没有颜色列表，默认使用槽位索引作为颜色
+            this.playerColors = new ArrayList<>();
+            for (int i = 0; i < 4; i++) {
+                this.playerColors.add(i);
+            }
+        }
         // 根据游戏模式启动不同的游戏
         if (message.getGameMode() == me.catand.cooptetris.shared.tetris.GameMode.COOP) {
             // 合作模式
@@ -156,6 +169,7 @@ public class GameStateManager implements NetworkManager.NetworkListener {
     @Override
     public void onCoopGameStateUpdate(CoopGameStateMessage message) {
         // 合作模式游戏状态更新
+        // 颜色直接绑定到槽位索引，无需颜色映射
         sharedManager.updateCoopGameLogic(message);
     }
 
