@@ -6,9 +6,11 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
@@ -171,7 +173,20 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         }
     }
 
-    private boolean isFirstCreate = true;
+    private boolean needsRefresh = true;
+
+    @Override
+    public void show(Stage stage, Skin skin) {
+        super.show(stage, skin);
+    }
+
+    @Override
+    protected void recreateUI() {
+        // resize时不需要发送状态请求
+        needsRefresh = false;
+        super.recreateUI();
+        needsRefresh = true;
+    }
 
     @Override
     protected void createUI() {
@@ -190,11 +205,10 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
 
         if (networkManager != null) {
             networkManager.addListener(this);
-            // 只在第一次创建UI时发送状态请求，避免resize时重复发送
-            if (isFirstCreate) {
+            // 只在非resize情况下发送状态请求
+            if (needsRefresh) {
                 RoomMessage statusMessage = new RoomMessage(RoomMessage.RoomAction.STATUS);
                 networkManager.sendMessage(statusMessage);
-                isFirstCreate = false;
             }
         }
     }

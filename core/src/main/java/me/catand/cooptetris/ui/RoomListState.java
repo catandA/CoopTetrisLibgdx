@@ -5,8 +5,10 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
@@ -67,7 +69,20 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         this.roomRowTables = new ArrayList<>();
     }
 
-    private boolean isFirstCreate = true;
+    private boolean needsRefresh = true;
+
+    @Override
+    public void show(Stage stage, Skin skin) {
+        super.show(stage, skin);
+    }
+
+    @Override
+    protected void recreateUI() {
+        // resize时不需要刷新房间列表
+        needsRefresh = false;
+        super.recreateUI();
+        needsRefresh = true;
+    }
 
     @Override
     protected void createUI() {
@@ -88,10 +103,12 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         if (networkManager != null) {
             networkManager.addListener(this);
             isProcessing = false;
-            // 只在第一次创建UI时刷新房间列表，避免resize时重复发送
-            if (isFirstCreate) {
+            // 只在非resize情况下刷新房间列表
+            if (needsRefresh) {
                 refreshRoomList();
-                isFirstCreate = false;
+            } else {
+                // resize时重新渲染已有的房间数据
+                updateRoomListDisplay(new ArrayList<>(availableRooms));
             }
         }
     }
@@ -245,7 +262,6 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
     }
 
     private void updateRoomListDisplay(List<RoomMessage.RoomInfo> rooms) {
-        availableRooms.clear();
         roomRowTables.clear();
 
         roomListTable.clear();
@@ -257,15 +273,13 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
             return;
         }
 
-        availableRooms.addAll(rooms);
-
-        for (RoomMessage.RoomInfo room : availableRooms) {
+        for (RoomMessage.RoomInfo room : rooms) {
             Table roomRow = createRoomRow(room);
             roomRowTables.add(roomRow);
             roomListTable.add(roomRow).fillX().padBottom(h(4f)).row();
         }
 
-        setStatus(lang().get("status.rooms.loaded").replace("%d", String.valueOf(availableRooms.size())), COLOR_SUCCESS);
+        setStatus(lang().get("status.rooms.loaded").replace("%d", String.valueOf(rooms.size())), COLOR_SUCCESS);
 
         roomListScrollPane.layout();
         roomListScrollPane.setScrollPercentY(0);
@@ -480,7 +494,12 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         switch (message.getAction()) {
             case LIST:
                 if (message.isSuccess()) {
-                    updateRoomListDisplay(message.getRooms());
+                    // 更新房间数据并刷新显示
+                    availableRooms.clear();
+                    if (message.getRooms() != null) {
+                        availableRooms.addAll(message.getRooms());
+                    }
+                    updateRoomListDisplay(availableRooms);
                 } else {
                     setStatus(lang().get("error.failed.to.load.rooms"), COLOR_DANGER);
                 }
