@@ -366,18 +366,16 @@ public class ServerManager {
 	private void handleListRooms(ClientConnection client) {
 		List<RoomMessage.RoomInfo> roomInfos = new ArrayList<>();
 		for (Room room : rooms) {
-			if (!room.isStarted()) {
-				// 根据客户端语言获取本地化的房间名称
-				String roomName = getLocalizedRoomName(room, client.getLanguage());
-				roomInfos.add(new RoomMessage.RoomInfo(
-					room.getId(),
-					roomName,
-					room.getActualPlayerCount(),
-					room.getMaxPlayers(),
-					room.isStarted(),
-					room.getDisplayPlayerCount() // 显示的玩家数量（包含锁定的槽位）
-				));
-			}
+			// 根据客户端语言获取本地化的房间名称
+			String roomName = getLocalizedRoomName(room, client.getLanguage());
+			roomInfos.add(new RoomMessage.RoomInfo(
+				room.getId(),
+				roomName,
+				room.getActualPlayerCount(),
+				room.getMaxPlayers(),
+				room.isStarted(),
+				room.getDisplayPlayerCount() // 显示的玩家数量（包含锁定的槽位）
+			));
 		}
 
 		RoomMessage response = new RoomMessage(RoomMessage.RoomAction.LIST);
@@ -608,18 +606,16 @@ public class ServerManager {
 			if (client.getCurrentRoom() == null) {
 				List<RoomMessage.RoomInfo> roomInfos = new ArrayList<>();
 				for (Room r : rooms) {
-					if (!r.isStarted()) {
-						// 根据客户端语言获取本地化的房间名称
-						String roomName = getLocalizedRoomName(r, client.getLanguage());
-						roomInfos.add(new RoomMessage.RoomInfo(
-							r.getId(),
-							roomName,
-							r.getActualPlayerCount(),
-							r.getMaxPlayers(),
-							r.isStarted(),
-							r.getDisplayPlayerCount() // 显示的玩家数量（包含锁定的槽位）
-						));
-					}
+					// 根据客户端语言获取本地化的房间名称
+					String roomName = getLocalizedRoomName(r, client.getLanguage());
+					roomInfos.add(new RoomMessage.RoomInfo(
+						r.getId(),
+						roomName,
+						r.getActualPlayerCount(),
+						r.getMaxPlayers(),
+						r.isStarted(),
+						r.getDisplayPlayerCount() // 显示的玩家数量（包含锁定的槽位）
+					));
 				}
 
 				RoomMessage listMessage = new RoomMessage(RoomMessage.RoomAction.LIST);

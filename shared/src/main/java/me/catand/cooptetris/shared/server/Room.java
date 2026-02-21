@@ -419,6 +419,12 @@ public class Room {
 
 			broadcastPlayerSlots();
 			broadcastRoomStatus();
+
+			// 广播房间列表更新（玩家人数变更）
+			if (serverManager != null) {
+				serverManager.broadcastRoomListUpdate();
+			}
+
 			return true;
 		} else {
 			// 退出观战，成为普通玩家
@@ -439,6 +445,12 @@ public class Room {
 
 				broadcastPlayerSlots();
 				broadcastRoomStatus();
+
+				// 广播房间列表更新（玩家人数变更）
+				if (serverManager != null) {
+					serverManager.broadcastRoomListUpdate();
+				}
+
 				return true;
 			}
 		}
@@ -668,6 +680,11 @@ public class Room {
 		broadcastGameState();
 
 		broadcastRoomStatus();
+
+		// 广播房间列表更新给所有不在房间中的客户端（通知他们房间状态变为游戏中）
+		if (serverManager != null) {
+			serverManager.broadcastRoomListUpdate();
+		}
 	}
 
 	public void handleMove(ClientConnection client, int moveType) {
