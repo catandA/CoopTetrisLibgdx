@@ -35,6 +35,10 @@ public class NetworkManager {
     private final List<NetworkListener> listeners;
     @Getter
     private ConnectionType currentConnectionType;
+    @Getter
+    private String connectedHost;
+    @Getter
+    private int connectedPort;
 
     public enum ConnectionType {
         NONE,         // 未连接
@@ -71,6 +75,8 @@ public class NetworkManager {
             client.connect(5000, host, port);
 
             this.playerName = playerName;
+            this.connectedHost = host;
+            this.connectedPort = port;
             connected = true;
 
             // 确定连接类型
@@ -437,6 +443,11 @@ public class NetworkManager {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            // 清除连接信息
+            connectedHost = null;
+            connectedPort = 0;
+            currentConnectionType = ConnectionType.NONE;
 
             // 确保在主线程中调用监听器方法
             Gdx.app.postRunnable(() -> {

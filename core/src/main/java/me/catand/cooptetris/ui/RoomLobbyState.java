@@ -40,6 +40,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
     private final NetworkManager networkManager;
     private Label statusLabel;
     private Label roomNameLabel;
+    private Label serverAddressLabel;
     private Label playerCountLabel;
     private Label gameModeLabel;
     private SelectBox<String> gameModeSelectBox;
@@ -273,6 +274,11 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         roomNameLabel = new Label(roomName, titleStyle);
         roomNameLabel.setAlignment(Align.left);
 
+        // 服务器地址标签（显示在房间名下方，与准备状态文字同高度）
+        String serverAddressText = getServerAddressText();
+        serverAddressLabel = FontUtils.createLabel(serverAddressText, skin, fontSize(14), TEXT_MUTED);
+        serverAddressLabel.setAlignment(Align.left);
+
         statusLabel = FontUtils.createLabel(lang().get("waiting.players"), skin, fontSize(16), COLOR_WARNING);
         statusLabel.setAlignment(Align.right);
 
@@ -305,12 +311,31 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         modeTable.add(gameModeLabel).padRight(w(10f));
         modeTable.add(gameModeSelectBox).width(w(120f)).height(h(35f));
 
-        header.add(roomNameLabel).left().expandX();
+        // 左侧：房间名和服务器地址
+        Table leftTable = new Table();
+        leftTable.add(roomNameLabel).left().row();
+        leftTable.add(serverAddressLabel).left().padTop(h(5f));
+
+        header.add(leftTable).left().expandX();
         header.add(modeTable).padRight(w(20f));
         header.add(playerCountLabel).width(w(120f)).row();
         header.add(statusLabel).right().colspan(3).padTop(h(5f));
 
         return header;
+    }
+
+    /**
+     * 获取服务器地址显示文本
+     */
+    private String getServerAddressText() {
+        if (networkManager != null && networkManager.isConnected()) {
+            String host = networkManager.getConnectedHost();
+            int port = networkManager.getConnectedPort();
+            if (host != null && port > 0) {
+                return host + ":" + port;
+            }
+        }
+        return "";
     }
 
     private Table createPlayerListPanel() {

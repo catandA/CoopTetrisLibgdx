@@ -251,9 +251,9 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
         isCreatingLocalServer = true;
         setStatus(lang.get("status.creating.server"), COLOR_WARNING);
 
-        // 启动本地服务器
+        // 启动本地服务器（使用与单人游戏相同的端口逻辑，从56148开始）
         if (uiManager.getLocalServerManager() != null) {
-            int port = uiManager.getLocalServerManager().startServer(52791);
+            int port = uiManager.getLocalServerManager().startServer(56148);
             if (port == -1) {
                 // 服务器启动失败
                 isConnecting = false;
@@ -311,10 +311,13 @@ public class ServerConnectionState extends BaseUIState implements NetworkManager
     }
 
     private void connect(String address, int port, String playerName) {
-        // 保存设置
+        // 保存设置（仅在非本地服务器模式下保存端口）
         TetrisSettings.playerName(playerName);
-        TetrisSettings.defaultHost(address);
-        TetrisSettings.defaultPort(port);
+        if (!isCreatingLocalServer) {
+            // 只有连接外部服务器时才保存地址和端口设置
+            TetrisSettings.defaultHost(address);
+            TetrisSettings.defaultPort(port);
+        }
 
         NetworkManager networkManager = uiManager.getNetworkManager();
         if (networkManager != null) {
