@@ -307,6 +307,7 @@ public class ServerManager {
 		Room room = findRoomById(roomId);
 
 		if (room != null) {
+			// 首先尝试作为普通玩家加入
 			if (room.addPlayer(client)) {
 				RoomMessage response = new RoomMessage(RoomMessage.RoomAction.JOIN);
 				response.setSuccess(true);
@@ -322,6 +323,28 @@ public class ServerManager {
 				room.broadcastPlayerSlots();
 
 				System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 成功加入房间: " + room.getName());
+			} else if (room.addSpectator(client)) {
+				// 普通玩家加入失败，尝试作为观战者加入
+				RoomMessage response = new RoomMessage(RoomMessage.RoomAction.JOIN);
+				response.setSuccess(true);
+				response.setRoomId(room.getId());
+				response.setRoomName(room.getName());
+				response.setMessage("Joined room as spectator");
+				// 观战者不是房主
+				response.setHost(false);
+				client.sendMessage(response);
+
+				// 立即向新加入的观战者发送房间状态和玩家槽位信息
+				room.broadcastRoomStatus();
+				room.broadcastPlayerSlots();
+
+				// 如果游戏已经开始，向观战者发送游戏开始消息
+				// 注意：这个消息必须在 JOIN 响应之后发送，确保客户端已经进入 RoomLobbyState
+				if (room.isStarted()) {
+					room.sendGameStartToSpectator(client);
+				}
+
+				System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 成功以观战者身份加入房间: " + room.getName());
 			} else {
 				RoomMessage response = new RoomMessage(RoomMessage.RoomAction.JOIN);
 				response.setSuccess(false);
@@ -374,7 +397,9 @@ public class ServerManager {
 				room.getActualPlayerCount(),
 				room.getMaxPlayers(),
 				room.isStarted(),
-				room.getDisplayPlayerCount() // 显示的玩家数量（包含锁定的槽位）
+				room.getDisplayPlayerCount(), // 显示的玩家数量（包含锁定的槽位）
+				room.isSpectatorLocked(),     // 观战是否被锁定
+				room.getSpectators().size()   // 观战者数量
 			));
 		}
 
@@ -614,7 +639,9 @@ public class ServerManager {
 						r.getActualPlayerCount(),
 						r.getMaxPlayers(),
 						r.isStarted(),
-						r.getDisplayPlayerCount() // 显示的玩家数量（包含锁定的槽位）
+						r.getDisplayPlayerCount(), // 显示的玩家数量（包含锁定的槽位）
+						r.isSpectatorLocked(),     // 观战是否被锁定
+						r.getSpectators().size()   // 观战者数量
 					));
 				}
 

@@ -386,11 +386,13 @@ public class Room {
 	}
 
 	/**
-	 * 处理玩家请求成为观战者或退出观战
+	 * 处理玩家请求成为观战者或退出观战（仅用于房间内切换）
+	 * 游戏开始后不能通过此方法切换为观战者
 	 * @return 是否成功
 	 */
 	public boolean requestSpectator(ClientConnection requester, boolean becomeSpectator) {
-		if (started) {
+		// 此方法仅用于房间内的玩家切换，游戏开始后不允许切换
+		if (started && becomeSpectator) {
 			return false;
 		}
 
@@ -456,6 +458,56 @@ public class Room {
 		}
 
 		return false;
+	}
+
+	/**
+	 * 添加观战者到房间（用于外部玩家加入观战，支持游戏开始后加入）
+	 * @param client 要加入的客户端连接
+	 * @return 是否成功
+	 */
+	public boolean addSpectator(ClientConnection client) {
+		// 检查观战功能是否被锁定
+		if (spectatorLocked) {
+			return false;
+		}
+
+		// 检查是否已经在观战者列表中
+		if (spectators.contains(client)) {
+			return true; // 已经在观战中，视为成功
+		}
+
+		// 检查是否已经在普通玩家列表中
+		if (players.contains(client)) {
+			// 如果已经在普通玩家列表中，先移除
+			removePlayer(client);
+		}
+
+		// 添加到观战者列表
+		spectators.add(client);
+		client.setCurrentRoom(this);
+		client.setSpectator(true);
+		client.setSlotIndex(-1); // 观战者没有槽位
+
+		// 广播房间状态
+		broadcastRoomStatus();
+		broadcastPlayerSlots();
+
+		// 广播房间列表更新
+		if (serverManager != null) {
+			serverManager.broadcastRoomListUpdate();
+		}
+
+		return true;
+	}
+
+	/**
+	 * 向观战者发送游戏开始消息（用于游戏已经开始后加入的观战者）
+	 * @param client 观战者客户端连接
+	 */
+	public void sendGameStartToSpectator(ClientConnection client) {
+		if (started && serverManager != null && spectators.contains(client)) {
+			serverManager.sendGameStartMessage(client, this, -1, gameSeed);
+		}
 	}
 
 	/**

@@ -50,6 +50,8 @@ public class RoomMessage extends NetworkMessage {
         private int maxPlayers;
         private boolean started;
         private int displayPlayerCount; // 显示的玩家数量（包含锁定的槽位）
+        private boolean spectatorLocked; // 观战是否被锁定
+        private int spectatorCount; // 观战者数量
 
         public RoomInfo() {
         }
@@ -61,6 +63,8 @@ public class RoomMessage extends NetworkMessage {
             this.maxPlayers = maxPlayers;
             this.started = started;
             this.displayPlayerCount = playerCount;
+            this.spectatorLocked = false;
+            this.spectatorCount = 0;
         }
 
         public RoomInfo(String id, String name, int playerCount, int maxPlayers, boolean started, int displayPlayerCount) {
@@ -70,6 +74,49 @@ public class RoomMessage extends NetworkMessage {
             this.maxPlayers = maxPlayers;
             this.started = started;
             this.displayPlayerCount = displayPlayerCount;
+            this.spectatorLocked = false;
+            this.spectatorCount = 0;
+        }
+
+        public RoomInfo(String id, String name, int playerCount, int maxPlayers, boolean started, int displayPlayerCount, boolean spectatorLocked, int spectatorCount) {
+            this.id = id;
+            this.name = name;
+            this.playerCount = playerCount;
+            this.maxPlayers = maxPlayers;
+            this.started = started;
+            this.displayPlayerCount = displayPlayerCount;
+            this.spectatorLocked = spectatorLocked;
+            this.spectatorCount = spectatorCount;
+        }
+
+        /**
+         * 检查是否可以作为普通玩家加入
+         */
+        public boolean canJoinAsPlayer() {
+            return !started && displayPlayerCount < maxPlayers;
+        }
+
+        /**
+         * 检查是否可以作为观战者加入
+         * 房间已开始或满人时，只要观战未被锁定就可以加入观战
+         */
+        public boolean canJoinAsSpectator() {
+            return !spectatorLocked;
+        }
+
+        /**
+         * 获取显示状态文本
+         */
+        public String getStatusText(String waitingText, String fullText, String inGameText, String spectatorText) {
+            if (started) {
+                return inGameText;
+            } else if (displayPlayerCount >= maxPlayers) {
+                if (!spectatorLocked) {
+                    return spectatorText;
+                }
+                return fullText;
+            }
+            return waitingText;
         }
     }
 }

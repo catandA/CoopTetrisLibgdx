@@ -295,28 +295,49 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         int maxPlayers = room.getMaxPlayers();
         boolean isFull = displayCount >= maxPlayers;
         boolean isStarted = room.isStarted();
-        boolean canJoin = !isFull && !isStarted;
+        boolean spectatorLocked = room.isSpectatorLocked();
+
+        // 判断加入状态
+        boolean canJoinAsPlayer = !isFull && !isStarted;
+        boolean canJoinAsSpectator = !spectatorLocked && (isFull || isStarted);
+        boolean canJoin = canJoinAsPlayer || canJoinAsSpectator;
 
         // 第一列：房间名
         Label nameLabel = FontUtils.createLabel(room.getName(), skin, fontSize(14), COLOR_TEXT);
         nameLabel.setEllipsis(true);
         row.add(nameLabel).left().width(w(180f)).padRight(w(10f));
 
-        // 第二列：人数（满时红色，未满时绿色）
+        // 第二列：人数
+        // 满人但可观战时显示黄色，满人且不可观战时显示红色，未满时显示绿色
         String playersText = displayCount + "/" + maxPlayers;
-        Color playersColor = isFull ? COLOR_DANGER : COLOR_SUCCESS;
+        Color playersColor;
+        if (isFull) {
+            playersColor = canJoinAsSpectator ? COLOR_WARNING : COLOR_DANGER;
+        } else {
+            playersColor = COLOR_SUCCESS;
+        }
         Label playersLabel = FontUtils.createLabel(playersText, skin, fontSize(14), playersColor);
         row.add(playersLabel).center().width(w(80f)).padRight(w(10f));
 
-        // 第三列：状态（等待中绿色，游戏中红色）
+        // 第三列：状态
         String statusText;
         Color statusColor;
         if (isStarted) {
-            statusText = lang().get("room.status.in.game");
-            statusColor = COLOR_DANGER;
+            if (canJoinAsSpectator) {
+                statusText = lang().get("room.status.spectator.available");
+                statusColor = COLOR_WARNING;
+            } else {
+                statusText = lang().get("room.status.in.game");
+                statusColor = COLOR_DANGER;
+            }
         } else if (isFull) {
-            statusText = lang().get("room.status.full");
-            statusColor = COLOR_DANGER;
+            if (canJoinAsSpectator) {
+                statusText = lang().get("room.status.spectator.available");
+                statusColor = COLOR_WARNING;
+            } else {
+                statusText = lang().get("room.status.full");
+                statusColor = COLOR_DANGER;
+            }
         } else {
             statusText = lang().get("room.status.waiting");
             statusColor = COLOR_SUCCESS;
@@ -325,7 +346,20 @@ public class RoomListState extends BaseUIState implements NetworkManager.Network
         row.add(statusLabel).center().width(w(100f)).padRight(w(10f));
 
         // 第四列：加入按钮
-        TextButton joinBtn = FontUtils.createTextButton(lang().get("room.action.join"), skin, fontSize(14), canJoin ? COLOR_PRIMARY : TEXT_MUTED);
+        String buttonText;
+        Color buttonColor;
+        if (canJoinAsPlayer) {
+            buttonText = lang().get("room.action.join");
+            buttonColor = COLOR_PRIMARY;
+        } else if (canJoinAsSpectator) {
+            buttonText = lang().get("room.action.spectate");
+            buttonColor = COLOR_WARNING;
+        } else {
+            buttonText = lang().get("room.action.join");
+            buttonColor = TEXT_MUTED;
+        }
+
+        TextButton joinBtn = FontUtils.createTextButton(buttonText, skin, fontSize(14), buttonColor);
         joinBtn.setDisabled(!canJoin);
         joinBtn.addListener(event -> {
             if (event instanceof InputEvent && ((InputEvent) event).getType() == InputEvent.Type.touchDown) {
