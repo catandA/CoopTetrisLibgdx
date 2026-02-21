@@ -287,6 +287,9 @@ public class ServerManager {
 
 			// 广播房间列表更新给所有不在房间中的客户端
 			broadcastRoomListUpdate();
+
+			// 再次发送玩家槽位信息给创建者（确保客户端能收到）
+			room.broadcastPlayerSlots();
 		} else {
 			RoomMessage response = new RoomMessage(RoomMessage.RoomAction.CREATE);
 			response.setSuccess(false);
