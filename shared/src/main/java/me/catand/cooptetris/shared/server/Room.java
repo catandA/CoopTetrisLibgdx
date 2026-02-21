@@ -712,7 +712,8 @@ public class Room {
 		for (ClientConnection client : players) {
 			RoomMessage message = new RoomMessage(RoomMessage.RoomAction.STATUS);
 			message.setRoomId(id);
-			message.setRoomName(name);
+			// 根据客户端语言返回本地化的房间名称
+			message.setRoomName(getLocalizedRoomName(client.getLanguage()));
 			message.setPlayers(playerNames);
 			message.setStarted(started);
 			message.setSuccess(true);
@@ -720,6 +721,24 @@ public class Room {
 			message.setHost(client == host);
 			client.sendMessage(message);
 		}
+	}
+
+	/**
+	 * 根据客户端语言获取本地化的房间名称
+	 * 对于默认聊天室，根据语言返回本地化名称；其他房间返回原始名称
+	 */
+	private String getLocalizedRoomName(String language) {
+		if (isDefaultLobby) {
+			// 根据客户端语言返回本地化的默认聊天室名称
+			if ("zh".equals(language)) {
+				return "聊天室";
+			} else {
+				// 默认英文
+				return "Chat Room";
+			}
+		}
+		// 非默认房间返回原始名称
+		return name;
 	}
 
 	public boolean kickPlayer(ClientConnection requester, String playerName) {

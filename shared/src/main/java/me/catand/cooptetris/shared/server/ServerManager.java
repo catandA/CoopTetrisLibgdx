@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.Getter;
 import me.catand.cooptetris.shared.message.ConnectMessage;
 import me.catand.cooptetris.shared.message.CountdownMessage;
 import me.catand.cooptetris.shared.message.CoopGameStateMessage;
@@ -32,7 +33,8 @@ public class ServerManager {
 	private final List<ClientConnection> clients;
 	private final List<Room> rooms;
 	private boolean running;
-	private final ServerType serverType;
+	@Getter
+    private final ServerType serverType;
 	private Room defaultRoom;
 
 	public ServerManager(int port) {
@@ -361,9 +363,11 @@ public class ServerManager {
 		List<RoomMessage.RoomInfo> roomInfos = new ArrayList<>();
 		for (Room room : rooms) {
 			if (!room.isStarted()) {
+				// 根据客户端语言获取本地化的房间名称
+				String roomName = getLocalizedRoomName(room, client.getLanguage());
 				roomInfos.add(new RoomMessage.RoomInfo(
 					room.getId(),
-					room.getName(),
+					roomName,
 					room.getActualPlayerCount(),
 					room.getMaxPlayers(),
 					room.isStarted(),
@@ -575,35 +579,36 @@ public class ServerManager {
 	 * 广播房间列表更新给所有不在房间中的客户端
 	 */
 	public void broadcastRoomListUpdate() {
-		List<RoomMessage.RoomInfo> roomInfos = new ArrayList<>();
-		for (Room r : rooms) {
-			if (!r.isStarted()) {
-				roomInfos.add(new RoomMessage.RoomInfo(
-					r.getId(),
-					r.getName(),
-					r.getActualPlayerCount(),
-					r.getMaxPlayers(),
-					r.isStarted(),
-					r.getDisplayPlayerCount() // 显示的玩家数量（包含锁定的槽位）
-				));
-			}
-		}
-
-		RoomMessage listMessage = new RoomMessage(RoomMessage.RoomAction.LIST);
-		listMessage.setSuccess(true);
-		listMessage.setRooms(roomInfos);
-
-		// 发送给所有不在房间中的客户端
+		// 发送给所有不在房间中的客户端，每个客户端根据自己的语言获取本地化房间名称
 		int recipientCount = 0;
 		for (ClientConnection client : clients) {
 			if (client.getCurrentRoom() == null) {
+				List<RoomMessage.RoomInfo> roomInfos = new ArrayList<>();
+				for (Room r : rooms) {
+					if (!r.isStarted()) {
+						// 根据客户端语言获取本地化的房间名称
+						String roomName = getLocalizedRoomName(r, client.getLanguage());
+						roomInfos.add(new RoomMessage.RoomInfo(
+							r.getId(),
+							roomName,
+							r.getActualPlayerCount(),
+							r.getMaxPlayers(),
+							r.isStarted(),
+							r.getDisplayPlayerCount() // 显示的玩家数量（包含锁定的槽位）
+						));
+					}
+				}
+
+				RoomMessage listMessage = new RoomMessage(RoomMessage.RoomAction.LIST);
+				listMessage.setSuccess(true);
+				listMessage.setRooms(roomInfos);
 				client.sendMessage(listMessage);
 				recipientCount++;
 			}
 		}
 
 		if (recipientCount > 0) {
-			System.out.println("ServerManager: 广播房间列表更新给 " + recipientCount + " 个客户端，共 " + roomInfos.size() + " 个房间");
+			System.out.println("ServerManager: 广播房间列表更新给 " + recipientCount + " 个客户端");
 		}
 	}
 
@@ -616,11 +621,25 @@ public class ServerManager {
 		return null;
 	}
 
-	public ServerType getServerType() {
-		return serverType;
+	/**
+	 * 根据客户端语言获取本地化的房间名称
+	 * 对于默认聊天室，根据语言返回本地化名称；其他房间返回原始名称
+	 */
+	private String getLocalizedRoomName(Room room, String language) {
+		if (room.isDefaultLobby()) {
+			// 根据客户端语言返回本地化的默认聊天室名称
+			if ("zh".equals(language)) {
+				return "聊天室";
+			} else {
+				// 默认英文
+				return "Chat Room";
+			}
+		}
+		// 非默认房间返回原始名称
+		return room.getName();
 	}
 
-	public void stop() {
+    public void stop() {
 		System.out.println("ServerManager: 正在停止服务器...");
 		running = false;
 		try {
