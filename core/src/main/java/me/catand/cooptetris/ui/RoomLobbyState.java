@@ -460,13 +460,7 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
                 }
             } else {
                 // 空槽位
-                if (mySlotIndex >= 0 && mySlotIndex != index) {
-                    // 房主也可以移动到其他空槽位
-                    options.add(lang().get("slot.status.empty.move"));
-                    options.add(lang().get("slot.action.move.here"));
-                } else {
-                    options.add(displayText);
-                }
+                options.add(displayText);
                 options.add(lang().get("slot.action.lock.slot"));
             }
         } else {
@@ -476,13 +470,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
             } else if (hasPlayer) {
                 options.add(displayText);
             } else {
-                // 空槽位，可以换位
-                if (mySlotIndex >= 0 && mySlotIndex != index) {
-                    options.add(lang().get("slot.status.empty.move"));
-                    options.add(lang().get("slot.action.move.here"));
-                } else {
-                    options.add(lang().get("slot.status.empty"));
-                }
+                // 空槽位
+                options.add(lang().get("slot.status.empty"));
             }
         }
 
@@ -523,12 +512,6 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
                 requestKick(slotIndex);
             } else if (lang().get("slot.action.lock").equals(selected) || lang().get("slot.action.lock.slot").equals(selected)) {
                 requestLockToggle(slotIndex);
-            } else if (lang().get("slot.action.move.here").equals(selected)) {
-                requestSlotChange(slotIndex);
-            }
-        } else {
-            if (lang().get("slot.action.move.here").equals(selected)) {
-                requestSlotChange(slotIndex);
             }
         }
     }
