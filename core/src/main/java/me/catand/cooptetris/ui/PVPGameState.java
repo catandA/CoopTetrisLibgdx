@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.Align;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.Setter;
 import me.catand.cooptetris.Main;
 import me.catand.cooptetris.input.InputBinding;
 import me.catand.cooptetris.input.TouchInputProcessor;
@@ -42,10 +43,6 @@ import me.catand.cooptetris.util.TetrisSettings;
 public class PVPGameState extends BaseUIState implements GameStateManager.PlayerScoresListener, NetworkManager.NetworkListener {
     private Table uiTable;
     private final GameStateManager gameStateManager;
-    private float cellSize;
-    private Label scoreLabel;
-    private Label levelLabel;
-    private Label linesLabel;
     private Label scoreValueLabel;
     private Label levelValueLabel;
     private Label linesValueLabel;
@@ -86,10 +83,18 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
     private Table selfBoardArea;
     private Table opponentBoardArea;
 
+    // 对手统计区域引用
+    private Table opponentStatsArea;
+
     // 触屏输入处理器
     private TouchInputProcessor touchInput;
 
+    /**
+     * -- SETTER --
+     *  设置观战者模式
+     */
     // 观战者模式
+    @Setter
     private boolean spectatorMode = false;
 
     // UI颜色配置
@@ -109,13 +114,6 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         this.gameStateManager = gameStateManager;
         // 设置玩家分数监听器
         gameStateManager.setPlayerScoresListener(this);
-    }
-
-    /**
-     * 设置观战者模式
-     */
-    public void setSpectatorMode(boolean spectatorMode) {
-        this.spectatorMode = spectatorMode;
     }
 
     private LanguageManager lang() {
@@ -183,7 +181,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         // 玩家名称标签 - 使用动态字体
         Label nameLabel = FontUtils.createLabel(lang().get("you"), skin, fontSize(14), COLOR_PRIMARY);
         nameLabel.setAlignment(Align.center);
-        panel.add(nameLabel).fillX().padBottom(h(10f)).row();
+        panel.add(nameLabel).width(w(260f)).height(h(20f)).padBottom(h(10f)).row();
 
         // 游戏板区域（由ShapeRenderer绘制）
         selfBoardArea = new Table();
@@ -211,26 +209,21 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             // 两人对战：显示单个对手的游戏板
             Label nameLabel = FontUtils.createLabel(lang().get("opponent"), skin, fontSize(14), COLOR_SECONDARY);
             nameLabel.setAlignment(Align.center);
-            panel.add(nameLabel).fillX().padBottom(h(10f)).row();
+            panel.add(nameLabel).width(w(260f)).height(h(20f)).padBottom(h(10f)).row();
 
             // 对手游戏板区域
             opponentBoardArea = new Table();
             opponentBoardArea.setBackground(createPanelBackground(COLOR_BG));
             panel.add(opponentBoardArea).width(w(280f)).height(h(420f)).padBottom(h(10f)).row();
 
-            // 对手信息
-            for (PlayerScoresMessage.PlayerScore score : playerScores) {
-                if (score.getPlayerIndex() != myPlayerIndex) {
-                    Table infoTable = createOpponentInfoTable(score);
-                    panel.add(infoTable).fillX().height(h(100f));
-                    break;
-                }
-            }
+            // 对手统计信息面板（与左侧样式一致）
+            Table opponentStatsPanel = createOpponentStatsPanel();
+            panel.add(opponentStatsPanel).fillX().height(h(100f));
         } else {
             // 多人对战：显示排行榜和顶部玩家
             Label titleLabel = FontUtils.createLabel(lang().get("top.players"), skin, fontSize(14), COLOR_SECONDARY);
             titleLabel.setAlignment(Align.center);
-            panel.add(titleLabel).fillX().padBottom(h(10f)).row();
+            panel.add(titleLabel).width(w(260f)).height(h(20f)).padBottom(h(10f)).row();
 
             // 显示前两名（不包括自己）
             int displayed = 0;
@@ -278,7 +271,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
 
         Label titleLabel = FontUtils.createLabel(lang().get("your.stats"), skin, fontSize(14), COLOR_PRIMARY);
         titleLabel.setAlignment(Align.center);
-        panel.add(titleLabel).fillX().padBottom(h(15f)).row();
+        panel.add(titleLabel).width(w(160f)).height(h(20f)).padBottom(h(15f)).row();
 
         // 分数
         panel.add(createStatRow(lang().get("score.title"), "0", COLOR_PRIMARY)).fillX().padBottom(h(10f)).row();
@@ -311,8 +304,8 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             linesValueLabel = valueLabel;
         }
 
-        row.add(titleLabel).left().expandX();
-        row.add(valueLabel).right();
+        row.add(titleLabel).width(w(60f)).height(h(18f)).left();
+        row.add(valueLabel).width(w(80f)).height(h(18f)).right();
 
         return row;
     }
@@ -327,7 +320,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
 
         Label titleLabel = FontUtils.createLabel(lang().get("leaderboard"), skin, fontSize(14), COLOR_WARNING);
         titleLabel.setAlignment(Align.center);
-        panel.add(titleLabel).fillX().padBottom(h(10f)).row();
+        panel.add(titleLabel).width(w(160f)).height(h(20f)).padBottom(h(10f)).row();
 
         // 排行榜内容区域
         leaderboardTable = new Table();
@@ -363,7 +356,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             }
             Color nameColor = score.getPlayerIndex() == myPlayerIndex ? COLOR_PRIMARY : COLOR_TEXT;
             Label nameLabel = FontUtils.createLabel(nameText, skin, fontSize(14), nameColor);
-            row.add(nameLabel).left().expandX().padRight(w(5f));
+            row.add(nameLabel).width(w(80f)).height(h(16f)).left().padRight(w(5f));
 
             // 分数
             Label.LabelStyle scoreStyle = new Label.LabelStyle(statsFont, COLOR_TEXT);
@@ -409,7 +402,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             // 两人对战：显示单个对手
             Label titleLabel = FontUtils.createLabel(lang().get("opponent"), skin, fontSize(14), COLOR_SECONDARY);
             titleLabel.setAlignment(Align.center);
-            opponentPanel.add(titleLabel).fillX().padBottom(h(10f)).row();
+            opponentPanel.add(titleLabel).width(w(260f)).height(h(20f)).padBottom(h(10f)).row();
 
             // 对手信息
             for (PlayerScoresMessage.PlayerScore score : playerScores) {
@@ -426,7 +419,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
             // 多人对战：显示分数最高的两人（不包括自己）
             Label titleLabel = FontUtils.createLabel(lang().get("top.players"), skin, fontSize(14), COLOR_SECONDARY);
             titleLabel.setAlignment(Align.center);
-            opponentPanel.add(titleLabel).fillX().padBottom(h(10f)).row();
+            opponentPanel.add(titleLabel).width(w(260f)).height(h(20f)).padBottom(h(10f)).row();
 
             int displayed = 0;
             for (PlayerScoresMessage.PlayerScore score : playerScores) {
@@ -449,7 +442,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
 
         // 玩家名称
         Label nameLabel = FontUtils.createLabel(score.getPlayerName(), skin, fontSize(14), COLOR_TEXT);
-        table.add(nameLabel).left().row();
+        table.add(nameLabel).width(w(240f)).height(h(18f)).left().row();
 
         // 分数信息
         Table statsTable = new Table();
@@ -475,7 +468,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         Label previewTitle = FontUtils.createLabel(lang().get("next.piece"), skin, fontSize(16), COLOR_TEXT_MUTED);
         previewTitle.setAlignment(Align.center);
 
-        previewPanel.add(previewTitle).fillX().padBottom(h(5f)).row();
+        previewPanel.add(previewTitle).width(w(240f)).height(h(20f)).padBottom(h(5f)).row();
 
         // 预览区域
         previewArea = new Table();
@@ -513,6 +506,64 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         }
 
         previewArea.add(pieceTable).center().expand();
+    }
+
+    /**
+     * 创建对手统计信息面板（与左侧预览面板样式一致）
+     */
+    private Table createOpponentStatsPanel() {
+        Table statsPanel = new Table();
+        statsPanel.setBackground(createPanelBackground(COLOR_BG));
+        statsPanel.pad(w(10f));
+
+        Label statsTitle = FontUtils.createLabel(lang().get("opponent.stats"), skin, fontSize(16), COLOR_TEXT_MUTED);
+        statsTitle.setAlignment(Align.center);
+        statsPanel.add(statsTitle).width(w(240f)).height(h(20f)).padBottom(h(5f)).row();
+
+        // 统计信息区域
+        opponentStatsArea = new Table();
+        opponentStatsArea.setBackground(createPanelBackground(COLOR_PANEL));
+        statsPanel.add(opponentStatsArea).height(w(60f)).fillX();
+
+        // 动态更新对手统计信息
+        updateOpponentStats();
+
+        return statsPanel;
+    }
+
+    /**
+     * 更新对手统计信息显示
+     */
+    private void updateOpponentStats() {
+        if (opponentStatsArea == null) return;
+
+        opponentStatsArea.clear();
+
+        // 找到对手信息
+        PlayerScoresMessage.PlayerScore opponentScore = null;
+        for (PlayerScoresMessage.PlayerScore score : playerScores) {
+            if (score.getPlayerIndex() != myPlayerIndex) {
+                opponentScore = score;
+                break;
+            }
+        }
+
+        if (opponentScore != null) {
+            // 使用与左侧统计行相同的样式
+            Table statsTable = new Table();
+
+            // 分数
+            String scoreText = lang().get("score.short") + ": " + opponentScore.getScore();
+            Label scoreLabel = FontUtils.createLabel(scoreText, skin, fontSize(14), COLOR_TEXT);
+            statsTable.add(scoreLabel).width(w(100f)).height(h(16f)).left().padRight(w(10f));
+
+            // 行数
+            String linesText = lang().get("lines.short") + ": " + opponentScore.getLines();
+            Label linesLabel = FontUtils.createLabel(linesText, skin, fontSize(14), COLOR_TEXT);
+            statsTable.add(linesLabel).width(w(100f)).height(h(16f)).left();
+
+            opponentStatsArea.add(statsTable).center().expand();
+        }
     }
 
     private com.badlogic.gdx.scenes.scene2d.utils.Drawable createColoredBackground(Color color) {
@@ -847,6 +898,7 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
         this.myPlayerIndex = yourIndex;
         updateLeaderboard();
         updateOpponentPanel();
+        updateOpponentStats();
     }
 
     public void renderGame(ShapeRenderer shapeRenderer) {
@@ -1026,21 +1078,19 @@ public class PVPGameState extends BaseUIState implements GameStateManager.Player
     }
 
     private void calculateBoardPositions() {
-        // 计算自己的游戏板单元格大小
-        float selfBaseCellSize = 22f;
-        selfCellSize = selfBaseCellSize * scale();
-        float maxSelfCellSize = h(28f);
-        if (selfCellSize > maxSelfCellSize) {
-            selfCellSize = maxSelfCellSize;
+        // 计算游戏板单元格大小（两侧使用相同的大小）
+        // 游戏板区域高度为 420，游戏板有 20 行，所以单元格最大为 420/20 = 21
+        // 留一些边距，使用 20f 作为基础大小
+        float baseCellSize = 20f;
+        float cellSize = baseCellSize * scale();
+        float maxCellSize = h(21f);
+        if (cellSize > maxCellSize) {
+            cellSize = maxCellSize;
         }
 
-        // 计算对手的游戏板单元格大小
-        float opponentBaseCellSize = 18f;
-        opponentCellSize = opponentBaseCellSize * scale();
-        float maxOpponentCellSize = h(24f);
-        if (opponentCellSize > maxOpponentCellSize) {
-            opponentCellSize = maxOpponentCellSize;
-        }
+        // 两侧使用相同的单元格大小
+        selfCellSize = cellSize;
+        opponentCellSize = cellSize;
     }
 
     private void updateBoardPositionsFromUI() {
