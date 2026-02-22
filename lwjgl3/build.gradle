@@ -136,6 +136,14 @@ construo {
     jlink {
         // 禁用默认加密模块（如果不需要）
         includeDefaultCryptoModules.set(false)
+        // 显式指定模块列表，排除 sun.nio.ch
+        modules.set([
+            "java.base",
+            "java.desktop",
+            "java.management",
+            "java.sql",
+            "jdk.unsupported"
+        ])
     }
 
     targets.configure {
