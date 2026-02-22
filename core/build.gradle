@@ -3,5 +3,4 @@ eclipse.project.name = appName + '-core'
 
 dependencies {
   api project(':shared')
-  annotationProcessor "org.projectlombok:lombok:1.18.42"
 }

@@ -8,7 +8,7 @@ buildscript {
   }
   dependencies {
     classpath 'com.android.tools.build:gradle:8.13.2'
-
+    classpath 'io.freefair.gradle:lombok-plugin:8.12.2'
   }
 }
 
@@ -27,6 +27,7 @@ allprojects {
 
 configure(subprojects - project(':android')) {
   apply plugin: 'java-library'
+  apply plugin: 'io.freefair.lombok'
   java.sourceCompatibility = 11
 
   // From https://lyze.dev/2021/04/29/libGDX-Internal-Assets-List/
