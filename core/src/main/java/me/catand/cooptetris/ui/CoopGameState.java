@@ -666,11 +666,21 @@ public class CoopGameState extends BaseUIState implements NetworkManager.Network
         gameOverDialog = new NotificationDialog(skin);
         gameOverDialog.setNotification(notificationMessage);
         gameOverDialog.setOnCloseAction(() -> {
-            returnToMenu();
+            returnToLobby();
         });
 
         // 显示在右侧，避免被游戏板遮挡
         gameOverDialog.show(stage, NotificationDialog.Position.RIGHT);
+    }
+
+    private void returnToLobby() {
+        // 如果还在网络游戏中，返回到房间大厅
+        if (uiManager.getNetworkManager() != null && uiManager.getNetworkManager().isConnected()) {
+            uiManager.setScreen(new RoomLobbyState(uiManager, uiManager.getNetworkManager()));
+        } else {
+            // 否则返回主菜单
+            returnToMenu();
+        }
     }
 
     private void returnToMenu() {

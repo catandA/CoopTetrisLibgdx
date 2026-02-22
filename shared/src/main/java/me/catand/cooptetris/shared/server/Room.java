@@ -931,6 +931,9 @@ public class Room {
 		}
 		message.setPlayerPieces(playerPieceStates);
 
+		// 设置每个槽位的颜色选择
+		message.setSlotColorIndices(coopGameLogic.getSlotColorIndices());
+
 		return message;
 	}
 

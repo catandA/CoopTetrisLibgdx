@@ -156,6 +156,14 @@ public class GameStateManager {
                 }
             }
         }
+
+        // 更新每个槽位的颜色选择
+        int[] slotColorIndices = message.getSlotColorIndices();
+        if (slotColorIndices != null) {
+            for (int i = 0; i < slotColorIndices.length && i < CoopGameLogic.MAX_PLAYERS; i++) {
+                coopGameLogic.setSlotColorIndex(i, slotColorIndices[i]);
+            }
+        }
     }
 
     public GameLogic getLocalGameLogic() {

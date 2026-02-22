@@ -262,6 +262,7 @@ public class ServerManager {
 		Room room = client.getCurrentRoom();
 		if (room != null) {
 			room.broadcastRoomStatus();
+			room.broadcastPlayerSlots();
 			System.out.println("ServerManager: 玩家 " + client.getPlayerName() + " 请求房间状态更新");
 		}
 	}
