@@ -415,13 +415,18 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
         row.add(nameSelectBox).width(w(150f)).height(h(32f)).padRight(w(10f));
 
         // ========== 第二列：颜色选择下拉菜单 ==========
-        SelectBox<String> colorSelectBox = createColorSelectBox(slot, index);
-        boolean canChangeColor = !isLocked && hasPlayer && (isHost || isMySlot);
-        colorSelectBox.setDisabled(!canChangeColor);
-        if (!canChangeColor) {
-            colorSelectBox.setColor(COLOR_GRAYED_OUT);
+        if (hasPlayer) {
+            SelectBox<String> colorSelectBox = createColorSelectBox(slot, index);
+            boolean canChangeColor = !isLocked && (isHost || isMySlot);
+            colorSelectBox.setDisabled(!canChangeColor);
+            if (!canChangeColor) {
+                colorSelectBox.setColor(COLOR_GRAYED_OUT);
+            }
+            row.add(colorSelectBox).width(w(100f)).height(h(32f)).padRight(w(10f));
+        } else {
+            // 没有玩家时，颜色列显示为空
+            row.add().width(w(100f)).height(h(32f)).padRight(w(10f));
         }
-        row.add(colorSelectBox).width(w(100f)).height(h(32f)).padRight(w(10f));
 
         // ========== 第三列：位置下拉菜单 ==========
         SelectBox<String> positionSelectBox = createPositionSelectBox(slot, index);
@@ -755,7 +760,8 @@ public class RoomLobbyState extends BaseUIState implements NetworkManager.Networ
                 // 有玩家的位置
                 if (isHost) {
                     // 房主可以交换
-                    options.add(option + " (Swap with " + targetSlot.getPlayerName() + ")");
+                    String swapText = String.format(lang().get("slot.action.swap"), targetSlot.getPlayerName());
+                    options.add(option + " (" + swapText + ")");
                 } else if (isMySlot) {
                     // 非房主只能移动到空位
                     // 不添加此选项
